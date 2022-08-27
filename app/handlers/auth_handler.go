@@ -87,7 +87,7 @@ func (a *AuthHandler) GithubCallback(c *fiber.Ctx) error {
 	q.Set("email", u.Email)
 	q.Set("profileUrl", u.ProfileURL)
 	url.RawQuery = q.Encode()
-	log.Info().Msgf("auth handlers: github auth handler: redirect to %s, %v", url.String())
+	log.Info().Msgf("auth handlers: github auth handler: redirect to %s", url.String())
 	return c.Redirect(url.String())
 
 }
