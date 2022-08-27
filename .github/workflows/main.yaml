@@ -34,3 +34,29 @@ jobs:
           go mod download
       - name: Build
         run: go test ./...
+
+
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: ls -a via ssh
+        uses: fifsky/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          user: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          command: |
+            cd ${{ secrets.SSH_TARGET }}
+            ls
+            eval $(ssh-agent -s)
+            ssh-add ~/.ssh/sb-back
+            cd second-brain-backend
+            git fetch --all
+            git reset --hard origin/master
+            cd ..
+            docker-compose -f docker-compose.yaml -f docker-compose.prod.yaml down
+            docker system prune -f
+            docker-compose -f docker-compose.prebuild.yaml up --build
+            docker-compose -f docker-compose.yaml -f docker-compose.prod.yaml up --build -d
+          args: "-tt -vvv"
