@@ -28,7 +28,7 @@ func configDefault(config ...Config) Config {
 // TODO: master add config for common arrangements
 func NewAuthMiddleware() func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
-		rawUser := c.Locals("user").(*models.User)
+		rawUser := c.Locals("user")
 		if rawUser == nil {
 			return c.Status(fiber.StatusUnauthorized).JSON(NewHttpError[any](ErrInvalidToken, nil))
 		}
