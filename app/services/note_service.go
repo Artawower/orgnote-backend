@@ -87,7 +87,6 @@ func (a *NoteService) BulkCreateOrUpdate(userID string, notes []models.Note) err
 	return nil
 }
 
-// TODO: master
 func (a *NoteService) GetNotes(includePrivate bool, filter models.NoteFilter) (*models.Paginated[models.PublicNote], error) {
 	notes, err := a.noteRepository.GetNotes(includePrivate, filter)
 	if err != nil {

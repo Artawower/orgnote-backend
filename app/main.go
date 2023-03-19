@@ -34,7 +34,7 @@ func main() {
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)
 
 	if config.Debug {
-		zerolog.SetGlobalLevel(zerolog.InfoLevel)
+    zerolog.SetGlobalLevel(zerolog.InfoLevel)
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)

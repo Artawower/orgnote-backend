@@ -3,7 +3,6 @@ package models
 import (
 	"time"
 
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 type NoteHeading struct {
@@ -41,7 +40,7 @@ type NoteMeta struct {
 type Note struct {
 	ID        string    `json:"id" bson:"_id"`
 	AuthorID  string    `json:"authorId" bson:"authorId"`
-	Content   bson.M    `json:"content" bson:"content"`
+	Content   string    `json:"content" bson:"content"`
 	Meta      NoteMeta  `json:"meta" bson:"meta"`
 	CreatedAt time.Time `json:"createdAt" bson:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt" bson:"updatedAt"`
@@ -52,7 +51,7 @@ type Note struct {
 type PublicNote struct {
 	ID      string     `json:"id" bson:"_id"`
 	Author  PublicUser `json:"author" bson:"author"`
-	Content bson.M     `json:"content" bson:"content"`
+	Content string     `json:"content" bson:"content"`
 	Meta    NoteMeta   `json:"meta" bson:"meta"`
 }
 
