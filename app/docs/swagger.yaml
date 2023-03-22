@@ -1,9 +1,88 @@
 definitions:
+  handlers.HttpError-any:
+    properties:
+      data: {}
+      message:
+        type: string
+    type: object
+  handlers.HttpResponse-array_models_APIToken-any:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/models.APIToken'
+        type: array
+      meta: {}
+    type: object
+  handlers.HttpResponse-array_models_Note-models_Pagination:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/models.Note'
+        type: array
+      meta:
+        $ref: '#/definitions/models.Pagination'
+    type: object
+  handlers.HttpResponse-array_string-any:
+    properties:
+      data:
+        items:
+          type: string
+        type: array
+      meta: {}
+    type: object
+  handlers.HttpResponse-handlers_OAuthRedirectData-any:
+    properties:
+      data:
+        $ref: '#/definitions/handlers.OAuthRedirectData'
+      meta: {}
+    type: object
   handlers.HttpResponse-models_Note-any:
     properties:
       data:
         $ref: '#/definitions/models.Note'
       meta: {}
+    type: object
+  handlers.HttpResponse-models_NoteGraph-any:
+    properties:
+      data:
+        $ref: '#/definitions/models.NoteGraph'
+      meta: {}
+    type: object
+  handlers.HttpResponse-models_PublicUser-any:
+    properties:
+      data:
+        $ref: '#/definitions/models.PublicUser'
+      meta: {}
+    type: object
+  handlers.OAuthRedirectData:
+    properties:
+      redirectUrl:
+        type: string
+    type: object
+  models.APIToken:
+    properties:
+      id:
+        type: string
+      permission:
+        type: string
+      token:
+        type: string
+    type: object
+  models.GraphNoteLink:
+    properties:
+      source:
+        type: string
+      target:
+        type: string
+    type: object
+  models.GraphNoteNode:
+    properties:
+      id:
+        type: string
+      title:
+        type: string
+      weight:
+        type: integer
     type: object
   models.Note:
     properties:
@@ -23,6 +102,17 @@ definitions:
         type: string
       views:
         type: integer
+    type: object
+  models.NoteGraph:
+    properties:
+      links:
+        items:
+          $ref: '#/definitions/models.GraphNoteLink'
+        type: array
+      nodes:
+        items:
+          $ref: '#/definitions/models.GraphNoteNode'
+        type: array
     type: object
   models.NoteHeading:
     properties:
@@ -73,6 +163,30 @@ definitions:
       title:
         type: string
     type: object
+  models.Pagination:
+    properties:
+      limit:
+        type: integer
+      offset:
+        type: integer
+      total:
+        type: integer
+    type: object
+  models.PublicUser:
+    properties:
+      avatarUrl:
+        type: string
+      email:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      nickName:
+        type: string
+      profileUrl:
+        type: string
+    type: object
   models.category:
     enum:
     - article
@@ -95,13 +209,228 @@ info:
   title: Second Brain API
   version: 0.0.1
 paths:
+  /auth/api-tokens:
+    get:
+      consumes:
+      - application/json
+      description: Return all available API tokens
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.HttpResponse-array_models_APIToken-any'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.HttpError-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.HttpError-any'
+      summary: Get API tokens
+      tags:
+      - auth
+  /auth/github/callback:
+    get:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.HttpError-any'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.HttpError-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.HttpError-any'
+      summary: Callback for github OAuth
+      tags:
+      - auth
+  /auth/github/login:
+    get:
+      consumes:
+      - application/json
+      description: Entrypoint for login
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.HttpResponse-handlers_OAuthRedirectData-any'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.HttpError-any'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.HttpError-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.HttpError-any'
+      summary: Login
+      tags:
+      - auth
+  /auth/logout:
+    get:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.HttpError-any'
+      summary: Logout
+      tags:
+      - auth
+  /auth/token:
+    delete:
+      consumes:
+      - application/json
+      description: Delete API token
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.HttpError-any'
+      summary: Delete API token
+      tags:
+      - auth
+  /auth/verify:
+    get:
+      consumes:
+      - application/json
+      description: Return found user by provided token
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.HttpResponse-models_PublicUser-any'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/handlers.HttpError-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.HttpError-any'
+      summary: Verify user
+      tags:
+      - auth
+  /notes/:
+    get:
+      consumes:
+      - application/json
+      description: Get all notes with optional filter
+      parameters:
+      - description: User ID
+        in: query
+        name: userId
+        type: string
+      - description: Search text
+        in: query
+        name: searchText
+        type: string
+      - description: Limit for pagination
+        in: query
+        name: limit
+        required: true
+        type: string
+      - description: Offset for pagination
+        in: query
+        name: offset
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.HttpResponse-array_models_Note-models_Pagination'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.HttpError-any'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.HttpError-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.HttpError-any'
+      summary: Get notes
+      tags:
+      - notes
+    post:
+      consumes:
+      - application/json
+      description: Create note
+      parameters:
+      - description: Note model
+        in: body
+        name: note
+        required: true
+        schema:
+          $ref: '#/definitions/models.Note'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.HttpError-any'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.HttpError-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.HttpError-any'
+      summary: Create note
+      tags:
+      - notes
   /notes/{id}:
     get:
       consumes:
       - application/json
       description: get note by id
       parameters:
-      - description: Account ID
+      - description: Note ID
         in: path
         name: id
         required: true
@@ -116,19 +445,79 @@ paths:
         "400":
           description: Bad Request
           schema:
-            type: object
+            $ref: '#/definitions/handlers.HttpError-any'
         "404":
           description: Not Found
           schema:
-            type: object
+            $ref: '#/definitions/handlers.HttpError-any'
         "500":
           description: Internal Server Error
           schema:
-            type: object
+            $ref: '#/definitions/handlers.HttpError-any'
       summary: Get note
       tags:
       - notes
-schemes:
-- http,
-- https
+  /notes/bulk-upsert:
+    put:
+      consumes:
+      - application/json
+      description: Bulk update or insert notes
+      parameters:
+      - description: Notes list
+        in: body
+        name: notes
+        required: true
+        schema:
+          items:
+            $ref: '#/definitions/models.Note'
+          type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.HttpError-any'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.HttpError-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.HttpError-any'
+      summary: Upsert notes
+      tags:
+      - notes
+  /notes/graph:
+    get:
+      consumes:
+      - application/json
+      description: Return list of al registered tags
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.HttpResponse-array_string-any'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.HttpError-any'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.HttpError-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.HttpError-any'
+      summary: Get tags
+      tags:
+      - tags
 swagger: "2.0"

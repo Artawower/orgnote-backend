@@ -45,6 +45,18 @@ type AuthHandler struct {
 	authMiddleware fiber.Handler
 }
 
+
+// Login godoc
+// @Summary      Login
+// @Description  Entrypoint for login
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Success      200  {object}  handlers.HttpResponse[OAuthRedirectData, any]
+// @Failure      400  {object}  handlers.HttpError[any]
+// @Failure      404  {object}  handlers.HttpError[any]
+// @Failure      500  {object}  handlers.HttpError[any]
+// @Router       /auth/github/login  [get]
 func (a *AuthHandler) Login(c *fiber.Ctx) error {
 	url, err := goth_fiber.GetAuthURL(c)
 	if err != nil {
@@ -57,6 +69,17 @@ func (a *AuthHandler) Login(c *fiber.Ctx) error {
 	return c.JSON(data)
 }
 
+// GithubCallback godoc
+// @Summary      Callback for github OAuth
+// @Description  
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Success      200  {object}  any
+// @Failure      400  {object}  handlers.HttpError[any]
+// @Failure      404  {object}  handlers.HttpError[any]
+// @Failure      500  {object}  handlers.HttpError[any]
+// @Router       /auth/github/callback  [get]
 func (a *AuthHandler) GithubCallback(c *fiber.Ctx) error {
 	user, err := goth_fiber.CompleteUserAuth(c)
 	if err != nil {
@@ -94,6 +117,15 @@ func (a *AuthHandler) GithubCallback(c *fiber.Ctx) error {
 
 }
 
+// Logout godoc
+// @Summary      Logout
+// @Description  
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Success      200  {object}  any
+// @Failure      500  {object}  handlers.HttpError[any]
+// @Router       /auth/logout  [get]
 func (a *AuthHandler) Logout(c *fiber.Ctx) error {
 	if err := goth_fiber.Logout(c); err != nil {
 		log.Error().Err(err).Msgf("auth handlers: github auth handler: logout")
@@ -118,6 +150,15 @@ type BodyDeleteToken struct {
 	TokenID string `json:"tokenId"`
 }
 
+// DeleteToken godoc
+// @Summary      Delete API token
+// @Description  Delete API token
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Success      200  {object}  any
+// @Failure      500  {object}  handlers.HttpError[any]
+// @Router       /auth/token  [delete]
 func (a *AuthHandler) DeleteToken(c *fiber.Ctx) error {
 	user := c.Locals("user").(*models.User)
 	b := new(BodyDeleteToken)
@@ -133,6 +174,17 @@ func (a *AuthHandler) DeleteToken(c *fiber.Ctx) error {
 	return c.Status(200).JSON(NewHttpReponse[any, any](nil, nil))
 }
 
+
+// VerifyUser godoc
+// @Summary      Verify user
+// @Description  Return found user by provided token
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Success      200  {object}  handlers.HttpResponse[models.PublicUser, any]
+// @Failure      403  {object}  handlers.HttpError[any]
+// @Failure      500  {object}  handlers.HttpError[any]
+// @Router       /auth/verify  [get]
 func (a *AuthHandler) VerifyUser(c *fiber.Ctx) error {
 	token := tools.ExtractBearerTokenFromCtx(c)
 	if token == "" {
@@ -146,6 +198,16 @@ func (a *AuthHandler) VerifyUser(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(NewHttpReponse[*models.PublicUser, any](user, nil))
 }
 
+// GetApiTokens godoc
+// @Summary      Get API tokens
+// @Description  Return all available API tokens
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Success      200  {object}  handlers.HttpResponse[[]models.APIToken, any]
+// @Failure      500  {object}  handlers.HttpError[any]
+// @Failure      400  {object}  handlers.HttpError[any]
+// @Router       /auth/api-tokens  [get]
 func (a *AuthHandler) GetAPITokens(c *fiber.Ctx) error {
 	user := c.Locals("user").(*models.User)
 	tokens, err := a.userService.GetAPITokens(user.ID.Hex())

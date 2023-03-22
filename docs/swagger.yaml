@@ -1,0 +1,137 @@
+definitions:
+  handlers.HttpError-any:
+    properties:
+      data: {}
+      message:
+        type: string
+    type: object
+  handlers.HttpResponse-models_Note-any:
+    properties:
+      data:
+        $ref: '#/definitions/models.Note'
+      meta: {}
+    type: object
+  models.Note:
+    properties:
+      authorId:
+        type: string
+      content:
+        type: string
+      createdAt:
+        type: string
+      id:
+        type: string
+      likes:
+        type: integer
+      meta:
+        $ref: '#/definitions/models.NoteMeta'
+      updatedAt:
+        type: string
+      views:
+        type: integer
+    type: object
+  models.NoteHeading:
+    properties:
+      level:
+        type: integer
+      text:
+        type: string
+    type: object
+  models.NoteLink:
+    properties:
+      name:
+        type: string
+      url:
+        type: string
+    type: object
+  models.NoteMeta:
+    properties:
+      category:
+        $ref: '#/definitions/models.category'
+      description:
+        type: string
+      externalLinks:
+        items:
+          $ref: '#/definitions/models.NoteLink'
+        type: array
+      fileTags:
+        items:
+          type: string
+        type: array
+      headings:
+        items:
+          $ref: '#/definitions/models.NoteHeading'
+        type: array
+      images:
+        items:
+          type: string
+        type: array
+      linkedArticles:
+        items:
+          $ref: '#/definitions/models.NoteLink'
+        type: array
+      previewImg:
+        type: string
+      published:
+        type: boolean
+      startup:
+        type: string
+      title:
+        type: string
+    type: object
+  models.category:
+    enum:
+    - article
+    - book
+    - schedule
+    type: string
+    x-enum-varnames:
+    - CategoryArticle
+    - CategoryBook
+    - CategorySchedule
+info:
+  contact:
+    email: artawower@protonmail.com
+    name: API Support
+  description: List of methods for work with second brain.
+  license:
+    name: GPL 3.0
+    url: https://www.gnu.org/licenses/gpl-3.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Second Brain API
+  version: 0.0.1
+paths:
+  /notes/{id}:
+    get:
+      consumes:
+      - application/json
+      description: get note by id
+      parameters:
+      - description: Note ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.HttpResponse-models_Note-any'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.HttpError-any'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.HttpError-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.HttpError-any'
+      summary: Get note
+      tags:
+      - notes
+swagger: "2.0"

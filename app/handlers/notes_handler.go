@@ -56,9 +56,9 @@ type SuccessGetNotesResponse struct {
 // @Produce      json
 // @Param        id   path      string  true  "Note ID"
 // @Success      200  {object}  handlers.HttpResponse[models.Note, any]
-// @Failure      400  {object}  any
-// @Failure      404  {object}  any
-// @Failure      500  {object}  any
+// @Failure      400  {object}  handlers.HttpError[any]
+// @Failure      404  {object}  handlers.HttpError[any]
+// @Failure      500  {object}  handlers.HttpError[any]
 // @Router       /notes/{id}  [get]
 func (h *NoteHandlers) GetNote(c *fiber.Ctx) error {
 	noteID := c.Params("id")
@@ -82,6 +82,21 @@ func (h *NoteHandlers) GetNote(c *fiber.Ctx) error {
 	return c.Status(http.StatusOK).JSON(NewHttpReponse[*models.PublicNote, any](notes, nil))
 }
 
+// GetNote godoc
+// @Summary      Get notes
+// @Description  Get all notes with optional filter
+// @Tags         notes
+// @Accept       json
+// @Produce      json
+// @Param        userId       query  string  false  "User ID"
+// @Param        searchText   query  string  false  "Search text"
+// @Param        limit        query  string  true  "Limit for pagination"
+// @Param        offset       query  string  true  "Offset for pagination"
+// @Success      200  {object}  handlers.HttpResponse[[]models.Note, models.Pagination]
+// @Failure      400  {object}  handlers.HttpError[any]
+// @Failure      404  {object}  handlers.HttpError[any]
+// @Failure      500  {object}  handlers.HttpError[any]
+// @Router       /notes/  [get]
 func (h *NoteHandlers) GetNotes(c *fiber.Ctx) error {
 	defaultLimit := int64(10)
 	defaultOffset := int64(0)
@@ -117,6 +132,18 @@ func (h *NoteHandlers) GetNotes(c *fiber.Ctx) error {
 		}))
 }
 
+// CreateNote godoc
+// @Summary      Create note
+// @Description  Create note
+// @Tags         notes
+// @Accept       json
+// @Produce      json
+// @Param        note       body  models.Note  true  "Note model"
+// @Success      200  {object}  any
+// @Failure      400  {object}  handlers.HttpError[any]
+// @Failure      404  {object}  handlers.HttpError[any]
+// @Failure      500  {object}  handlers.HttpError[any]
+// @Router       /notes/  [post]
 func (h *NoteHandlers) CreateNote(c *fiber.Ctx) error {
 	note := new(models.Note)
 
@@ -134,6 +161,18 @@ func (h *NoteHandlers) CreateNote(c *fiber.Ctx) error {
 	return c.Status(http.StatusOK).JSON(nil)
 }
 
+// UpserNotes godoc
+// @Summary      Upsert notes
+// @Description  Bulk update or insert notes
+// @Tags         notes
+// @Accept       json
+// @Produce      json
+// @Param        notes body []models.Note  true  "Notes list"
+// @Success      200  {object}  any
+// @Failure      400  {object}  handlers.HttpError[any]
+// @Failure      404  {object}  handlers.HttpError[any]
+// @Failure      500  {object}  handlers.HttpError[any]
+// @Router       /notes/bulk-upsert  [put]
 func (h *NoteHandlers) UpsertNotes(c *fiber.Ctx) error {
 
 	if form, err := c.MultipartForm(); err == nil {
@@ -169,7 +208,17 @@ func (h *NoteHandlers) UpsertNotes(c *fiber.Ctx) error {
 	return c.Status(http.StatusInternalServerError).JSON(NewHttpError[any]("Can't parse multipart form data", nil))
 }
 
-// Return user graph of notes
+// GetNoteGraph godoc
+// @Summary      Get notes graph
+// @Description  Return graph model with links between connected notes
+// @Tags         notes
+// @Accept       json
+// @Produce      json
+// @Success      200  {object}  handlers.HttpResponse[models.NoteGraph, any]
+// @Failure      400  {object}  handlers.HttpError[any]
+// @Failure      404  {object}  handlers.HttpError[any]
+// @Failure      500  {object}  handlers.HttpError[any]
+// @Router       /notes/graph  [get]
 func (h *NoteHandlers) GetNoteGraph(c *fiber.Ctx) error {
 	ctxUser := c.Locals("user")
 
