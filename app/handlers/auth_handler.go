@@ -75,20 +75,22 @@ func (a *AuthHandler) GithubCallback(c *fiber.Ctx) error {
 		log.Error().Err(err).Msgf("auth handlers: github auth handler: login user %v", err)
 		return c.Status(fiber.StatusInternalServerError).SendString("Internal server error")
 	}
-	redirectURL := a.config.ClientAddress + "/auth/login"
-	url, err := url.Parse(redirectURL)
+	// TODO: master client url for redirect. Read from env
+	redirectURL := a.config.ClientAddress + "/#/auth/login/"
+	parsedURL, err := url.Parse(redirectURL)
 	if err != nil {
 		log.Error().Err(err).Msgf("auth handlers: github auth handler: parse redirect url %v", err)
 	}
-	q := url.Query()
+	q := parsedURL.Query()
 	q.Set("token", u.Token)
+	q.Set("id", u.ID.String())
 	q.Set("username", u.NickName)
 	q.Set("avatarUrl", u.AvatarURL)
 	q.Set("email", u.Email)
 	q.Set("profileUrl", u.ProfileURL)
-	url.RawQuery = q.Encode()
-	log.Info().Msgf("auth handlers: github auth handler: redirect to %s", url.String())
-	return c.Redirect(url.String())
+	parsedURL.RawQuery = q.Encode()
+
+	return c.Redirect(redirectURL + "?" + parsedURL.RawQuery)
 
 }
 

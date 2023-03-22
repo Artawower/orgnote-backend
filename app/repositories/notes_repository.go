@@ -126,6 +126,10 @@ func (a *NoteRepository) UpdateNote(article models.Note) error {
 }
 
 func (a *NoteRepository) BulkUpsert(userID string, notes []models.Note) error {
+	if (len(notes)) == 0 {
+		return errors.New("note repository: no notes to upsert")
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
