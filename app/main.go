@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -24,8 +25,6 @@ import (
 // @contact.email artawower@protonmail.com
 // @license.name GPL 3.0
 // @license.url https://www.gnu.org/licenses/gpl-3.0.html
-// @host localhost:8080
-// @BasePath /
 func main() {
 	config := configs.NewConfig()
 
@@ -34,7 +33,7 @@ func main() {
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)
 
 	if config.Debug {
-    zerolog.SetGlobalLevel(zerolog.InfoLevel)
+		zerolog.SetGlobalLevel(zerolog.InfoLevel)
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
@@ -77,8 +76,9 @@ func main() {
 	userService := services.NewUserService(userRepository)
 
 	// api.Use(handlers.NewAuthMiddleware())
-	// TODO: master add validation
-	handlers.RegisterSwagger(api)
+	// TODO: expose to external fn
+
+	handlers.RegisterSwagger(api, config)
 	handlers.RegisterNoteHandler(api, noteService, authMiddleware)
 	handlers.RegisterTagHandler(api, tagService)
 	handlers.RegisterAuthHandler(api, userService, config, authMiddleware)

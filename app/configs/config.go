@@ -13,8 +13,18 @@ type Config struct {
 	MediaPath     string
 	GithubID      string
 	GithubSecret  string
-	BackendHost   string
+	BackendSchema string
+	BackendPort   string
+	BackendDomain string
 	ClientAddress string
+}
+
+func (c *Config) BackendHost() string {
+	host := c.BackendSchema + "://" + c.BackendDomain
+	if (c.BackendPort != "") {
+		host += ":" + c.BackendPort
+	}
+	return host
 }
 
 // TODO: master split into several functions
@@ -47,7 +57,13 @@ func NewConfig() Config {
 		clientAddress = envClientAddress
 	}
 
-	backendHost := os.Getenv("BACKEND_HOST")
+	backendDomain := os.Getenv("BACKEND_DOMAIN")
+	backendSchema := os.Getenv("BACKEND_SCHEMA")
+	if (backendDomain == "" || backendSchema == "") {
+		log.Fatal().Msg("BACKEND_DOMAIN or BACKEND_SCHEMA is not set")
+	}
+		
+	backendPort := os.Getenv("BACKEND_PORT")
 
 	config := Config{
 		AppAddress:    appAddress,
@@ -57,7 +73,10 @@ func NewConfig() Config {
 		GithubID:      envGithubID,
 		GithubSecret:  envGithubSecret,
 		ClientAddress: clientAddress,
-		BackendHost:   backendHost,
+		BackendSchema: backendSchema,
+		BackendDomain: backendDomain,
+		BackendPort:   backendPort,
+
 	}
 	log.Info().Msgf("Config: %+v", config)
 

@@ -1,4 +1,8 @@
 {
+    "schemes": [
+        "http,",
+        "https"
+    ],
     "swagger": "2.0",
     "info": {
         "description": "List of methods for work with second brain.",
@@ -14,8 +18,6 @@
         },
         "version": "0.0.1"
     },
-    "host": "localhost:8080",
-    "basePath": "/",
     "paths": {
         "/notes/{id}": {
             "get": {
@@ -32,7 +34,7 @@
                 "summary": "Get note",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "Account ID",
                         "name": "id",
                         "in": "path",
@@ -43,7 +45,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/handlers.NoteResponse"
+                            "$ref": "#/definitions/handlers.HttpResponse-models_Note-any"
                         }
                     },
                     "400": {
@@ -69,8 +71,131 @@
         }
     },
     "definitions": {
-        "handlers.NoteResponse": {
-            "type": "object"
+        "handlers.HttpResponse-models_Note-any": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/models.Note"
+                },
+                "meta": {}
+            }
+        },
+        "models.Note": {
+            "type": "object",
+            "properties": {
+                "authorId": {
+                    "type": "string"
+                },
+                "content": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "likes": {
+                    "type": "integer"
+                },
+                "meta": {
+                    "$ref": "#/definitions/models.NoteMeta"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "views": {
+                    "type": "integer"
+                }
+            }
+        },
+        "models.NoteHeading": {
+            "type": "object",
+            "properties": {
+                "level": {
+                    "type": "integer"
+                },
+                "text": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.NoteLink": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.NoteMeta": {
+            "type": "object",
+            "properties": {
+                "category": {
+                    "$ref": "#/definitions/models.category"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "externalLinks": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.NoteLink"
+                    }
+                },
+                "fileTags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "headings": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.NoteHeading"
+                    }
+                },
+                "images": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "linkedArticles": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.NoteLink"
+                    }
+                },
+                "previewImg": {
+                    "type": "string"
+                },
+                "published": {
+                    "type": "boolean"
+                },
+                "startup": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.category": {
+            "type": "string",
+            "enum": [
+                "article",
+                "book",
+                "schedule"
+            ],
+            "x-enum-varnames": [
+                "CategoryArticle",
+                "CategoryBook",
+                "CategorySchedule"
+            ]
         }
     }
 }

@@ -1,8 +1,88 @@
-basePath: /
 definitions:
-  handlers.NoteResponse:
+  handlers.HttpResponse-models_Note-any:
+    properties:
+      data:
+        $ref: '#/definitions/models.Note'
+      meta: {}
     type: object
-host: localhost:8080
+  models.Note:
+    properties:
+      authorId:
+        type: string
+      content:
+        type: string
+      createdAt:
+        type: string
+      id:
+        type: string
+      likes:
+        type: integer
+      meta:
+        $ref: '#/definitions/models.NoteMeta'
+      updatedAt:
+        type: string
+      views:
+        type: integer
+    type: object
+  models.NoteHeading:
+    properties:
+      level:
+        type: integer
+      text:
+        type: string
+    type: object
+  models.NoteLink:
+    properties:
+      name:
+        type: string
+      url:
+        type: string
+    type: object
+  models.NoteMeta:
+    properties:
+      category:
+        $ref: '#/definitions/models.category'
+      description:
+        type: string
+      externalLinks:
+        items:
+          $ref: '#/definitions/models.NoteLink'
+        type: array
+      fileTags:
+        items:
+          type: string
+        type: array
+      headings:
+        items:
+          $ref: '#/definitions/models.NoteHeading'
+        type: array
+      images:
+        items:
+          type: string
+        type: array
+      linkedArticles:
+        items:
+          $ref: '#/definitions/models.NoteLink'
+        type: array
+      previewImg:
+        type: string
+      published:
+        type: boolean
+      startup:
+        type: string
+      title:
+        type: string
+    type: object
+  models.category:
+    enum:
+    - article
+    - book
+    - schedule
+    type: string
+    x-enum-varnames:
+    - CategoryArticle
+    - CategoryBook
+    - CategorySchedule
 info:
   contact:
     email: artawower@protonmail.com
@@ -25,14 +105,14 @@ paths:
         in: path
         name: id
         required: true
-        type: integer
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/handlers.NoteResponse'
+            $ref: '#/definitions/handlers.HttpResponse-models_Note-any'
         "400":
           description: Bad Request
           schema:
@@ -48,4 +128,7 @@ paths:
       summary: Get note
       tags:
       - notes
+schemes:
+- http,
+- https
 swagger: "2.0"

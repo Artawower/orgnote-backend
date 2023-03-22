@@ -158,7 +158,7 @@ func (a *AuthHandler) GetAPITokens(c *fiber.Ctx) error {
 // TODO: master refactor this code.
 func RegisterAuthHandler(app fiber.Router, userService *services.UserService, config configs.Config, authMiddleware fiber.Handler) {
 	goth.UseProviders(
-		github.New(config.GithubID, config.GithubSecret, config.BackendHost+"/auth/github/callback"),
+		github.New(config.GithubID, config.GithubSecret, config.BackendHost() +"/auth/github/callback"),
 	)
 
 	authHandler := &AuthHandler{

@@ -68,7 +68,7 @@ func (a *NoteService) BulkCreateOrUpdate(userID string, notes []models.Note) err
 			Views:     0,
 			Likes:     0,
 		})
-		tags = append(tags, note.Meta.Tags...)
+		tags = append(tags, note.Meta.FileTags...)
 		go a.udpateNoteGraph(userID, note)
 	}
 	// TODO: master add transaction here

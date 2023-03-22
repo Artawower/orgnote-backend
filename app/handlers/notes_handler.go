@@ -16,6 +16,7 @@ func collectNoteFromString(stringNote string) (models.Note, error) {
 	note := models.Note{}
 	err := json.Unmarshal([]byte(stringNote), &note)
 	if err != nil {
+		log.Error().Err(err).Msg("Error while unmarshalling note")
 		return note, err
 	}
 	return note, nil
@@ -26,6 +27,7 @@ func collectNotesFromStrings(stringNotes []string) ([]models.Note, []string) {
 	errors := []string{}
 	for _, strNote := range stringNotes {
 		note, err := collectNoteFromString(strNote)
+		log.Info().Msgf("note: %s", note)
 		if err != nil {
 			// TODO master: add user friendly error message
 			errors = append(errors, err.Error())
@@ -42,14 +44,18 @@ type NoteHandlers struct {
 
 // TODO: master wait when swago will support generics :(
 
+type SuccessGetNotesResponse struct {
+	Notes []models.Note `json:"notes"`
+}
+
 // GetNote godoc
 // @Summary      Get note
 // @Description  get note by id
 // @Tags         notes
 // @Accept       json
 // @Produce      json
-// @Param        id   path      int  true  "Account ID"
-// @Success      200  {object}  HttpResponse<models.Note>
+// @Param        id   path      string  true  "Note ID"
+// @Success      200  {object}  handlers.HttpResponse[models.Note, any]
 // @Failure      400  {object}  any
 // @Failure      404  {object}  any
 // @Failure      500  {object}  any
@@ -130,7 +136,6 @@ func (h *NoteHandlers) CreateNote(c *fiber.Ctx) error {
 
 func (h *NoteHandlers) UpsertNotes(c *fiber.Ctx) error {
 
-	log.Info().Msgf("content type: %v", string(c.Request().Header.ContentType()))
 	if form, err := c.MultipartForm(); err == nil {
 
 		log.Info().Err(err).Msg("note handler: put notes: parse body")

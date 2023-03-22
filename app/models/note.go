@@ -2,7 +2,6 @@ package models
 
 import (
 	"time"
-
 )
 
 type NoteHeading struct {
@@ -33,7 +32,7 @@ type NoteMeta struct {
 	Published      bool           `json:"published" bson:"published"`
 	ExternalLinks  *[]NoteLink    `json:"externalLinks" bson:"externalLinks"`
 	Startup        *string        `json:"startup" bson:"startup"`
-	Tags           []string       `json:"tags" bson:"tags"`
+	FileTags       []string       `json:"fileTags" bson:"fileTags"`
 	Images         []string       `json:"images" bson:"images"`
 }
 
