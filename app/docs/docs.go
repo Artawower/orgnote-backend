@@ -313,7 +313,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/handlers.HttpResponse-array_models_Note-models_Pagination"
+                            "$ref": "#/definitions/handlers.HttpResponse-array_models_PublicNote-models_Pagination"
                         }
                     },
                     "400": {
@@ -509,7 +509,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/handlers.HttpResponse-models_Note-any"
+                            "$ref": "#/definitions/handlers.HttpResponse-models_PublicNote-any"
                         }
                     },
                     "400": {
@@ -597,13 +597,13 @@ const docTemplate = `{
                 "meta": {}
             }
         },
-        "handlers.HttpResponse-array_models_Note-models_Pagination": {
+        "handlers.HttpResponse-array_models_PublicNote-models_Pagination": {
             "type": "object",
             "properties": {
                 "data": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/models.Note"
+                        "$ref": "#/definitions/models.PublicNote"
                     }
                 },
                 "meta": {
@@ -641,20 +641,20 @@ const docTemplate = `{
                 "meta": {}
             }
         },
-        "handlers.HttpResponse-models_Note-any": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/models.Note"
-                },
-                "meta": {}
-            }
-        },
         "handlers.HttpResponse-models_NoteGraph-any": {
             "type": "object",
             "properties": {
                 "data": {
                     "$ref": "#/definitions/models.NoteGraph"
+                },
+                "meta": {}
+            }
+        },
+        "handlers.HttpResponse-models_PublicNote-any": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/models.PublicNote"
                 },
                 "meta": {}
             }
@@ -847,6 +847,23 @@ const docTemplate = `{
                 },
                 "total": {
                     "type": "integer"
+                }
+            }
+        },
+        "models.PublicNote": {
+            "type": "object",
+            "properties": {
+                "author": {
+                    "$ref": "#/definitions/models.PublicUser"
+                },
+                "content": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "meta": {
+                    "$ref": "#/definitions/models.NoteMeta"
                 }
             }
         },

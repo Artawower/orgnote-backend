@@ -54,7 +54,7 @@ type SuccessGetNotesResponse struct {
 // @Accept       json
 // @Produce      json
 // @Param        id   path      string  true  "Note ID"
-// @Success      200  {object}  HttpResponse[models.Note, any]
+// @Success      200  {object}  HttpResponse[models.PublicNote, any]
 // @Failure      400  {object}  HttpError[any]
 // @Failure      404  {object}  HttpError[any]
 // @Failure      500  {object}  HttpError[any]
@@ -91,7 +91,7 @@ func (h *NoteHandlers) GetNote(c *fiber.Ctx) error {
 // @Param        searchText   query  string  false  "Search text"
 // @Param        limit        query  int  true  "Limit for pagination"
 // @Param        offset       query  int  true  "Offset for pagination"
-// @Success      200  {object}  HttpResponse[[]models.Note, models.Pagination]
+// @Success      200  {object}  HttpResponse[[]models.PublicNote, models.Pagination]
 // @Failure      400  {object}  HttpError[any]
 // @Failure      404  {object}  HttpError[any]
 // @Failure      500  {object}  HttpError[any]

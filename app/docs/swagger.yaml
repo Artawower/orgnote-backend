@@ -13,11 +13,11 @@ definitions:
         type: array
       meta: {}
     type: object
-  handlers.HttpResponse-array_models_Note-models_Pagination:
+  handlers.HttpResponse-array_models_PublicNote-models_Pagination:
     properties:
       data:
         items:
-          $ref: '#/definitions/models.Note'
+          $ref: '#/definitions/models.PublicNote'
         type: array
       meta:
         $ref: '#/definitions/models.Pagination'
@@ -42,16 +42,16 @@ definitions:
         $ref: '#/definitions/models.APIToken'
       meta: {}
     type: object
-  handlers.HttpResponse-models_Note-any:
-    properties:
-      data:
-        $ref: '#/definitions/models.Note'
-      meta: {}
-    type: object
   handlers.HttpResponse-models_NoteGraph-any:
     properties:
       data:
         $ref: '#/definitions/models.NoteGraph'
+      meta: {}
+    type: object
+  handlers.HttpResponse-models_PublicNote-any:
+    properties:
+      data:
+        $ref: '#/definitions/models.PublicNote'
       meta: {}
     type: object
   handlers.HttpResponse-models_PublicUser-any:
@@ -177,6 +177,17 @@ definitions:
         type: integer
       total:
         type: integer
+    type: object
+  models.PublicNote:
+    properties:
+      author:
+        $ref: '#/definitions/models.PublicUser'
+      content:
+        type: string
+      id:
+        type: string
+      meta:
+        $ref: '#/definitions/models.NoteMeta'
     type: object
   models.PublicUser:
     properties:
@@ -405,7 +416,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/handlers.HttpResponse-array_models_Note-models_Pagination'
+            $ref: '#/definitions/handlers.HttpResponse-array_models_PublicNote-models_Pagination'
         "400":
           description: Bad Request
           schema:
@@ -471,7 +482,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/handlers.HttpResponse-models_Note-any'
+            $ref: '#/definitions/handlers.HttpResponse-models_PublicNote-any'
         "400":
           description: Bad Request
           schema:
