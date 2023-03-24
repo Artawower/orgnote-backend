@@ -47,17 +47,17 @@ type AuthHandler struct {
 
 
 // Login godoc
-// @Summary      Login
+// @Summary      OAuth Login
 // @Description  Entrypoint for login
 // @Tags         auth
 // @Accept       json
 // @Produce      json
-// @Param        provider query string true "provider"
+// @Param        provider path string true "provider"
 // @Success      200  {object}  handlers.HttpResponse[OAuthRedirectData, any]
 // @Failure      400  {object}  handlers.HttpError[any]
 // @Failure      404  {object}  handlers.HttpError[any]
 // @Failure      500  {object}  handlers.HttpError[any]
-// @Router       /auth/github/login  [get]
+// @Router       /auth/{provider}/login  [get]
 func (a *AuthHandler) Login(c *fiber.Ctx) error {
 	log.Info().Msgf("Fiber context: %v", c.BaseURL())
 	url, err := goth_fiber.GetAuthURL(c)
@@ -72,18 +72,19 @@ func (a *AuthHandler) Login(c *fiber.Ctx) error {
 	return c.JSON(data)
 }
 
-// GithubCallback godoc
-// @Summary      Callback for github OAuth
+// LoginCallback godoc
+// @Summary      Callback for OAuth
 // @Description  
 // @Tags         auth
 // @Accept       json
 // @Produce      json
+// @Param        provider path string true "provider"
 // @Success      200  {object}  any
 // @Failure      400  {object}  handlers.HttpError[any]
 // @Failure      404  {object}  handlers.HttpError[any]
 // @Failure      500  {object}  handlers.HttpError[any]
-// @Router       /auth/github/callback  [get]
-func (a *AuthHandler) GithubCallback(c *fiber.Ctx) error {
+// @Router       /auth/{provider}/callback  [get]
+func (a *AuthHandler) LoginCallback(c *fiber.Ctx) error {
 	user, err := goth_fiber.CompleteUserAuth(c)
 	if err != nil {
 		log.Error().Err(err).Msgf("auth handlers: github auth handler: complete user auth")
@@ -109,7 +110,7 @@ func (a *AuthHandler) GithubCallback(c *fiber.Ctx) error {
 	}
 	q := parsedURL.Query()
 	q.Set("token", u.Token)
-	q.Set("id", u.ID.String())
+	q.Set("id", u.ID.Hex())
 	q.Set("username", u.NickName)
 	q.Set("avatarUrl", u.AvatarURL)
 	q.Set("email", u.Email)
@@ -241,8 +242,8 @@ func RegisterAuthHandler(app fiber.Router, userService *services.UserService, co
 		authMiddleware: authMiddleware,
 	}
 
-	app.Get("/auth/github/login", authHandler.Login)
-	app.Get("/auth/github/callback", authHandler.GithubCallback)
+	app.Get("/auth/:provider/login", authHandler.Login)
+	app.Get("/auth/:provider/callback", authHandler.LoginCallback)
 	app.Get("/auth/logout", authHandler.Logout)
 	app.Post("/auth/token", authMiddleware, authHandler.CreateToken)
 	app.Delete("/auth/token", authMiddleware, authHandler.DeleteToken)

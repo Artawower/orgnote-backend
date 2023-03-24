@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"moonbrain/app/models"
 	"moonbrain/app/repositories"
+
+	"github.com/rs/zerolog/log"
 )
 
 type UserService struct {
@@ -15,6 +17,7 @@ func NewUserService(userRepository *repositories.UserRepository) *UserService {
 }
 
 func (u *UserService) Login(user models.User) (*models.User, error) {
+	log.Info().Msgf("Login user: %v", user)
 	createdUser, err := u.userRepository.CreateOrGet(user)
 	if err != nil {
 		return nil, fmt.Errorf("user service: login: %v", err)

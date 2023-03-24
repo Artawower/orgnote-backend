@@ -226,33 +226,16 @@ info:
   title: Second Brain API
   version: 0.0.1
 paths:
-  /auth/api-tokens:
+  /auth/{provider}/callback:
     get:
       consumes:
       - application/json
-      description: Return all available API tokens
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/handlers.HttpResponse-array_models_APIToken-any'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/handlers.HttpError-any'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/handlers.HttpError-any'
-      summary: Get API tokens
-      tags:
-      - auth
-  /auth/github/callback:
-    get:
-      consumes:
-      - application/json
+      parameters:
+      - description: provider
+        in: path
+        name: provider
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -272,17 +255,17 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/handlers.HttpError-any'
-      summary: Callback for github OAuth
+      summary: Callback for OAuth
       tags:
       - auth
-  /auth/github/login:
+  /auth/{provider}/login:
     get:
       consumes:
       - application/json
       description: Entrypoint for login
       parameters:
       - description: provider
-        in: query
+        in: path
         name: provider
         required: true
         type: string
@@ -305,7 +288,30 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/handlers.HttpError-any'
-      summary: Login
+      summary: OAuth Login
+      tags:
+      - auth
+  /auth/api-tokens:
+    get:
+      consumes:
+      - application/json
+      description: Return all available API tokens
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.HttpResponse-array_models_APIToken-any'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.HttpError-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.HttpError-any'
+      summary: Get API tokens
       tags:
       - auth
   /auth/logout:

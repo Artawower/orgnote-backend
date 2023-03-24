@@ -35,7 +35,12 @@ func (u *UserRepository) CreateOrGet(user models.User) (*models.User, error) {
 	if err != nil {
 		return nil, fmt.Errorf("user repository: create or update user: update one user: %v", err)
 	}
-	return &user, nil
+
+	storedUser, err := u.GetUser(&user)
+	if err != nil {
+		return nil, fmt.Errorf("user repository: create or update user: get user: %v", err)
+	}
+	return storedUser, nil
 }
 
 func (u *UserRepository) GetUser(user *models.User) (*models.User, error) {
