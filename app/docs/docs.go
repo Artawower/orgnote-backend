@@ -112,6 +112,15 @@ const docTemplate = `{
                     "auth"
                 ],
                 "summary": "Login",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "provider",
+                        "name": "provider",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -169,6 +178,33 @@ const docTemplate = `{
             }
         },
         "/auth/token": {
+            "post": {
+                "description": "Create API token",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Create API token",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.HttpResponse-models_APIToken-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.HttpError-any"
+                        }
+                    }
+                }
+            },
             "delete": {
                 "description": "Delete API token",
                 "consumes": [
@@ -259,14 +295,14 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Limit for pagination",
                         "name": "limit",
                         "in": "query",
                         "required": true
                     },
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Offset for pagination",
                         "name": "offset",
                         "in": "query",
@@ -408,7 +444,7 @@ const docTemplate = `{
         },
         "/notes/graph": {
             "get": {
-                "description": "Return list of al registered tags",
+                "description": "Return graph model with links between connected notes",
                 "consumes": [
                     "application/json"
                 ],
@@ -416,14 +452,14 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "tags"
+                    "notes"
                 ],
-                "summary": "Get tags",
+                "summary": "Get notes graph",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/handlers.HttpResponse-array_string-any"
+                            "$ref": "#/definitions/handlers.HttpResponse-models_NoteGraph-any"
                         }
                     },
                     "400": {
@@ -474,6 +510,47 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/handlers.HttpResponse-models_Note-any"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.HttpError-any"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.HttpError-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.HttpError-any"
+                        }
+                    }
+                }
+            }
+        },
+        "/tags": {
+            "get": {
+                "description": "Return list of al registered tags",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tags"
+                ],
+                "summary": "Get tags",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.HttpResponse-array_string-any"
                         }
                     },
                     "400": {
@@ -551,6 +628,15 @@ const docTemplate = `{
             "properties": {
                 "data": {
                     "$ref": "#/definitions/handlers.OAuthRedirectData"
+                },
+                "meta": {}
+            }
+        },
+        "handlers.HttpResponse-models_APIToken-any": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/models.APIToken"
                 },
                 "meta": {}
             }

@@ -11,6 +11,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
+	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -65,6 +66,7 @@ func main() {
 	tagRepository := repositories.NewTagRepository(database)
 	userRepository := repositories.NewUserRepository(database)
 
+	app.Use(cors.New())
 	app.Use(handlers.NewUserInjectMiddleware(handlers.Config{
 		GetUser: userRepository.FindUserByToken,
 	}))

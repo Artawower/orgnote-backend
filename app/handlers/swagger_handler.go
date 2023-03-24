@@ -17,9 +17,4 @@ func RegisterSwagger(app fiber.Router, config configs.Config) {
 
 
 	app.Get("/swagger/*", swagger.HandlerDefault) // default
-	app.Get("/swagger/*", swagger.New(swagger.Config{ // custom
-		URL:         "doc.json",
-		DeepLinking: false,
-		DocExpansion: "none",
-	}))
 }

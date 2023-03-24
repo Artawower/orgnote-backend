@@ -18,7 +18,7 @@ import (
 // @Failure      400  {object}  handlers.HttpError[any]
 // @Failure      404  {object}  handlers.HttpError[any]
 // @Failure      500  {object}  handlers.HttpError[any]
-// @Router       /notes/graph  [get]
+// @Router       /tags  [get]
 func RegisterTagHandler(app fiber.Router, tagService *services.TagService) {
 	app.Get("/tags", func(c *fiber.Ctx) error {
 		tags, err := tagService.GetTags()

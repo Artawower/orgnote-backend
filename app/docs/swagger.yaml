@@ -36,6 +36,12 @@ definitions:
         $ref: '#/definitions/handlers.OAuthRedirectData'
       meta: {}
     type: object
+  handlers.HttpResponse-models_APIToken-any:
+    properties:
+      data:
+        $ref: '#/definitions/models.APIToken'
+      meta: {}
+    type: object
   handlers.HttpResponse-models_Note-any:
     properties:
       data:
@@ -263,6 +269,12 @@ paths:
       consumes:
       - application/json
       description: Entrypoint for login
+      parameters:
+      - description: provider
+        in: query
+        name: provider
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -322,6 +334,24 @@ paths:
       summary: Delete API token
       tags:
       - auth
+    post:
+      consumes:
+      - application/json
+      description: Create API token
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.HttpResponse-models_APIToken-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.HttpError-any'
+      summary: Create API token
+      tags:
+      - auth
   /auth/verify:
     get:
       consumes:
@@ -363,12 +393,12 @@ paths:
         in: query
         name: limit
         required: true
-        type: string
+        type: integer
       - description: Offset for pagination
         in: query
         name: offset
         required: true
-        type: string
+        type: integer
       produces:
       - application/json
       responses:
@@ -494,6 +524,33 @@ paths:
       tags:
       - notes
   /notes/graph:
+    get:
+      consumes:
+      - application/json
+      description: Return graph model with links between connected notes
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.HttpResponse-models_NoteGraph-any'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.HttpError-any'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.HttpError-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.HttpError-any'
+      summary: Get notes graph
+      tags:
+      - notes
+  /tags:
     get:
       consumes:
       - application/json

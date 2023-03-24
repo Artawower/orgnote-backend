@@ -52,17 +52,20 @@ type AuthHandler struct {
 // @Tags         auth
 // @Accept       json
 // @Produce      json
+// @Param        provider query string true "provider"
 // @Success      200  {object}  handlers.HttpResponse[OAuthRedirectData, any]
 // @Failure      400  {object}  handlers.HttpError[any]
 // @Failure      404  {object}  handlers.HttpError[any]
 // @Failure      500  {object}  handlers.HttpError[any]
 // @Router       /auth/github/login  [get]
 func (a *AuthHandler) Login(c *fiber.Ctx) error {
+	log.Info().Msgf("Fiber context: %v", c.BaseURL())
 	url, err := goth_fiber.GetAuthURL(c)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).SendString(err.Error())
 	}
 	// return c.Redirect(url, fiber.StatusTemporaryRedirect)
+	log.Info().Msgf("Redirecting to %s", url)
 	data := NewHttpReponse[OAuthRedirectData, any](OAuthRedirectData{
 		RedirectURL: url,
 	}, nil)
@@ -136,6 +139,15 @@ func (a *AuthHandler) Logout(c *fiber.Ctx) error {
 	return c.Status(200).JSON(struct{}{})
 }
 
+// CreateApiToken godoc
+// @Summary      Create API token
+// @Description  Create API token
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Success      200  {object}  HttpResponse[models.APIToken, any]
+// @Failure      500  {object}  handlers.HttpError[any]
+// @Router       /auth/token  [post]
 func (a *AuthHandler) CreateToken(c *fiber.Ctx) error {
 	user := c.Locals("user").(*models.User)
 	token, err := a.userService.CreateToken(user)

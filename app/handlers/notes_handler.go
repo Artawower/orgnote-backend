@@ -55,10 +55,10 @@ type SuccessGetNotesResponse struct {
 // @Accept       json
 // @Produce      json
 // @Param        id   path      string  true  "Note ID"
-// @Success      200  {object}  handlers.HttpResponse[models.Note, any]
-// @Failure      400  {object}  handlers.HttpError[any]
-// @Failure      404  {object}  handlers.HttpError[any]
-// @Failure      500  {object}  handlers.HttpError[any]
+// @Success      200  {object}  HttpResponse[models.Note, any]
+// @Failure      400  {object}  HttpError[any]
+// @Failure      404  {object}  HttpError[any]
+// @Failure      500  {object}  HttpError[any]
 // @Router       /notes/{id}  [get]
 func (h *NoteHandlers) GetNote(c *fiber.Ctx) error {
 	noteID := c.Params("id")
@@ -90,12 +90,12 @@ func (h *NoteHandlers) GetNote(c *fiber.Ctx) error {
 // @Produce      json
 // @Param        userId       query  string  false  "User ID"
 // @Param        searchText   query  string  false  "Search text"
-// @Param        limit        query  string  true  "Limit for pagination"
-// @Param        offset       query  string  true  "Offset for pagination"
-// @Success      200  {object}  handlers.HttpResponse[[]models.Note, models.Pagination]
-// @Failure      400  {object}  handlers.HttpError[any]
-// @Failure      404  {object}  handlers.HttpError[any]
-// @Failure      500  {object}  handlers.HttpError[any]
+// @Param        limit        query  int  true  "Limit for pagination"
+// @Param        offset       query  int  true  "Offset for pagination"
+// @Success      200  {object}  HttpResponse[[]models.Note, models.Pagination]
+// @Failure      400  {object}  HttpError[any]
+// @Failure      404  {object}  HttpError[any]
+// @Failure      500  {object}  HttpError[any]
 // @Router       /notes/  [get]
 func (h *NoteHandlers) GetNotes(c *fiber.Ctx) error {
 	defaultLimit := int64(10)
@@ -140,9 +140,9 @@ func (h *NoteHandlers) GetNotes(c *fiber.Ctx) error {
 // @Produce      json
 // @Param        note       body  models.Note  true  "Note model"
 // @Success      200  {object}  any
-// @Failure      400  {object}  handlers.HttpError[any]
-// @Failure      404  {object}  handlers.HttpError[any]
-// @Failure      500  {object}  handlers.HttpError[any]
+// @Failure      400  {object}  HttpError[any]
+// @Failure      404  {object}  HttpError[any]
+// @Failure      500  {object}  HttpError[any]
 // @Router       /notes/  [post]
 func (h *NoteHandlers) CreateNote(c *fiber.Ctx) error {
 	note := new(models.Note)
@@ -169,9 +169,9 @@ func (h *NoteHandlers) CreateNote(c *fiber.Ctx) error {
 // @Produce      json
 // @Param        notes body []models.Note  true  "Notes list"
 // @Success      200  {object}  any
-// @Failure      400  {object}  handlers.HttpError[any]
-// @Failure      404  {object}  handlers.HttpError[any]
-// @Failure      500  {object}  handlers.HttpError[any]
+// @Failure      400  {object}  HttpError[any]
+// @Failure      404  {object}  HttpError[any]
+// @Failure      500  {object}  HttpError[any]
 // @Router       /notes/bulk-upsert  [put]
 func (h *NoteHandlers) UpsertNotes(c *fiber.Ctx) error {
 
@@ -215,9 +215,9 @@ func (h *NoteHandlers) UpsertNotes(c *fiber.Ctx) error {
 // @Accept       json
 // @Produce      json
 // @Success      200  {object}  handlers.HttpResponse[models.NoteGraph, any]
-// @Failure      400  {object}  handlers.HttpError[any]
-// @Failure      404  {object}  handlers.HttpError[any]
-// @Failure      500  {object}  handlers.HttpError[any]
+// @Failure      400  {object}  HttpError[any]
+// @Failure      404  {object}  HttpError[any]
+// @Failure      500  {object}  HttpError[any]
 // @Router       /notes/graph  [get]
 func (h *NoteHandlers) GetNoteGraph(c *fiber.Ctx) error {
 	ctxUser := c.Locals("user")

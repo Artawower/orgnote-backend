@@ -24,7 +24,8 @@ func (c *Config) BackendHost() string {
 	if (c.BackendPort != "") {
 		host += ":" + c.BackendPort
 	}
-	return host
+	// TODO: master add version to environment and config
+	return host + "/v1"
 }
 
 // TODO: master split into several functions
