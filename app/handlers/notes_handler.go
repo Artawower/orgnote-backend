@@ -27,7 +27,6 @@ func collectNotesFromStrings(stringNotes []string) ([]models.Note, []string) {
 	errors := []string{}
 	for _, strNote := range stringNotes {
 		note, err := collectNoteFromString(strNote)
-		log.Info().Msgf("note: %s", note)
 		if err != nil {
 			// TODO master: add user friendly error message
 			errors = append(errors, err.Error())
