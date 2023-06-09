@@ -2,6 +2,17 @@ name: CI/CD for second brain backend
 
 on: [push]
 
+env:
+  MONGO_USERNAME: ${{ secrets.MONGO_USERNAME }}
+  MONGO_PASSWORD: ${{ secrets.MONGO_PASSWORD }}
+  API_URL: ${{ vars.API_URL }}
+  GITHUB_ID: ${{ secrets.OAUTH_GITHUB_ID }}
+  GITHUB_SECRET: ${{ secrets.OAUTH_GITHUB_SECRET }}
+  CLIENT_ADDRESS: ${{ vars.CLIENT_ADDRESS }}
+  BACKEND_HOST: ${{ vars.BACKEND_HOST }}
+  BACKEND_DOMAIN: ${{ vars.BACKEND_DOMAIN }}
+  BACKEND_SCHEMA: ${{ vars.BACKEND_SCHEMA }}
+
 jobs:
   build:
     name: Build
@@ -11,7 +22,7 @@ jobs:
       - name: Setup go
         uses: actions/setup-go@v2
         with:
-          go-version: '1.18.1'
+          go-version: "1.18.1"
       - name: Install dependencies
         run: |
           go version
@@ -27,7 +38,7 @@ jobs:
       - name: Setup go
         uses: actions/setup-go@v2
         with:
-          go-version: '1.18.1'
+          go-version: "1.18.1"
       - name: Install dependencies
         run: |
           go version
@@ -35,29 +46,40 @@ jobs:
       - name: Build
         run: go test ./...
 
-
   deploy:
     name: Deploy
     runs-on: ubuntu-latest
     needs: [tests, build]
+    environment: deploy
     steps:
-      - name: ls -a via ssh
+      - name: deploy
         uses: fifsky/ssh-action@master
         with:
           host: ${{ secrets.SSH_HOST }}
           user: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           command: |
-            cd ${{ secrets.SSH_TARGET }}
-            ls
             eval $(ssh-agent -s)
             ssh-add ~/.ssh/sb-back
-            cd second-brain-backend
+            cd ~/second-brain/second-brain-backend
+            git checkout master
             git fetch --all
             git reset --hard origin/master
-            cd ..
-            docker-compose -f docker-compose.yaml -f docker-compose.prod.yaml down
+
+            cat <<EOT > .env
+            DEUBG=true
+            API_URL=${{ env.API_URL }}
+            MONGO_USERNAME=${{ env.MONGO_USERNAME }}
+            MONGO_PASSWORD=${{ env.MONGO_PASSWORD }}
+            GITHUB_ID=${{ env.GITHUB_ID }}
+            GITHUB_SECRET=${{ env.GITHUB_SECRET }}
+            CLIENT_ADDRESS=${{ env.CLIENT_ADDRESS }}
+            BACKEND_HOST=${{ env.BACKEND_HOST }}
+            BACKEND_DOMAIN=${{ env.BACKEND_DOMAIN }}
+            BACKEND_SCHEMA=${{ env.BACKEND_SCHEMA }}
+            EOT
+
+            docker-compose -f docker-compose.db.yaml -f docker-compose.prod.yaml down
             docker system prune -f
-            docker-compose -f docker-compose.prebuild.yaml up --build
-            docker-compose -f docker-compose.yaml -f docker-compose.prod.yaml up --build -d
+            docker-compose -f docker-compose.db.yaml -f docker-compose.prod.yaml up --build -d
           args: "-tt -vvv"
