@@ -50,7 +50,7 @@ git clone git@github.com:Artawower/second-brain-backend.git && cd second-brain-b
 Make sure the correct ~.env~ file is in the `second-brain-client' directory.
 
 #+BEGIN_SRC bash
-docker-compose -f docker-compose.db.yaml -f docker-compose.dev.yml up --build
+docker-compose -f docker-compose.db.yaml -f docker-compose.dev.yaml up --build
 #+END_SRC
 
 * 🍩 Contribute guide
