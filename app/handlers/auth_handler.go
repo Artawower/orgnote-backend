@@ -45,7 +45,6 @@ type AuthHandler struct {
 	authMiddleware fiber.Handler
 }
 
-
 // Login godoc
 // @Summary      OAuth Login
 // @Description  Entrypoint for login
@@ -74,7 +73,7 @@ func (a *AuthHandler) Login(c *fiber.Ctx) error {
 
 // LoginCallback godoc
 // @Summary      Callback for OAuth
-// @Description  
+// @Description
 // @Tags         auth
 // @Accept       json
 // @Produce      json
@@ -123,7 +122,7 @@ func (a *AuthHandler) LoginCallback(c *fiber.Ctx) error {
 
 // Logout godoc
 // @Summary      Logout
-// @Description  
+// @Description
 // @Tags         auth
 // @Accept       json
 // @Produce      json
@@ -187,7 +186,6 @@ func (a *AuthHandler) DeleteToken(c *fiber.Ctx) error {
 	return c.Status(200).JSON(NewHttpReponse[any, any](nil, nil))
 }
 
-
 // VerifyUser godoc
 // @Summary      Verify user
 // @Description  Return found user by provided token
@@ -222,6 +220,10 @@ func (a *AuthHandler) VerifyUser(c *fiber.Ctx) error {
 // @Failure      400  {object}  handlers.HttpError[any]
 // @Router       /auth/api-tokens  [get]
 func (a *AuthHandler) GetAPITokens(c *fiber.Ctx) error {
+	ctxUser := c.Locals("user")
+	if ctxUser == nil {
+		return c.Status(fiber.StatusBadRequest).SendString("Could not find api tokens for current user")
+	}
 	user := c.Locals("user").(*models.User)
 	tokens, err := a.userService.GetAPITokens(user.ID.Hex())
 	if err != nil {
@@ -233,7 +235,7 @@ func (a *AuthHandler) GetAPITokens(c *fiber.Ctx) error {
 // TODO: master refactor this code.
 func RegisterAuthHandler(app fiber.Router, userService *services.UserService, config configs.Config, authMiddleware fiber.Handler) {
 	goth.UseProviders(
-		github.New(config.GithubID, config.GithubSecret, config.BackendHost() +"/auth/github/callback"),
+		github.New(config.GithubID, config.GithubSecret, config.BackendHost()+"/auth/github/callback"),
 	)
 
 	authHandler := &AuthHandler{

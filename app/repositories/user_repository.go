@@ -11,7 +11,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type UserRepository struct {
@@ -27,26 +26,77 @@ func NewUserRepository(db *mongo.Database) *UserRepository {
 }
 
 func (u *UserRepository) CreateOrGet(user models.User) (*models.User, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	filter := bson.D{{"email", user.Email}, {"provider", user.Provider}}
-	options := options.Update().SetUpsert(true)
-	_, err := u.collection.UpdateOne(ctx, filter, bson.D{{"$set", user}}, options)
-	if err != nil {
-		return nil, fmt.Errorf("user repository: create or update user: update one user: %v", err)
-	}
+	foundUser, err := u.GetUser(&user)
 
-	storedUser, err := u.GetUser(&user)
-	if err != nil {
+	if err != nil && errors.Is(err, mongo.ErrNilDocument) {
 		return nil, fmt.Errorf("user repository: create or update user: get user: %v", err)
 	}
-	return storedUser, nil
+
+	if foundUser != nil {
+		updatedUser, err := u.UpdateAuthInfo(user)
+		if err != nil {
+			return nil, fmt.Errorf("user repository: create or update user: update auth info: %v", err)
+		}
+		return updatedUser, nil
+	}
+	createdUser, err := u.Create(user)
+	if err != nil {
+		return nil, fmt.Errorf("user repository: create or update user: create user: %v", err)
+	}
+
+	return createdUser, nil
+}
+
+func (u *UserRepository) UpdateAuthInfo(user models.User) (*models.User, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	filter := bson.M{"email": user.Email, "provider": user.Provider}
+
+	_, err := u.collection.UpdateOne(ctx, filter, bson.D{
+		bson.E{Key: "$set", Value: bson.D{
+			bson.E{Key: "token", Value: user.Token},
+			bson.E{Key: "refreshToken", Value: user.RefreshToken},
+			bson.E{Key: "tokenExpiration", Value: user.TokenExpirationDate},
+			bson.E{Key: "profileUrl", Value: user.ProfileURL},
+		}},
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("user repository: update user: update one user: %v", err)
+	}
+
+	updatedUser, err := u.GetUser(&user)
+
+	if err != nil {
+		return nil, fmt.Errorf("user repository: update user: get user: %v", err)
+	}
+
+	return updatedUser, nil
+}
+
+func (u *UserRepository) Create(user models.User) (*models.User, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	user.ID = primitive.NewObjectID()
+	_, err := u.collection.InsertOne(ctx, user)
+
+	if err != nil {
+		return nil, fmt.Errorf("user repository: create user: insert one user: %v", err)
+	}
+
+	createdUser, err := u.GetUser(&user)
+
+	if err != nil {
+		return nil, fmt.Errorf("user repository: create user: get user: %v", err)
+	}
+	return createdUser, nil
 }
 
 func (u *UserRepository) GetUser(user *models.User) (*models.User, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	filter := bson.M{"email": user.Email}
+	filter := bson.M{"email": user.Email, "provider": user.Provider}
 	err := u.collection.FindOne(ctx, filter).Decode(user)
 	if err != nil {
 		return nil, fmt.Errorf("user repository: get user: find one user: %v", err)
