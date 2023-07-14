@@ -52,6 +52,9 @@ Make sure the correct ~.env~ file is in the `second-brain-client' directory.
 #+BEGIN_SRC bash
 docker-compose -f docker-compose.db.yaml -f docker-compose.dev.yaml up --build
 #+END_SRC
+** Swagger
+The swagger path is {{HOST}}/v1/swagger/index.html
+for example: http://localhost:8000/v1/swagger/index.html
 
 * 🍩 Contribute guide
 Any contribution is very much appreciated! Please read the [[./CONTRIBUTE.org][style guide]] before contributing to avoid misunderstandings!

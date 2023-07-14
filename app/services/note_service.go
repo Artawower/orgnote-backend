@@ -268,3 +268,7 @@ func (a *NoteService) getRelatedLinks(note models.Note) (graphNoteLinks []models
 
 	return
 }
+
+func (n *NoteService) DeleteNotes(ids []string) error {
+	return n.noteRepository.MarkNotesAsDeleted(ids)
+}

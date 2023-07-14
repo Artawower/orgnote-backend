@@ -5,6 +5,11 @@ definitions:
       message:
         type: string
     type: object
+  handlers.HttpResponse-any-any:
+    properties:
+      data: {}
+      meta: {}
+    type: object
   handlers.HttpResponse-array_models_APIToken-any:
     properties:
       data:
@@ -97,6 +102,8 @@ definitions:
       content:
         type: string
       createdAt:
+        type: string
+      deletedTime:
         type: string
       id:
         type: string
@@ -392,6 +399,42 @@ paths:
       summary: Verify user
       tags:
       - auth
+  /notes:
+    delete:
+      consumes:
+      - application/json
+      description: Mark notes as deleted by provided list of ids
+      parameters:
+      - description: List of ids of deleted notes
+        in: body
+        name: ids
+        required: true
+        schema:
+          items:
+            type: string
+          type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.HttpResponse-any-any'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.HttpError-any'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.HttpError-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.HttpError-any'
+      summary: Delete notes
+      tags:
+      - notes
   /notes/:
     get:
       consumes:

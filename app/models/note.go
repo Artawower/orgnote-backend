@@ -37,14 +37,15 @@ type NoteMeta struct {
 }
 
 type Note struct {
-	ID        string    `json:"id" bson:"_id"`
-	AuthorID  string    `json:"authorId" bson:"authorId"`
-	Content   string    `json:"content" bson:"content"`
-	Meta      NoteMeta  `json:"meta" bson:"meta"`
-	CreatedAt time.Time `json:"createdAt" bson:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt" bson:"updatedAt"`
-	Views     int       `json:"views" bson:"views"`
-	Likes     int       `json:"likes" bson:"likes"`
+	ID          string     `json:"id" bson:"_id"`
+	AuthorID    string     `json:"authorId" bson:"authorId"`
+	Content     string     `json:"content" bson:"content"`
+	Meta        NoteMeta   `json:"meta" bson:"meta"`
+	CreatedAt   time.Time  `json:"createdAt" bson:"createdAt"`
+	UpdatedAt   time.Time  `json:"updatedAt" bson:"updatedAt"`
+	Views       int        `json:"views" bson:"views"`
+	Likes       int        `json:"likes" bson:"likes"`
+	DeletedTime *time.Time `json:"deletedTime" bson:"deletedTime"`
 }
 
 type PublicNote struct {

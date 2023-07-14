@@ -7,7 +7,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
- 
 // GetTags godoc
 // @Summary      Get tags
 // @Description  Return list of al registered tags
@@ -25,6 +24,6 @@ func RegisterTagHandler(app fiber.Router, tagService *services.TagService) {
 		if err != nil {
 			return c.Status(http.StatusInternalServerError).JSON(NewHttpError[any](err.Error(), nil))
 		}
-		return c.Status(http.StatusOK).JSON(NewHttpReponse[[]string, any](tags, nil))
+		return c.Status(http.StatusOK).JSON(NewHttpResponse[[]string, any](tags, nil))
 	})
 }

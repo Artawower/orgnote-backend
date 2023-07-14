@@ -76,9 +76,32 @@ func (h *NoteHandlers) GetNote(c *fiber.Ctx) error {
 		return c.Status(http.StatusInternalServerError).JSON(NewHttpError[any]("Couldn't get note, something went wrong", nil))
 	}
 	if notes == nil {
-		return c.Status(http.StatusNotFound).JSON(NewHttpReponse[any, any](nil, nil))
+		return c.Status(http.StatusNotFound).JSON(NewHttpResponse[any, any](nil, nil))
 	}
-	return c.Status(http.StatusOK).JSON(NewHttpReponse[*models.PublicNote, any](notes, nil))
+	return c.Status(http.StatusOK).JSON(NewHttpResponse[*models.PublicNote, any](notes, nil))
+}
+
+// DeleteNotes godoc
+// @Summary      Delete notes
+// @Description  Mark notes as deleted by provided list of ids
+// @Tags         notes
+// @Accept       json
+// @Produce      json
+// @Param        ids   body     []string  true  "List of ids of deleted notes"
+// @Success      200  {object}  HttpResponse[any, any]
+// @Failure      400  {object}  HttpError[any]
+// @Failure      404  {object}  HttpError[any]
+// @Failure      500  {object}  HttpError[any]
+// @Router       /notes [delete]
+func (h *NoteHandlers) DeleteNotes(c *fiber.Ctx) error {
+	notesIDs := []string{}
+	err := c.BodyParser(&notesIDs)
+	if err != nil {
+		log.Info().Err(err).Msg("note handler: delete notes: body parser")
+		return c.Status(http.StatusBadRequest).JSON(NewHttpError[any]("Couldn't parse body, something went wrong", nil))
+	}
+	h.noteService.DeleteNotes(notesIDs)
+	return nil
 }
 
 // GetNote godoc
@@ -124,7 +147,7 @@ func (h *NoteHandlers) GetNotes(c *fiber.Ctx) error {
 		return c.Status(http.StatusInternalServerError).JSON(NewHttpError[any]("Couldn't get notes, something went wrong", nil))
 	}
 	return c.Status(http.StatusOK).JSON(
-		NewHttpReponse(paginatedNotes.Data, models.Pagination{
+		NewHttpResponse(paginatedNotes.Data, models.Pagination{
 			Limit:  paginatedNotes.Limit,
 			Offset: paginatedNotes.Offset,
 			Total:  paginatedNotes.Total,
@@ -174,37 +197,39 @@ func (h *NoteHandlers) CreateNote(c *fiber.Ctx) error {
 // @Router       /notes/bulk-upsert  [put]
 func (h *NoteHandlers) UpsertNotes(c *fiber.Ctx) error {
 
-	if form, err := c.MultipartForm(); err == nil {
-
-		log.Info().Err(err).Msg("note handler: put notes: parse body")
-		// files := form.File["files"]
-		rawNotes, ok := form.Value["notes"]
-		if !ok {
-			return c.Status(http.StatusInternalServerError).JSON(NewHttpError[any]("Notes doesn't provided", nil))
-		}
-		notes, errors := collectNotesFromStrings(rawNotes)
-		if len(errors) > 0 {
-			// TODO: master add errors exposing to real life.
-			log.Error().Err(err).Msg("note handler: put notes: collect notes")
-		}
-		user := c.Locals("user").(*models.User)
-		err = h.noteService.BulkCreateOrUpdate(user.ID.Hex(), notes)
-		if err != nil {
-			log.Warn().Msgf("note handlers: save notes: %v", err)
-			return c.Status(http.StatusInternalServerError).JSON(NewHttpError[any]("Can't create notes", nil))
-		}
-		files := form.File["files"]
-		log.Info().Msgf("notes: %v", files)
-
-		err := h.noteService.UploadImages(files)
-		if err != nil {
-			// TODO: master error handling here
-			return c.Status(http.StatusInternalServerError).JSON(NewHttpError[any]("Can't upload images", nil))
-		}
-		return c.Status(http.StatusOK).JSON(nil)
+	form, err := c.MultipartForm()
+	if err != nil {
+		log.Error().Err(err).Msg("note handler: put notes: parse body")
+		return c.Status(http.StatusInternalServerError).JSON(NewHttpError[any]("Can't parse multipart form data", nil))
 	}
 
-	return c.Status(http.StatusInternalServerError).JSON(NewHttpError[any]("Can't parse multipart form data", nil))
+	log.Info().Err(err).Msg("note handler: put notes: parse body")
+	// files := form.File["files"]
+	rawNotes, ok := form.Value["notes"]
+	if !ok {
+		return c.Status(http.StatusInternalServerError).JSON(NewHttpError[any]("Notes doesn't provided", nil))
+	}
+	notes, errors := collectNotesFromStrings(rawNotes)
+	if len(errors) > 0 {
+		// TODO: master add errors exposing to real life.
+		log.Error().Err(err).Msg("note handler: put notes: collect notes")
+	}
+	user := c.Locals("user").(*models.User)
+	err = h.noteService.BulkCreateOrUpdate(user.ID.Hex(), notes)
+	if err != nil {
+		log.Warn().Msgf("note handlers: save notes: %v", err)
+		return c.Status(http.StatusInternalServerError).JSON(NewHttpError[any]("Can't create notes", nil))
+	}
+	files := form.File["files"]
+	log.Info().Msgf("notes: %v", files)
+
+	err = h.noteService.UploadImages(files)
+	if err != nil {
+		// TODO: master error handling here
+		return c.Status(http.StatusInternalServerError).JSON(NewHttpError[any]("Can't upload images", nil))
+	}
+	return c.Status(http.StatusOK).JSON(nil)
+
 }
 
 // GetNoteGraph godoc
@@ -230,7 +255,7 @@ func (h *NoteHandlers) GetNoteGraph(c *fiber.Ctx) error {
 		return c.Status(http.StatusInternalServerError).JSON(NewHttpError[any]("Couldn't get note graph", nil))
 	}
 
-	return c.Status(http.StatusOK).JSON(NewHttpReponse[*models.NoteGraph, any](graph, nil))
+	return c.Status(http.StatusOK).JSON(NewHttpResponse[*models.NoteGraph, any](graph, nil))
 }
 
 func RegisterNoteHandler(app fiber.Router, noteService *services.NoteService, authMiddleware func(*fiber.Ctx) error) {
@@ -242,4 +267,5 @@ func RegisterNoteHandler(app fiber.Router, noteService *services.NoteService, au
 	app.Get("/notes", noteHandlers.GetNotes)
 	app.Post("/notes", authMiddleware, noteHandlers.CreateNote)
 	app.Put("/notes/bulk-upsert", authMiddleware, noteHandlers.UpsertNotes)
+	app.Delete("/notes", authMiddleware, noteHandlers.DeleteNotes)
 }

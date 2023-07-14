@@ -17,7 +17,7 @@ type HttpResponse[T any, T2 any] struct {
 	Meta T2 `json:"meta"`
 }
 
-func NewHttpReponse[T any, T2 any](data T, meta T2) HttpResponse[T, T2] {
+func NewHttpResponse[T any, T2 any](data T, meta T2) HttpResponse[T, T2] {
 	return HttpResponse[T, T2]{
 		Data: data,
 		Meta: meta,

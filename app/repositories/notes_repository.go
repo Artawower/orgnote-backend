@@ -50,7 +50,7 @@ func (a *NoteRepository) GetNotes(includePrivate bool, f models.NoteFilter) ([]m
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	notes := []models.Note{}
-	filter := a.getNotesFilter(includePrivate, f)
+	filter := a.getNotesFilter(includePrivate, f, false)
 
 	limit, offset := a.getLimitOffset(f)
 	findOptions := options.FindOptions{
@@ -77,8 +77,14 @@ func (a *NoteRepository) GetNotes(includePrivate bool, f models.NoteFilter) ([]m
 	return notes, nil
 }
 
-func (a *NoteRepository) getNotesFilter(includePrivate bool, f models.NoteFilter) bson.M {
-	filter := bson.M{}
+func (a *NoteRepository) getNotesFilter(includePrivate bool, f models.NoteFilter, includeDeleted bool) bson.M {
+	orQuery := []bson.M{{"deletedAt": bson.M{"$exists": includeDeleted}}}
+	if !includeDeleted {
+		orQuery = append(orQuery, bson.M{"deletedAt": bson.M{"$eq": nil}})
+	}
+	filter := bson.M{
+		"$or": orQuery,
+	}
 	if includePrivate == false {
 		filter["meta.published"] = true
 	}
@@ -96,7 +102,7 @@ func (a *NoteRepository) NotesCount(includePrivate bool, f models.NoteFilter) (i
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	filters := a.getNotesFilter(includePrivate, f)
+	filters := a.getNotesFilter(includePrivate, f, false)
 	count, err := a.collection.CountDocuments(ctx, filters)
 	if err != nil {
 		return 0, fmt.Errorf("note repository: failed to get notes count: %v", err)
@@ -162,6 +168,7 @@ func (a *NoteRepository) getUpdateNote(note models.Note) bson.M {
 		"updatedAt": note.CreatedAt,
 		"views":     note.Views,
 		"likes":     note.Likes,
+		"deletedAt": nil,
 	}
 
 	return update
@@ -198,3 +205,25 @@ func (a *NoteRepository) GetNote(id string, authorID string) (*models.Note, erro
 
 	return &note, nil
 }
+
+func (n *NoteRepository) MarkNotesAsDeleted(noteIds []string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	notesModel := make([]mongo.WriteModel, len(noteIds))
+
+	for i, note := range noteIds {
+		notesModel[i] = mongo.NewUpdateOneModel().
+			SetFilter(bson.M{"_id": note}).
+			SetUpdate(bson.M{"$set": bson.M{"deletedAt": time.Now()}})
+	}
+
+	_, err := n.collection.BulkWrite(ctx, notesModel)
+	if err != nil {
+		return fmt.Errorf("note repository: failed to bulk update notes: %v", err)
+	}
+
+	return nil
+}
+
+// TODO: master add function for real deletion. Implement periodic task.

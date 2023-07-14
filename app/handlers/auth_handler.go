@@ -65,7 +65,7 @@ func (a *AuthHandler) Login(c *fiber.Ctx) error {
 	}
 	// return c.Redirect(url, fiber.StatusTemporaryRedirect)
 	log.Info().Msgf("Redirecting to %s", url)
-	data := NewHttpReponse[OAuthRedirectData, any](OAuthRedirectData{
+	data := NewHttpResponse[OAuthRedirectData, any](OAuthRedirectData{
 		RedirectURL: url,
 	}, nil)
 	return c.JSON(data)
@@ -155,7 +155,7 @@ func (a *AuthHandler) CreateToken(c *fiber.Ctx) error {
 		log.Error().Err(err).Msgf("auth handlers: github auth handler: create token")
 		return c.Status(500).SendString("Internal server error")
 	}
-	return c.Status(200).JSON(NewHttpReponse[*models.APIToken, any](token, nil))
+	return c.Status(200).JSON(NewHttpResponse[*models.APIToken, any](token, nil))
 }
 
 type BodyDeleteToken struct {
@@ -183,7 +183,7 @@ func (a *AuthHandler) DeleteToken(c *fiber.Ctx) error {
 		log.Error().Err(err).Msgf("auth handlers: github auth handler: delete token")
 		return c.Status(500).SendString("Internal server error")
 	}
-	return c.Status(200).JSON(NewHttpReponse[any, any](nil, nil))
+	return c.Status(200).JSON(NewHttpResponse[any, any](nil, nil))
 }
 
 // VerifyUser godoc
@@ -206,7 +206,7 @@ func (a *AuthHandler) VerifyUser(c *fiber.Ctx) error {
 		log.Info().Err(err).Msgf("auth handlers: github auth handler: find user")
 		return c.Status(fiber.StatusBadRequest).SendString(ErrInvalidToken)
 	}
-	return c.Status(fiber.StatusOK).JSON(NewHttpReponse[*models.PublicUser, any](user, nil))
+	return c.Status(fiber.StatusOK).JSON(NewHttpResponse[*models.PublicUser, any](user, nil))
 }
 
 // GetApiTokens godoc
@@ -229,7 +229,7 @@ func (a *AuthHandler) GetAPITokens(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).SendString("Could not find api tokens for current user")
 	}
-	return c.Status(fiber.StatusOK).JSON(NewHttpReponse[[]models.APIToken, any](tokens, nil))
+	return c.Status(fiber.StatusOK).JSON(NewHttpResponse[[]models.APIToken, any](tokens, nil))
 }
 
 // TODO: master refactor this code.

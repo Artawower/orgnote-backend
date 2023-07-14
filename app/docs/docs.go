@@ -277,6 +277,61 @@ const docTemplate = `{
                 }
             }
         },
+        "/notes": {
+            "delete": {
+                "description": "Mark notes as deleted by provided list of ids",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "notes"
+                ],
+                "summary": "Delete notes",
+                "parameters": [
+                    {
+                        "description": "List of ids of deleted notes",
+                        "name": "ids",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.HttpResponse-any-any"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.HttpError-any"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.HttpError-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.HttpError-any"
+                        }
+                    }
+                }
+            }
+        },
         "/notes/": {
             "get": {
                 "description": "Get all notes with optional filter",
@@ -594,6 +649,13 @@ const docTemplate = `{
                 }
             }
         },
+        "handlers.HttpResponse-any-any": {
+            "type": "object",
+            "properties": {
+                "data": {},
+                "meta": {}
+            }
+        },
         "handlers.HttpResponse-array_models_APIToken-any": {
             "type": "object",
             "properties": {
@@ -734,6 +796,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "createdAt": {
+                    "type": "string"
+                },
+                "deletedTime": {
                     "type": "string"
                 },
                 "id": {
