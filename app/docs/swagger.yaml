@@ -105,6 +105,10 @@ definitions:
         type: string
       deletedTime:
         type: string
+      filePath:
+        items:
+          type: string
+        type: array
       id:
         type: string
       likes:

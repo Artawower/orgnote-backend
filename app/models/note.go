@@ -43,6 +43,7 @@ type Note struct {
 	Meta        NoteMeta   `json:"meta" bson:"meta"`
 	CreatedAt   time.Time  `json:"createdAt" bson:"createdAt"`
 	UpdatedAt   time.Time  `json:"updatedAt" bson:"updatedAt"`
+	FilePath    []string   `json:"filePath" bson:"filePath"`
 	Views       int        `json:"views" bson:"views"`
 	Likes       int        `json:"likes" bson:"likes"`
 	DeletedTime *time.Time `json:"deletedTime" bson:"deletedTime"`

@@ -169,6 +169,7 @@ func (a *NoteRepository) getUpdateNote(note models.Note) bson.M {
 		"views":     note.Views,
 		"likes":     note.Likes,
 		"deletedAt": nil,
+		"filePath":  note.FilePath,
 	}
 
 	return update

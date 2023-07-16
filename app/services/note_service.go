@@ -65,6 +65,7 @@ func (a *NoteService) BulkCreateOrUpdate(userID string, notes []models.Note) err
 			Meta:      note.Meta,
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
+			FilePath:  note.FilePath,
 			Views:     0,
 			Likes:     0,
 		})
