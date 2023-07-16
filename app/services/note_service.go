@@ -108,12 +108,7 @@ func (a *NoteService) GetNotes(includePrivate bool, filter models.NoteFilter) (*
 
 	for _, note := range notes {
 		u := usersMap[note.AuthorID]
-		publicNote := &models.PublicNote{
-			ID:      note.ID,
-			Content: note.Content,
-			Meta:    note.Meta,
-			Author:  *mapToPublicUserInfo(&u),
-		}
+		publicNote := mapToPublicNote(&note, &u)
 		publicNotes = append(publicNotes, *publicNote)
 	}
 
@@ -167,14 +162,8 @@ func (a *NoteService) GetNote(id string, userID string) (*models.PublicNote, err
 	if err != nil {
 		return nil, fmt.Errorf("note service: get note: could not get user: %v", err)
 	}
-	u := mapToPublicUserInfo(user)
-	// TODO: master add mapper function
-	return &models.PublicNote{
-		ID:      note.ID,
-		Content: note.Content,
-		Meta:    note.Meta,
-		Author:  *u,
-	}, nil
+	publicNote := mapToPublicNote(note, user)
+	return publicNote, nil
 }
 
 func (a *NoteService) UploadImages(fileHeaders []*multipart.FileHeader) error {

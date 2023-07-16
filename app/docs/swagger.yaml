@@ -195,6 +195,10 @@ definitions:
         $ref: '#/definitions/models.PublicUser'
       content:
         type: string
+      filePath:
+        items:
+          type: string
+        type: array
       id:
         type: string
       meta:

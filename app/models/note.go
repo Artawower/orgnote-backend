@@ -50,10 +50,11 @@ type Note struct {
 }
 
 type PublicNote struct {
-	ID      string     `json:"id" bson:"_id"`
-	Author  PublicUser `json:"author" bson:"author"`
-	Content string     `json:"content" bson:"content"`
-	Meta    NoteMeta   `json:"meta" bson:"meta"`
+	ID       string     `json:"id" bson:"_id"`
+	Author   PublicUser `json:"author" bson:"author"`
+	Content  string     `json:"content" bson:"content"`
+	Meta     NoteMeta   `json:"meta"`
+	FilePath []string   `json:"filePath"`
 }
 
 type NoteFilter struct {

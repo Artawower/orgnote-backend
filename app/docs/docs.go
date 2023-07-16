@@ -939,6 +939,12 @@ const docTemplate = `{
                 "content": {
                     "type": "string"
                 },
+                "filePath": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "id": {
                     "type": "string"
                 },
