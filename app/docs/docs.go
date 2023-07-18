@@ -419,7 +419,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.Note"
+                            "$ref": "#/definitions/handlers.CreatedNote"
                         }
                     }
                 ],
@@ -455,7 +455,7 @@ const docTemplate = `{
             "put": {
                 "description": "Bulk update or insert notes",
                 "consumes": [
-                    "application/json"
+                    "multipart/form-data"
                 ],
                 "produces": [
                     "application/json"
@@ -466,16 +466,26 @@ const docTemplate = `{
                 "summary": "Upsert notes",
                 "parameters": [
                     {
-                        "description": "Notes list",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "Notes payload. See CreatedNote model",
                         "name": "notes",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/models.Note"
-                            }
-                        }
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "Form data files.",
+                        "name": "files",
+                        "in": "formData",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -640,6 +650,26 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "handlers.CreatedNote": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "filePath": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "id": {
+                    "type": "string"
+                },
+                "meta": {
+                    "$ref": "#/definitions/models.NoteMeta"
+                }
+            }
+        },
         "handlers.HttpError-any": {
             "type": "object",
             "properties": {
@@ -782,44 +812,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "weight": {
-                    "type": "integer"
-                }
-            }
-        },
-        "models.Note": {
-            "type": "object",
-            "properties": {
-                "authorId": {
-                    "type": "string"
-                },
-                "content": {
-                    "type": "string"
-                },
-                "createdAt": {
-                    "type": "string"
-                },
-                "deletedTime": {
-                    "type": "string"
-                },
-                "filePath": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "id": {
-                    "type": "string"
-                },
-                "likes": {
-                    "type": "integer"
-                },
-                "meta": {
-                    "$ref": "#/definitions/models.NoteMeta"
-                },
-                "updatedAt": {
-                    "type": "string"
-                },
-                "views": {
                     "type": "integer"
                 }
             }

@@ -124,11 +124,17 @@ func (a *NoteRepository) getLimitOffset(noteFilter models.NoteFilter) (int64, in
 }
 
 func (a *NoteRepository) AddNote(note models.Note) error {
-	return errors.New("not implemented")
-}
+	// TODO: create note
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
-func (a *NoteRepository) UpdateNote(article models.Note) error {
-	return errors.New("not implemented")
+	_, err := a.collection.InsertOne(ctx, note)
+
+	if err != nil {
+		return fmt.Errorf("note repository: failed to add note: %v", err)
+	}
+
+	return nil
 }
 
 func (a *NoteRepository) BulkUpsert(userID string, notes []models.Note) error {

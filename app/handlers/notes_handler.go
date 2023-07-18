@@ -160,36 +160,41 @@ func (h *NoteHandlers) GetNotes(c *fiber.Ctx) error {
 // @Tags         notes
 // @Accept       json
 // @Produce      json
-// @Param        note       body  models.Note  true  "Note model"
+// @Param        note       body  CreatedNote  true  "Note model"
 // @Success      200  {object}  any
 // @Failure      400  {object}  HttpError[any]
 // @Failure      404  {object}  HttpError[any]
 // @Failure      500  {object}  HttpError[any]
 // @Router       /notes/  [post]
 func (h *NoteHandlers) CreateNote(c *fiber.Ctx) error {
-	note := new(models.Note)
+	note := new(CreatedNote)
 
 	if err := c.BodyParser(note); err != nil {
 		log.Info().Err(err).Msg("note handler: post note: parse body")
 		return c.Status(fiber.StatusInternalServerError).JSON(NewHttpError("Can't parse body", err))
 	}
 
-	err := h.noteService.CreateNote(*note)
+	author := c.Locals("user").(*models.User)
+	n := mapCreatingNoteToNote(*note)
+	n.AuthorID = author.ID.Hex()
+	err := h.noteService.CreateNote(n)
 
 	if err != nil {
 		log.Info().Err(err).Msgf("note handler: post note: create %v", err)
-		return c.Status(http.StatusInternalServerError).JSON(NewHttpError[any]("Can't create note:(", nil))
+		return c.Status(http.StatusInternalServerError).JSON(NewHttpError[any]("Can't create note", nil))
 	}
 	return c.Status(http.StatusOK).JSON(nil)
 }
 
+// TODO: master Split this methods into files and note upsert methods. [high]
 // UpserNotes godoc
 // @Summary      Upsert notes
 // @Description  Bulk update or insert notes
 // @Tags         notes
-// @Accept       json
+// @Accept       mpfd
 // @Produce      json
-// @Param        notes body []models.Note  true  "Notes list"
+// @Param        notes formData []string true "Notes payload. See CreatedNote model"
+// @Param        files formData []string true "Form data files."
 // @Success      200  {object}  any
 // @Failure      400  {object}  HttpError[any]
 // @Failure      404  {object}  HttpError[any]

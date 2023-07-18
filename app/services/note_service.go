@@ -42,14 +42,6 @@ func (a *NoteService) CreateNote(note models.Note) error {
 	return nil
 }
 
-func (a *NoteService) UpdateNote(note models.Note) error {
-	err := a.noteRepository.UpdateNote(note)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func (a *NoteService) BulkCreateOrUpdate(userID string, notes []models.Note) error {
 	filteredNotesWithID := []models.Note{}
 	tags := []string{}

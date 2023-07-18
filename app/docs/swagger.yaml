@@ -1,4 +1,17 @@
 definitions:
+  handlers.CreatedNote:
+    properties:
+      content:
+        type: string
+      filePath:
+        items:
+          type: string
+        type: array
+      id:
+        type: string
+      meta:
+        $ref: '#/definitions/models.NoteMeta'
+    type: object
   handlers.HttpError-any:
     properties:
       data: {}
@@ -93,31 +106,6 @@ definitions:
       title:
         type: string
       weight:
-        type: integer
-    type: object
-  models.Note:
-    properties:
-      authorId:
-        type: string
-      content:
-        type: string
-      createdAt:
-        type: string
-      deletedTime:
-        type: string
-      filePath:
-        items:
-          type: string
-        type: array
-      id:
-        type: string
-      likes:
-        type: integer
-      meta:
-        $ref: '#/definitions/models.NoteMeta'
-      updatedAt:
-        type: string
-      views:
         type: integer
     type: object
   models.NoteGraph:
@@ -499,7 +487,7 @@ paths:
         name: note
         required: true
         schema:
-          $ref: '#/definitions/models.Note'
+          $ref: '#/definitions/handlers.CreatedNote'
       produces:
       - application/json
       responses:
@@ -558,17 +546,25 @@ paths:
   /notes/bulk-upsert:
     put:
       consumes:
-      - application/json
+      - multipart/form-data
       description: Bulk update or insert notes
       parameters:
-      - description: Notes list
-        in: body
+      - collectionFormat: csv
+        description: Notes payload. See CreatedNote model
+        in: formData
+        items:
+          type: string
         name: notes
         required: true
-        schema:
-          items:
-            $ref: '#/definitions/models.Note'
-          type: array
+        type: array
+      - collectionFormat: csv
+        description: Form data files.
+        in: formData
+        items:
+          type: string
+        name: files
+        required: true
+        type: array
       produces:
       - application/json
       responses:
