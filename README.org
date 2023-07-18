@@ -21,6 +21,7 @@
 * 🌱 Introduction
 This project is part of [[https://github.com/Artawower/second-brain][second brain project]]. It is a backend part based on the [[https://gofiber.io/][GO fiber]] framework.
 * 🍻 Connected links
+- [[http://65.108.90.95/api/v1/swagger/index.html][Swagger schema]] 
 - [[https://github.com/Artawower/second-brain][Main repo]]
 - [[https://github.com/Artawower/second-brain-client][Second brain frontend]] 
 - [[https://en.wikipedia.org/wiki/Zettelkasten][About Zettelkasten approach]] 
