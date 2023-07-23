@@ -336,24 +336,6 @@ paths:
       tags:
       - auth
   /auth/token:
-    delete:
-      consumes:
-      - application/json
-      description: Delete API token
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/handlers.HttpError-any'
-      summary: Delete API token
-      tags:
-      - auth
     post:
       consumes:
       - application/json
@@ -370,6 +352,31 @@ paths:
           schema:
             $ref: '#/definitions/handlers.HttpError-any'
       summary: Create API token
+      tags:
+      - auth
+  /auth/token/{tokenId}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete API token
+      parameters:
+      - description: token id
+        in: path
+        name: tokenId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.HttpError-any'
+      summary: Delete API token
       tags:
       - auth
   /auth/verify:

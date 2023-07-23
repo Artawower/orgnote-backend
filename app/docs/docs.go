@@ -114,7 +114,9 @@ const docTemplate = `{
                         }
                     }
                 }
-            },
+            }
+        },
+        "/auth/token/{tokenId}": {
             "delete": {
                 "description": "Delete API token",
                 "consumes": [
@@ -127,6 +129,15 @@ const docTemplate = `{
                     "auth"
                 ],
                 "summary": "Delete API token",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "token id",
+                        "name": "tokenId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",

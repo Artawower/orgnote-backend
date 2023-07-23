@@ -158,25 +158,28 @@ func (a *AuthHandler) CreateToken(c *fiber.Ctx) error {
 	return c.Status(200).JSON(NewHttpResponse[*models.APIToken, any](token, nil))
 }
 
-type BodyDeleteToken struct {
+type ParamsDeleteToken struct {
 	TokenID string `json:"tokenId"`
 }
 
-// DeleteToken godoc
+// DeleteToken   godoc
 // @Summary      Delete API token
 // @Description  Delete API token
 // @Tags         auth
+// @Param 		   tokenId path string true "token id"
 // @Accept       json
 // @Produce      json
 // @Success      200  {object}  any
 // @Failure      500  {object}  handlers.HttpError[any]
-// @Router       /auth/token  [delete]
+// @Router       /auth/token/{tokenId}  [delete]
 func (a *AuthHandler) DeleteToken(c *fiber.Ctx) error {
 	user := c.Locals("user").(*models.User)
-	b := new(BodyDeleteToken)
-	if err := c.BodyParser(b); err != nil {
+	b := new(ParamsDeleteToken)
+	if err := c.ParamsParser(b); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(NewHttpError[any]("Token doesn't provided", nil))
 	}
+
+	log.Info().Msgf("Delete token %s", b.TokenID)
 
 	err := a.userService.DeleteToken(user, b.TokenID)
 	if err != nil {
@@ -248,8 +251,7 @@ func RegisterAuthHandler(app fiber.Router, userService *services.UserService, co
 	app.Get("/auth/:provider/callback", authHandler.LoginCallback)
 	app.Get("/auth/logout", authHandler.Logout)
 	app.Post("/auth/token", authMiddleware, authHandler.CreateToken)
-	app.Delete("/auth/token", authMiddleware, authHandler.DeleteToken)
+	app.Delete("/auth/token/:tokenId", authMiddleware, authHandler.DeleteToken)
 	app.Get("/auth/verify", authHandler.VerifyUser)
 	app.Get("/auth/api-tokens", authHandler.GetAPITokens)
-
 }
