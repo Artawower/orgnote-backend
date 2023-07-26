@@ -1005,6 +1005,8 @@ var SwaggerInfo = &swag.Spec{
 	Description:      "List of methods for work with second brain.",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
+	LeftDelim:        "{{",
+	RightDelim:       "}}",
 }
 
 func init() {

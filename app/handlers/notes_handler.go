@@ -191,7 +191,7 @@ func (h *NoteHandlers) CreateNote(c *fiber.Ctx) error {
 // @Summary      Upsert notes
 // @Description  Bulk update or insert notes
 // @Tags         notes
-// @Accept       mpfd
+// @Accept       multipart/form-data
 // @Produce      json
 // @Param        notes formData []string true "Notes payload. See CreatedNote model"
 // @Param        files formData []string true "Form data files."
@@ -204,13 +204,13 @@ func (h *NoteHandlers) UpsertNotes(c *fiber.Ctx) error {
 
 	form, err := c.MultipartForm()
 	if err != nil {
-		log.Error().Err(err).Msg("note handler: put notes: parse body")
+		log.Error().Err(err).Msgf("note handler: put notes: parse body")
 		return c.Status(http.StatusInternalServerError).JSON(NewHttpError[any]("Can't parse multipart form data", nil))
 	}
 
 	log.Info().Err(err).Msg("note handler: put notes: parse body")
-	// files := form.File["files"]
 	rawNotes, ok := form.Value["notes"]
+	log.Info().Msgf("raw notes: %v", rawNotes)
 	if !ok {
 		return c.Status(http.StatusInternalServerError).JSON(NewHttpError[any]("Notes doesn't provided", nil))
 	}
@@ -226,7 +226,7 @@ func (h *NoteHandlers) UpsertNotes(c *fiber.Ctx) error {
 		return c.Status(http.StatusInternalServerError).JSON(NewHttpError[any]("Can't create notes", nil))
 	}
 	files := form.File["files"]
-	log.Info().Msgf("notes: %v", files)
+	log.Info().Msgf("files: %v", files)
 
 	err = h.noteService.UploadImages(files)
 	if err != nil {
