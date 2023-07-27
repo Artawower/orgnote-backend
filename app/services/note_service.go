@@ -2,35 +2,27 @@ package services
 
 import (
 	"fmt"
-	"io/ioutil"
-	"mime/multipart"
 	"moonbrain/app/models"
 	"moonbrain/app/repositories"
 	"moonbrain/app/tools"
-	"path"
 	"time"
-
-	"github.com/rs/zerolog/log"
 )
 
 type NoteService struct {
 	noteRepository *repositories.NoteRepository
 	userRepository *repositories.UserRepository
 	tagRepository  *repositories.TagRepository
-	imageDir       string
 }
 
 func NewNoteService(
 	noteRepository *repositories.NoteRepository,
 	userRepository *repositories.UserRepository,
 	tagRepository *repositories.TagRepository,
-	imageDir string,
 ) *NoteService {
 	return &NoteService{
 		noteRepository: noteRepository,
 		tagRepository:  tagRepository,
 		userRepository: userRepository,
-		imageDir:       imageDir,
 	}
 }
 
@@ -88,7 +80,7 @@ func (a *NoteService) GetNotes(includePrivate bool, filter models.NoteFilter) (*
 
 	count, err := a.noteRepository.NotesCount(includePrivate, filter)
 	if err != nil {
-		return nil, fmt.Errorf("note service: upload images: could not upload image: %v", err)
+		return nil, fmt.Errorf("note service: upload images: get notes count: %v", err)
 	}
 
 	publicNotes := []models.PublicNote{}
@@ -156,36 +148,6 @@ func (a *NoteService) GetNote(id string, userID string) (*models.PublicNote, err
 	}
 	publicNote := mapToPublicNote(note, user)
 	return publicNote, nil
-}
-
-func (a *NoteService) UploadImages(fileHeaders []*multipart.FileHeader) error {
-	for _, fh := range fileHeaders {
-		err := a.UploadImage(fh)
-		if err != nil {
-			log.Err(err).Msg("note service: upload images: could not upload image")
-			// TODO: add aggregation of errors
-			continue
-		}
-	}
-	return nil
-}
-
-func (a *NoteService) UploadImage(fileHeader *multipart.FileHeader) error {
-	file, err := fileHeader.Open()
-	if err != nil {
-		return fmt.Errorf("note service: upload image: could not open uploaded file: %v", err)
-	}
-	defer file.Close()
-
-	fileData, err := ioutil.ReadAll(file)
-	if err != nil {
-		return fmt.Errorf("note service: upload image: could not read uploaded file: %v", err)
-	}
-	err = ioutil.WriteFile(path.Join(a.imageDir, fileHeader.Filename), fileData, 0644)
-	if err != nil {
-		return fmt.Errorf("note service: upload image: could not write file: %v", err)
-	}
-	return nil
 }
 
 func (a *NoteService) GetNoteGraph(userID string) (*models.NoteGraph, error) {

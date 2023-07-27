@@ -288,6 +288,60 @@ const docTemplate = `{
                 }
             }
         },
+        "/files/upload": {
+            "post": {
+                "description": "Upload files.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "files"
+                ],
+                "summary": "Upload files",
+                "parameters": [
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "files",
+                        "name": "files",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.HttpError-any"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.HttpError-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.HttpError-any"
+                        }
+                    }
+                }
+            }
+        },
         "/notes": {
             "delete": {
                 "description": "Mark notes as deleted by provided list of ids",
@@ -430,7 +484,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.CreatedNote"
+                            "$ref": "#/definitions/handlers.CreatingNote"
                         }
                     }
                 ],
@@ -466,7 +520,7 @@ const docTemplate = `{
             "put": {
                 "description": "Bulk update or insert notes",
                 "consumes": [
-                    "multipart/form-data"
+                    "application/json"
                 ],
                 "produces": [
                     "application/json"
@@ -477,26 +531,16 @@ const docTemplate = `{
                 "summary": "Upsert notes",
                 "parameters": [
                     {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "collectionFormat": "csv",
-                        "description": "Notes payload. See CreatedNote model",
+                        "description": "List of created notes",
                         "name": "notes",
-                        "in": "formData",
-                        "required": true
-                    },
-                    {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "collectionFormat": "csv",
-                        "description": "Form data files.",
-                        "name": "files",
-                        "in": "formData",
-                        "required": true
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/handlers.CreatingNote"
+                            }
+                        }
                     }
                 ],
                 "responses": {
@@ -661,7 +705,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "handlers.CreatedNote": {
+        "handlers.CreatingNote": {
             "type": "object",
             "properties": {
                 "content": {

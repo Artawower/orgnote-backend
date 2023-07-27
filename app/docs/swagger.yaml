@@ -1,5 +1,5 @@
 definitions:
-  handlers.CreatedNote:
+  handlers.CreatingNote:
     properties:
       content:
         type: string
@@ -402,6 +402,42 @@ paths:
       summary: Verify user
       tags:
       - auth
+  /files/upload:
+    post:
+      consumes:
+      - application/json
+      description: Upload files.
+      parameters:
+      - collectionFormat: csv
+        description: files
+        in: formData
+        items:
+          type: string
+        name: files
+        required: true
+        type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.HttpError-any'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.HttpError-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.HttpError-any'
+      summary: Upload files
+      tags:
+      - files
   /notes:
     delete:
       consumes:
@@ -494,7 +530,7 @@ paths:
         name: note
         required: true
         schema:
-          $ref: '#/definitions/handlers.CreatedNote'
+          $ref: '#/definitions/handlers.CreatingNote'
       produces:
       - application/json
       responses:
@@ -553,25 +589,17 @@ paths:
   /notes/bulk-upsert:
     put:
       consumes:
-      - multipart/form-data
+      - application/json
       description: Bulk update or insert notes
       parameters:
-      - collectionFormat: csv
-        description: Notes payload. See CreatedNote model
-        in: formData
-        items:
-          type: string
+      - description: List of created notes
+        in: body
         name: notes
         required: true
-        type: array
-      - collectionFormat: csv
-        description: Form data files.
-        in: formData
-        items:
-          type: string
-        name: files
-        required: true
-        type: array
+        schema:
+          items:
+            $ref: '#/definitions/handlers.CreatingNote'
+          type: array
       produces:
       - application/json
       responses:

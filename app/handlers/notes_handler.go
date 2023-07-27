@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"encoding/json"
 	"moonbrain/app/models"
 	"moonbrain/app/services"
 	"net/http"
@@ -11,31 +10,6 @@ import (
 	fiber "github.com/gofiber/fiber/v2"
 	"github.com/rs/zerolog/log"
 )
-
-func collectNoteFromString(stringNote string) (models.Note, error) {
-	note := models.Note{}
-	err := json.Unmarshal([]byte(stringNote), &note)
-	if err != nil {
-		log.Error().Err(err).Msg("Error while unmarshalling note")
-		return note, err
-	}
-	return note, nil
-}
-
-func collectNotesFromStrings(stringNotes []string) ([]models.Note, []string) {
-	notes := []models.Note{}
-	errors := []string{}
-	for _, strNote := range stringNotes {
-		note, err := collectNoteFromString(strNote)
-		if err != nil {
-			// TODO master: add user friendly error message
-			errors = append(errors, err.Error())
-			continue
-		}
-		notes = append(notes, note)
-	}
-	return notes, errors
-}
 
 type NoteHandlers struct {
 	noteService *services.NoteService
@@ -160,14 +134,14 @@ func (h *NoteHandlers) GetNotes(c *fiber.Ctx) error {
 // @Tags         notes
 // @Accept       json
 // @Produce      json
-// @Param        note       body  CreatedNote  true  "Note model"
+// @Param        note       body  CreatingNote  true  "Note model"
 // @Success      200  {object}  any
 // @Failure      400  {object}  HttpError[any]
 // @Failure      404  {object}  HttpError[any]
 // @Failure      500  {object}  HttpError[any]
 // @Router       /notes/  [post]
 func (h *NoteHandlers) CreateNote(c *fiber.Ctx) error {
-	note := new(CreatedNote)
+	note := new(CreatingNote)
 
 	if err := c.BodyParser(note); err != nil {
 		log.Info().Err(err).Msg("note handler: post note: parse body")
@@ -186,55 +160,34 @@ func (h *NoteHandlers) CreateNote(c *fiber.Ctx) error {
 	return c.Status(http.StatusOK).JSON(nil)
 }
 
-// TODO: master Split this methods into files and note upsert methods. [high]
 // UpserNotes godoc
 // @Summary      Upsert notes
 // @Description  Bulk update or insert notes
 // @Tags         notes
-// @Accept       multipart/form-data
+// @Accept       json
 // @Produce      json
-// @Param        notes formData []string true "Notes payload. See CreatedNote model"
-// @Param        files formData []string true "Form data files."
+// @Param        notes body []CreatingNote true "List of created notes"
 // @Success      200  {object}  any
 // @Failure      400  {object}  HttpError[any]
 // @Failure      404  {object}  HttpError[any]
 // @Failure      500  {object}  HttpError[any]
 // @Router       /notes/bulk-upsert  [put]
 func (h *NoteHandlers) UpsertNotes(c *fiber.Ctx) error {
+	notesForCreate := []CreatingNote{}
 
-	form, err := c.MultipartForm()
-	if err != nil {
-		log.Error().Err(err).Msgf("note handler: put notes: parse body")
-		return c.Status(http.StatusInternalServerError).JSON(NewHttpError[any]("Can't parse multipart form data", nil))
+	if err := c.BodyParser(&notesForCreate); err != nil {
+		log.Error().Err(err).Msg("note handler: upsert notes: parse body")
+		return c.Status(http.StatusBadRequest).JSON(NewHttpError[any]("Couldn't parse body, something went wrong", nil))
 	}
 
-	log.Info().Err(err).Msg("note handler: put notes: parse body")
-	rawNotes, ok := form.Value["notes"]
-	log.Info().Msgf("raw notes: %v", rawNotes)
-	if !ok {
-		return c.Status(http.StatusInternalServerError).JSON(NewHttpError[any]("Notes doesn't provided", nil))
-	}
-	notes, errors := collectNotesFromStrings(rawNotes)
-	if len(errors) > 0 {
-		// TODO: master add errors exposing to real life.
-		log.Error().Err(err).Msg("note handler: put notes: collect notes")
-	}
 	user := c.Locals("user").(*models.User)
-	err = h.noteService.BulkCreateOrUpdate(user.ID.Hex(), notes)
+	notes := mapCreatingNotesToNotes(notesForCreate)
+	err := h.noteService.BulkCreateOrUpdate(user.ID.Hex(), notes)
 	if err != nil {
 		log.Warn().Msgf("note handlers: save notes: %v", err)
 		return c.Status(http.StatusInternalServerError).JSON(NewHttpError[any]("Can't create notes", nil))
 	}
-	files := form.File["files"]
-	log.Info().Msgf("files: %v", files)
-
-	err = h.noteService.UploadImages(files)
-	if err != nil {
-		// TODO: master error handling here
-		return c.Status(http.StatusInternalServerError).JSON(NewHttpError[any]("Can't upload images", nil))
-	}
 	return c.Status(http.StatusOK).JSON(nil)
-
 }
 
 // GetNoteGraph godoc
@@ -263,6 +216,23 @@ func (h *NoteHandlers) GetNoteGraph(c *fiber.Ctx) error {
 	return c.Status(http.StatusOK).JSON(NewHttpResponse[*models.NoteGraph, any](graph, nil))
 }
 
+// SyncNotes godoc
+// @Summary      Syncronize notes
+// @Description  Syncronize notes with specific timestamp
+// @Tags         notes
+// @Accept       json
+// @Produce      json
+// @Param        timestamp   path      string  true  "Timestamp of the last syncronization"
+// @Success      200  {object}
+// @Failure      400  {object}  HttpResponse[SyncNotesData, any]
+// @Failure      404  {object}  HttpError[any]
+// @Failure      500  {object}  HttpError[any]
+// @Router       /notes/sync  [post]
+// func (h *NodeHandlers) SyncNotes(c *fiber.Ctx) error {
+// 	ctxUser := c.Locals("user")
+// 	return c.Status(http.StatusOK).JSON(NewHttpResponse[]())
+// }
+
 func RegisterNoteHandler(app fiber.Router, noteService *services.NoteService, authMiddleware func(*fiber.Ctx) error) {
 	noteHandlers := &NoteHandlers{
 		noteService: noteService,
@@ -270,6 +240,7 @@ func RegisterNoteHandler(app fiber.Router, noteService *services.NoteService, au
 	app.Get("/notes/graph", authMiddleware, noteHandlers.GetNoteGraph)
 	app.Get("/notes/:id", noteHandlers.GetNote)
 	app.Get("/notes", noteHandlers.GetNotes)
+	// app.Post("/sync", noteHandelrs.SyncNotes)
 	app.Post("/notes", authMiddleware, noteHandlers.CreateNote)
 	app.Put("/notes/bulk-upsert", authMiddleware, noteHandlers.UpsertNotes)
 	app.Delete("/notes", authMiddleware, noteHandlers.DeleteNotes)

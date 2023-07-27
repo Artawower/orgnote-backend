@@ -62,6 +62,7 @@ func main() {
 	app := fiber.New()
 	api := app.Group("/v1")
 
+	// TODO: master May be someday there will be DI
 	noteRepository := repositories.NewNoteRepository(database)
 	tagRepository := repositories.NewTagRepository(database)
 	userRepository := repositories.NewUserRepository(database)
@@ -73,9 +74,10 @@ func main() {
 
 	authMiddleware := handlers.NewAuthMiddleware()
 
-	noteService := services.NewNoteService(noteRepository, userRepository, tagRepository, config.MediaPath)
+	noteService := services.NewNoteService(noteRepository, userRepository, tagRepository)
 	tagService := services.NewTagService(tagRepository)
 	userService := services.NewUserService(userRepository)
+	fileService := services.NewFileService(config.MediaPath)
 
 	// api.Use(handlers.NewAuthMiddleware())
 	// TODO: expose to external fn
@@ -84,6 +86,7 @@ func main() {
 	handlers.RegisterNoteHandler(api, noteService, authMiddleware)
 	handlers.RegisterTagHandler(api, tagService)
 	handlers.RegisterAuthHandler(api, userService, config, authMiddleware)
+	handlers.RegisterFileHandler(api, fileService, authMiddleware)
 	// handlers.RegisterUserHandlers(app)
 	// handlers.RegisterTagHandlers(app)
 	app.Static("media", config.MediaPath)

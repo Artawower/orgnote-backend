@@ -4,19 +4,14 @@ import (
 	"moonbrain/app/models"
 )
 
-type CreatedNote struct {
+type CreatingNote struct {
 	ID       string          `json:"id" form:"id"`
 	Content  string          `json:"content" form:"content"`
 	Meta     models.NoteMeta `json:"meta" form:"meta"`
 	FilePath []string        `json:"filePath" form:"filePath"`
 }
 
-type UpsertNoteFormData struct {
-	Notes CreatedNote `form:"notes" json:"notes"`
-	Files string      `form:"files" json:"files" format:"binary"`
-}
-
-func mapCreatingNoteToNote(note CreatedNote) models.Note {
+func mapCreatingNoteToNote(note CreatingNote) models.Note {
 	return models.Note{
 		ID:       note.ID,
 		Content:  note.Content,
@@ -25,7 +20,7 @@ func mapCreatingNoteToNote(note CreatedNote) models.Note {
 	}
 }
 
-func mapCreatingNotesToNotes(notes []CreatedNote) (mappedNotes []models.Note) {
+func mapCreatingNotesToNotes(notes []CreatingNote) (mappedNotes []models.Note) {
 	mappedNotes = make([]models.Note, len(notes))
 	for _, n := range notes {
 		mappedNotes = append(mappedNotes, mapCreatingNoteToNote(n))
