@@ -480,24 +480,28 @@ paths:
       - application/json
       description: Get all notes with optional filter
       parameters:
-      - description: User ID
+      - in: query
+        name: limit
+        type: integer
+        x-order: "1"
+      - in: query
+        name: offset
+        type: integer
+        x-order: "2"
+      - description: User id of which notes to load
         in: query
         name: userId
         type: string
-      - description: Search text
-        in: query
+        x-order: "3"
+      - in: query
         name: searchText
         type: string
-      - description: Limit for pagination
+        x-order: "4"
+      - description: Load all my own notes (user will be used from provided token)
         in: query
-        name: limit
-        required: true
-        type: integer
-      - description: Offset for pagination
-        in: query
-        name: offset
-        required: true
-        type: integer
+        name: my
+        type: boolean
+        x-order: "5"
       produces:
       - application/json
       responses:

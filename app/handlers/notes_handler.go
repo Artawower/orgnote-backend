@@ -84,10 +84,7 @@ func (h *NoteHandlers) DeleteNotes(c *fiber.Ctx) error {
 // @Tags         notes
 // @Accept       json
 // @Produce      json
-// @Param        userId       query  string  false  "User ID"
-// @Param        searchText   query  string  false  "Search text"
-// @Param        limit        query  int  true  "Limit for pagination"
-// @Param        offset       query  int  true  "Offset for pagination"
+// @Param        filter       query  models.NoteFilter false "Filter"
 // @Success      200  {object}  HttpResponse[[]models.PublicNote, models.Pagination]
 // @Failure      400  {object}  HttpError[any]
 // @Failure      404  {object}  HttpError[any]
@@ -104,6 +101,11 @@ func (h *NoteHandlers) GetNotes(c *fiber.Ctx) error {
 	}
 
 	ctxUser := c.Locals("user")
+
+	if filter.My != nil && *filter.My && ctxUser != nil {
+		userId := ctxUser.(*models.User).ID.Hex()
+		filter.UserID = &userId
+	}
 
 	includePrivateNotes := filter.UserID != nil && ctxUser != nil && ctxUser.(*models.User).ID.Hex() == *filter.UserID
 

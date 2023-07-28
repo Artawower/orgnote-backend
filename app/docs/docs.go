@@ -412,30 +412,36 @@ const docTemplate = `{
                 "summary": "Get notes",
                 "parameters": [
                     {
+                        "type": "integer",
+                        "x-order": "1",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "x-order": "2",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
                         "type": "string",
-                        "description": "User ID",
+                        "x-order": "3",
+                        "description": "User id of which notes to load",
                         "name": "userId",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "Search text",
+                        "x-order": "4",
                         "name": "searchText",
                         "in": "query"
                     },
                     {
-                        "type": "integer",
-                        "description": "Limit for pagination",
-                        "name": "limit",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Offset for pagination",
-                        "name": "offset",
-                        "in": "query",
-                        "required": true
+                        "type": "boolean",
+                        "x-order": "5",
+                        "description": "Load all my own notes (user will be used from provided token)",
+                        "name": "my",
+                        "in": "query"
                     }
                 ],
                 "responses": {
