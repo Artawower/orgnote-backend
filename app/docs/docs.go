@@ -1003,6 +1003,9 @@ const docTemplate = `{
                 },
                 "meta": {
                     "$ref": "#/definitions/models.NoteMeta"
+                },
+                "updatedAt": {
+                    "type": "string"
                 }
             }
         },

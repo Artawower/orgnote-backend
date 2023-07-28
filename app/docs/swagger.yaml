@@ -191,6 +191,8 @@ definitions:
         type: string
       meta:
         $ref: '#/definitions/models.NoteMeta'
+      updatedAt:
+        type: string
     type: object
   models.PublicUser:
     properties:
