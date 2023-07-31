@@ -59,9 +59,10 @@ type PublicNote struct {
 }
 
 type NoteFilter struct {
-	Limit      *int64  `json:"limit" extensions:"x-order=1"`
-	Offset     *int64  `json:"offset" extensions:"x-order=2"`
-	UserID     *string `json:"userId" extensions:"x-order=3"` // User id of which notes to load
-	SearchText *string `json:"searchText" extensions:"x-order=4"`
-	My         *bool   `json:"my" extensions:"x-order=5"` // Load all my own notes (user will be used from provided token)
+	Limit      *int64     `json:"limit" extensions:"x-order=1"`
+	Offset     *int64     `json:"offset" extensions:"x-order=2"`
+	UserID     *string    `json:"userId" extensions:"x-order=3"` // User id of which notes to load
+	SearchText *string    `json:"searchText" extensions:"x-order=4"`
+	My         *bool      `json:"my" extensions:"x-order=5"` // Load all my own notes (user will be used from provided token)
+	From       *time.Time `json:"from" extensions:"x-order=6"`
 }

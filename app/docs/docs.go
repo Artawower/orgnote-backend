@@ -442,6 +442,12 @@ const docTemplate = `{
                         "description": "Load all my own notes (user will be used from provided token)",
                         "name": "my",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "x-order": "6",
+                        "name": "from",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -537,7 +543,7 @@ const docTemplate = `{
                 "summary": "Upsert notes",
                 "parameters": [
                     {
-                        "description": "List of created notes",
+                        "description": "List of crated notes",
                         "name": "notes",
                         "in": "body",
                         "required": true,
@@ -595,6 +601,58 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/handlers.HttpResponse-models_NoteGraph-any"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.HttpError-any"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.HttpError-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.HttpError-any"
+                        }
+                    }
+                }
+            }
+        },
+        "/notes/sync": {
+            "post": {
+                "description": "Synchronize notes with specific timestamp",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "notes"
+                ],
+                "summary": "Synchronize notes",
+                "parameters": [
+                    {
+                        "description": "Sync notes request",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.SyncNotesRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.HttpResponse-array_models_PublicNote-any"
                         }
                     },
                     "400": {
@@ -728,6 +786,9 @@ const docTemplate = `{
                 },
                 "meta": {
                     "$ref": "#/definitions/models.NoteMeta"
+                },
+                "updatedAt": {
+                    "type": "string"
                 }
             }
         },
@@ -754,6 +815,18 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/models.APIToken"
+                    }
+                },
+                "meta": {}
+            }
+        },
+        "handlers.HttpResponse-array_models_PublicNote-any": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.PublicNote"
                     }
                 },
                 "meta": {}
@@ -834,6 +907,20 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "redirectUrl": {
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.SyncNotesRequest": {
+            "type": "object",
+            "properties": {
+                "notes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handlers.CreatingNote"
+                    }
+                },
+                "timestamp": {
                     "type": "string"
                 }
             }

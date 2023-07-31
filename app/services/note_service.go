@@ -216,3 +216,59 @@ func (a *NoteService) getRelatedLinks(note models.Note) (graphNoteLinks []models
 func (n *NoteService) DeleteNotes(ids []string) error {
 	return n.noteRepository.MarkNotesAsDeleted(ids)
 }
+
+func (n *NoteService) SyncNotes(notes []models.Note, timestamp time.Time, userID string) ([]models.Note, error) {
+	my := true
+	filter := models.NoteFilter{
+		My:     &my,
+		From:   &timestamp,
+		UserID: &userID,
+	}
+
+	err := n.bulkUpdateOutdatedNotes(notes)
+
+	if err != nil {
+		return nil, err
+	}
+
+	notesFromLastSync, err := n.noteRepository.GetNotes(true, filter)
+	if err != nil {
+		return nil, fmt.Errorf("note service: sync notes: could not get notes: %v", err)
+	}
+
+	updatedNotes := n.excludeSameNotes(notesFromLastSync, notes)
+
+	return updatedNotes, nil
+}
+
+func (n *NoteService) bulkUpdateOutdatedNotes(notes []models.Note) error {
+	someNotesPresent := len(notes) > 0
+
+	if !someNotesPresent {
+		return nil
+	}
+	err := n.noteRepository.BulkUpdateOutdated(notes)
+	if err != nil {
+		return fmt.Errorf("note service: sync notes: could not update outdated notes: %v", err)
+	}
+	return nil
+}
+
+func (n *NoteService) excludeSameNotes(srcNotes []models.Note, filterNotes []models.Note) []models.Note {
+	filteredNotes := []models.Note{}
+
+	for _, srcNote := range srcNotes {
+		exists := false
+		for _, filterNote := range filterNotes {
+			if srcNote.ID == filterNote.ID && srcNote.UpdatedAt.Equal(filterNote.UpdatedAt) {
+				exists = true
+				break
+			}
+		}
+		if !exists {
+			filteredNotes = append(filteredNotes, srcNote)
+		}
+	}
+
+	return filteredNotes
+}

@@ -92,6 +92,10 @@ func (a *NoteRepository) getNotesFilter(includePrivate bool, f models.NoteFilter
 		filter["authorId"] = *f.UserID
 	}
 
+	if f.From != nil {
+		filter["updatedAt"] = bson.M{"$gte": *f.From}
+	}
+
 	if f.SearchText != nil && *f.SearchText != "" {
 		filter["$text"] = bson.D{bson.E{Key: "$search", Value: *f.SearchText}}
 	}
@@ -171,7 +175,7 @@ func (a *NoteRepository) getUpdateNote(note models.Note) bson.M {
 		"authorId":  note.AuthorID,
 		"content":   note.Content,
 		"meta":      note.Meta,
-		"updatedAt": note.CreatedAt,
+		"updatedAt": note.UpdatedAt,
 		"views":     note.Views,
 		"likes":     note.Likes,
 		"deletedAt": nil,
@@ -234,3 +238,27 @@ func (n *NoteRepository) MarkNotesAsDeleted(noteIds []string) error {
 }
 
 // TODO: master add function for real deletion. Implement periodic task.
+
+func (n *NoteRepository) BulkUpdateOutdated(nodes []models.Note) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	notesModel := make([]mongo.WriteModel, len(nodes))
+
+	for i, note := range nodes {
+		notesModel[i] = mongo.NewUpdateOneModel().
+			SetFilter(bson.M{
+				"_id":       note.ID,
+				"updatedAt": bson.M{"$lt": note.UpdatedAt},
+			}).
+			SetUpdate(bson.M{"$set": bson.M{"deletedAt": time.Now()}})
+	}
+
+	_, err := n.collection.BulkWrite(ctx, notesModel)
+	if err != nil {
+		return fmt.Errorf("note repository: failed to bulk update notes: %v", err)
+	}
+
+	return nil
+
+}

@@ -11,6 +11,8 @@ definitions:
         type: string
       meta:
         $ref: '#/definitions/models.NoteMeta'
+      updatedAt:
+        type: string
     type: object
   handlers.HttpError-any:
     properties:
@@ -28,6 +30,14 @@ definitions:
       data:
         items:
           $ref: '#/definitions/models.APIToken'
+        type: array
+      meta: {}
+    type: object
+  handlers.HttpResponse-array_models_PublicNote-any:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/models.PublicNote'
         type: array
       meta: {}
     type: object
@@ -81,6 +91,15 @@ definitions:
   handlers.OAuthRedirectData:
     properties:
       redirectUrl:
+        type: string
+    type: object
+  handlers.SyncNotesRequest:
+    properties:
+      notes:
+        items:
+          $ref: '#/definitions/handlers.CreatingNote'
+        type: array
+      timestamp:
         type: string
     type: object
   models.APIToken:
@@ -504,6 +523,10 @@ paths:
         name: my
         type: boolean
         x-order: "5"
+      - in: query
+        name: from
+        type: string
+        x-order: "6"
       produces:
       - application/json
       responses:
@@ -598,7 +621,7 @@ paths:
       - application/json
       description: Bulk update or insert notes
       parameters:
-      - description: List of created notes
+      - description: List of crated notes
         in: body
         name: notes
         required: true
@@ -653,6 +676,40 @@ paths:
           schema:
             $ref: '#/definitions/handlers.HttpError-any'
       summary: Get notes graph
+      tags:
+      - notes
+  /notes/sync:
+    post:
+      consumes:
+      - application/json
+      description: Synchronize notes with specific timestamp
+      parameters:
+      - description: Sync notes request
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.SyncNotesRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.HttpResponse-array_models_PublicNote-any'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.HttpError-any'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.HttpError-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.HttpError-any'
+      summary: Synchronize notes
       tags:
       - notes
   /tags:

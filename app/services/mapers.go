@@ -2,6 +2,7 @@ package services
 
 import "moonbrain/app/models"
 
+// TODO: master move to handler layer
 func mapToPublicUserInfo(user *models.User) *models.PublicUser {
 	return &models.PublicUser{
 		ID:         user.ID.Hex(),

@@ -1,9 +1,11 @@
 package handlers
 
 import (
+	"fmt"
 	"moonbrain/app/models"
 	"moonbrain/app/services"
 	"net/http"
+	"time"
 
 	_ "moonbrain/app/docs"
 
@@ -146,8 +148,8 @@ func (h *NoteHandlers) CreateNote(c *fiber.Ctx) error {
 	note := new(CreatingNote)
 
 	if err := c.BodyParser(note); err != nil {
-		log.Info().Err(err).Msg("note handler: post note: parse body")
-		return c.Status(fiber.StatusInternalServerError).JSON(NewHttpError("Can't parse body", err))
+		log.Info().Msgf("note handler: post note: parse body: %v", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(NewHttpError[any]("Can't parse body", nil))
 	}
 
 	author := c.Locals("user").(*models.User)
@@ -168,7 +170,7 @@ func (h *NoteHandlers) CreateNote(c *fiber.Ctx) error {
 // @Tags         notes
 // @Accept       json
 // @Produce      json
-// @Param        notes body []CreatingNote true "List of created notes"
+// @Param        notes body []CreatingNote true "List of crated notes"
 // @Success      200  {object}  any
 // @Failure      400  {object}  HttpError[any]
 // @Failure      404  {object}  HttpError[any]
@@ -218,22 +220,42 @@ func (h *NoteHandlers) GetNoteGraph(c *fiber.Ctx) error {
 	return c.Status(http.StatusOK).JSON(NewHttpResponse[*models.NoteGraph, any](graph, nil))
 }
 
+type SyncNotesRequest struct {
+	Timestamp time.Time      `json:"timestamp"`
+	Notes     []CreatingNote `json:"notes"`
+}
+
 // SyncNotes godoc
-// @Summary      Syncronize notes
-// @Description  Syncronize notes with specific timestamp
+// @Summary      Synchronize notes
+// @Description  Synchronize notes with specific timestamp
 // @Tags         notes
 // @Accept       json
 // @Produce      json
-// @Param        timestamp   path      string  true  "Timestamp of the last syncronization"
-// @Success      200  {object}
-// @Failure      400  {object}  HttpResponse[SyncNotesData, any]
+// @Param        data  body     SyncNotesRequest  true  "Sync notes request"
+// @Success      200  {object}  HttpResponse[[]models.PublicNote, any]
+// @Failure      400  {object}  HttpError[any]
 // @Failure      404  {object}  HttpError[any]
 // @Failure      500  {object}  HttpError[any]
 // @Router       /notes/sync  [post]
-// func (h *NodeHandlers) SyncNotes(c *fiber.Ctx) error {
-// 	ctxUser := c.Locals("user")
-// 	return c.Status(http.StatusOK).JSON(NewHttpResponse[]())
-// }
+func (h *NoteHandlers) SyncNotes(c *fiber.Ctx) error {
+	ctxUser := c.Locals("user")
+	userId := ctxUser.(*models.User).ID.Hex()
+
+	rqst := new(SyncNotesRequest)
+	if err := c.BodyParser(rqst); err != nil {
+		log.Info().Msgf("note handler: sync notes: parse body: %v", err)
+		return fmt.Errorf("can't parse body")
+	}
+	notesToSync := mapCreatingNotesToNotes(rqst.Notes)
+	notes, err := h.noteService.SyncNotes(notesToSync, rqst.Timestamp, userId)
+	if err != nil {
+		log.Info().Err(err).Msg("note handler: sync notes")
+		return c.Status(http.StatusInternalServerError).JSON(NewHttpError[any]("Couldn't sync notes", nil))
+	}
+	publicNotes := mapNotesToPublicNotes(notes, *ctxUser.(*models.User))
+
+	return c.Status(http.StatusOK).JSON(NewHttpResponse[[]models.PublicNote, any](publicNotes, nil))
+}
 
 func RegisterNoteHandler(app fiber.Router, noteService *services.NoteService, authMiddleware func(*fiber.Ctx) error) {
 	noteHandlers := &NoteHandlers{
@@ -242,7 +264,7 @@ func RegisterNoteHandler(app fiber.Router, noteService *services.NoteService, au
 	app.Get("/notes/graph", authMiddleware, noteHandlers.GetNoteGraph)
 	app.Get("/notes/:id", noteHandlers.GetNote)
 	app.Get("/notes", noteHandlers.GetNotes)
-	// app.Post("/sync", noteHandelrs.SyncNotes)
+	app.Post("/notes/sync", authMiddleware, noteHandlers.SyncNotes)
 	app.Post("/notes", authMiddleware, noteHandlers.CreateNote)
 	app.Put("/notes/bulk-upsert", authMiddleware, noteHandlers.UpsertNotes)
 	app.Delete("/notes", authMiddleware, noteHandlers.DeleteNotes)
