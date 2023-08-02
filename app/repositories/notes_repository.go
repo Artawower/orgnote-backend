@@ -85,7 +85,8 @@ func (a *NoteRepository) getNotesFilter(includePrivate bool, f models.NoteFilter
 	filter := bson.M{
 		"$or": orQuery,
 	}
-	if includePrivate == false {
+	includeMy := f.My != nil && *f.My
+	if includePrivate == false && !includeMy {
 		filter["meta.published"] = true
 	}
 	if f.UserID != nil {
@@ -237,21 +238,18 @@ func (n *NoteRepository) MarkNotesAsDeleted(noteIds []string) error {
 	return nil
 }
 
-// TODO: master add function for real deletion. Implement periodic task.
-
-func (n *NoteRepository) BulkUpdateOutdated(nodes []models.Note) error {
+func (n *NoteRepository) BulkUpdateOutdated(nodes []models.Note, authorID string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	notesModel := make([]mongo.WriteModel, len(nodes))
+	notesModel := []mongo.WriteModel{}
 
-	for i, note := range nodes {
-		notesModel[i] = mongo.NewUpdateOneModel().
-			SetFilter(bson.M{
-				"_id":       note.ID,
-				"updatedAt": bson.M{"$lt": note.UpdatedAt},
-			}).
-			SetUpdate(bson.M{"$set": bson.M{"deletedAt": time.Now()}})
+	for _, note := range nodes {
+		model, err := n.getUpdateOutdatedModel(note, authorID)
+		if err != nil {
+			return fmt.Errorf("note repository: failed to get update outdated model: %v", err)
+		}
+		notesModel = append(notesModel, model)
 	}
 
 	_, err := n.collection.BulkWrite(ctx, notesModel)
@@ -261,4 +259,26 @@ func (n *NoteRepository) BulkUpdateOutdated(nodes []models.Note) error {
 
 	return nil
 
+}
+
+func (n *NoteRepository) getUpdateOutdatedModel(note models.Note, authorID string) (mongo.WriteModel, error) {
+	savedNote, err := n.GetNote(note.ID, authorID)
+	if err != nil {
+		return nil, fmt.Errorf("note repository: failed to get note: %v", err)
+	}
+	noteNotExist := savedNote == nil
+	updatedNote := n.getUpdateNote(note)
+	updatedNote["authorId"] = authorID
+	if noteNotExist {
+		updatedNote["createdAt"] = note.CreatedAt
+		return mongo.NewInsertOneModel().SetDocument(updatedNote), nil
+	}
+	return mongo.NewUpdateOneModel().
+		SetFilter(bson.M{
+			"_id":       note.ID,
+			"updatedAt": bson.M{"$lt": note.UpdatedAt},
+		}).
+		SetUpdate(bson.M{
+			"$set": updatedNote,
+		}), nil
 }

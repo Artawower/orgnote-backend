@@ -3,6 +3,8 @@ definitions:
     properties:
       content:
         type: string
+      createdAt:
+        type: string
       filePath:
         items:
           type: string

@@ -217,15 +217,15 @@ func (n *NoteService) DeleteNotes(ids []string) error {
 	return n.noteRepository.MarkNotesAsDeleted(ids)
 }
 
-func (n *NoteService) SyncNotes(notes []models.Note, timestamp time.Time, userID string) ([]models.Note, error) {
+func (n *NoteService) SyncNotes(notes []models.Note, timestamp time.Time, authorID string) ([]models.Note, error) {
 	my := true
 	filter := models.NoteFilter{
 		My:     &my,
 		From:   &timestamp,
-		UserID: &userID,
+		UserID: &authorID,
 	}
 
-	err := n.bulkUpdateOutdatedNotes(notes)
+	err := n.bulkUpdateOutdatedNotes(notes, authorID)
 
 	if err != nil {
 		return nil, err
@@ -241,13 +241,13 @@ func (n *NoteService) SyncNotes(notes []models.Note, timestamp time.Time, userID
 	return updatedNotes, nil
 }
 
-func (n *NoteService) bulkUpdateOutdatedNotes(notes []models.Note) error {
+func (n *NoteService) bulkUpdateOutdatedNotes(notes []models.Note, authorID string) error {
 	someNotesPresent := len(notes) > 0
 
 	if !someNotesPresent {
 		return nil
 	}
-	err := n.noteRepository.BulkUpdateOutdated(notes)
+	err := n.noteRepository.BulkUpdateOutdated(notes, authorID)
 	if err != nil {
 		return fmt.Errorf("note service: sync notes: could not update outdated notes: %v", err)
 	}

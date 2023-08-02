@@ -11,6 +11,7 @@ type CreatingNote struct {
 	Meta      models.NoteMeta `json:"meta" form:"meta"`
 	FilePath  []string        `json:"filePath" form:"filePath"`
 	UpdatedAt time.Time       `json:"updatedAt" form:"updatedAt"`
+	CreatedAt time.Time       `json:"createdAt" form:"createdAt"`
 }
 
 func mapCreatingNoteToNote(note CreatingNote) models.Note {
@@ -20,6 +21,7 @@ func mapCreatingNoteToNote(note CreatingNote) models.Note {
 		Meta:      note.Meta,
 		FilePath:  note.FilePath,
 		UpdatedAt: note.UpdatedAt,
+		CreatedAt: note.CreatedAt,
 	}
 }
 

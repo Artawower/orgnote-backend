@@ -775,6 +775,9 @@ const docTemplate = `{
                 "content": {
                     "type": "string"
                 },
+                "createdAt": {
+                    "type": "string"
+                },
                 "filePath": {
                     "type": "array",
                     "items": {

@@ -180,7 +180,7 @@ func (h *NoteHandlers) UpsertNotes(c *fiber.Ctx) error {
 	notesForCreate := []CreatingNote{}
 
 	if err := c.BodyParser(&notesForCreate); err != nil {
-		log.Error().Err(err).Msg("note handler: upsert notes: parse body")
+		log.Error().Err(err).Msgf("note handler: upsert notes: parse body: %v", err)
 		return c.Status(http.StatusBadRequest).JSON(NewHttpError[any]("Couldn't parse body, something went wrong", nil))
 	}
 
