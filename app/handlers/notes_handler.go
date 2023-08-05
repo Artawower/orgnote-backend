@@ -80,36 +80,32 @@ func (h *NoteHandlers) DeleteNotes(c *fiber.Ctx) error {
 	return nil
 }
 
-// GetNote godoc
-// @Summary      Get notes
-// @Description  Get all notes with optional filter
-// @Tags         notes
-// @Accept       json
-// @Produce      json
-// @Param        filter       query  models.NoteFilter false "Filter"
-// @Success      200  {object}  HttpResponse[[]models.PublicNote, models.Pagination]
-// @Failure      400  {object}  HttpError[any]
-// @Failure      404  {object}  HttpError[any]
-// @Failure      500  {object}  HttpError[any]
-// @Router       /notes/  [get]
-func (h *NoteHandlers) GetNotes(c *fiber.Ctx) error {
-	defaultLimit := int64(10)
-	defaultOffset := int64(0)
+type GetNotesFilter struct {
+	Limit          *int64     `json:"limit" extensions:"x-order=1"`
+	Offset         *int64     `json:"offset" extensions:"x-order=2"`
+	UserID         *string    `json:"userId" extensions:"x-order=3"` // User id of which notes to load
+	SearchText     *string    `json:"searchText" extensions:"x-order=4"`
+	My             *bool      `json:"my" extensions:"x-order=5"` // Load all my own notes (user will be used from provided token)
+	From           *time.Time `json:"from" extensions:"x-order=6"`
+	IncludeDeleted *bool      `json:"includeDeleted" extensions:"x-order=7"`
+}
 
-	filter := new(models.NoteFilter)
+var (
+	defaultLimit  = int64(10)
+	defaultOffset = int64(0)
+)
 
-	if err := c.QueryParser(filter); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(NewHttpError("Incorrect input query", err))
-	}
-
-	ctxUser := c.Locals("user")
-
-	if filter.My != nil && *filter.My && ctxUser != nil {
-		userId := ctxUser.(*models.User).ID.Hex()
+func buildNotesFilter(user *models.User, filter *GetNotesFilter) *models.NoteFilter {
+	if user != nil && filter.My != nil && *filter.My {
+		userId := user.ID.Hex()
 		filter.UserID = &userId
 	}
 
-	includePrivateNotes := filter.UserID != nil && ctxUser != nil && ctxUser.(*models.User).ID.Hex() == *filter.UserID
+	var published *bool
+	if filter.UserID == nil || user != nil && *filter.UserID != user.ID.Hex() {
+		pub := true
+		published = &pub
+	}
 
 	if filter.Limit == nil {
 		filter.Limit = &defaultLimit
@@ -119,7 +115,42 @@ func (h *NoteHandlers) GetNotes(c *fiber.Ctx) error {
 		filter.Offset = &defaultOffset
 	}
 
-	paginatedNotes, err := h.noteService.GetNotes(includePrivateNotes, *filter)
+	return &models.NoteFilter{
+		Limit:          filter.Limit,
+		Offset:         filter.Offset,
+		UserID:         filter.UserID,
+		SearchText:     filter.SearchText,
+		Published:      published,
+		From:           filter.From,
+		IncludeDeleted: filter.IncludeDeleted,
+	}
+}
+
+// GetNote godoc
+// @Summary      Get notes
+// @Description  Get all notes with optional filter
+// @Tags         notes
+// @Accept       json
+// @Produce      json
+// @Param        filter       query  GetNotesFilter false "Filter"
+// @Success      200  {object}  HttpResponse[[]models.PublicNote, models.Pagination]
+// @Failure      400  {object}  HttpError[any]
+// @Failure      404  {object}  HttpError[any]
+// @Failure      500  {object}  HttpError[any]
+// @Router       /notes/  [get]
+func (h *NoteHandlers) GetNotes(c *fiber.Ctx) error {
+	// TODO: expose filter building option
+	filter := new(GetNotesFilter)
+
+	if err := c.QueryParser(filter); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(NewHttpError("Incorrect input query", err))
+	}
+
+	ctxUser := c.Locals("user")
+
+	serviceFilter := buildNotesFilter(ctxUser.(*models.User), filter)
+
+	paginatedNotes, err := h.noteService.GetNotes(*serviceFilter)
 	if err != nil {
 		log.Info().Err(err).Msgf("note handler: get notes: get %v", err)
 		return c.Status(http.StatusInternalServerError).JSON(NewHttpError[any]("Couldn't get notes, something went wrong", nil))
@@ -221,8 +252,14 @@ func (h *NoteHandlers) GetNoteGraph(c *fiber.Ctx) error {
 }
 
 type SyncNotesRequest struct {
-	Timestamp time.Time      `json:"timestamp"`
-	Notes     []CreatingNote `json:"notes"`
+	Timestamp       time.Time      `json:"timestamp"`
+	Notes           []CreatingNote `json:"notes"`
+	DeletedNotesIDs []string       `json:"deletedNotesIds"`
+}
+
+type SyncNotesResponse struct {
+	Notes           []models.PublicNote `json:"notes"`
+	DeletedNotesIDs []string            `json:"deletedNotesIds"`
 }
 
 // SyncNotes godoc
@@ -254,7 +291,11 @@ func (h *NoteHandlers) SyncNotes(c *fiber.Ctx) error {
 	}
 	publicNotes := mapNotesToPublicNotes(notes, *ctxUser.(*models.User))
 
-	return c.Status(http.StatusOK).JSON(NewHttpResponse[[]models.PublicNote, any](publicNotes, nil))
+	syncNotesResponse := SyncNotesResponse{
+		Notes: publicNotes,
+	}
+
+	return c.Status(http.StatusOK).JSON(NewHttpResponse[SyncNotesResponse, any](syncNotesResponse, nil))
 }
 
 func RegisterNoteHandler(app fiber.Router, noteService *services.NoteService, authMiddleware func(*fiber.Ctx) error) {

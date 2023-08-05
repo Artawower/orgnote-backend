@@ -6,6 +6,8 @@ import (
 	"moonbrain/app/repositories"
 	"moonbrain/app/tools"
 	"time"
+
+	"github.com/rs/zerolog/log"
 )
 
 type NoteService struct {
@@ -72,13 +74,13 @@ func (a *NoteService) BulkCreateOrUpdate(userID string, notes []models.Note) err
 	return nil
 }
 
-func (a *NoteService) GetNotes(includePrivate bool, filter models.NoteFilter) (*models.Paginated[models.PublicNote], error) {
-	notes, err := a.noteRepository.GetNotes(includePrivate, filter)
+func (a *NoteService) GetNotes(filter models.NoteFilter) (*models.Paginated[models.PublicNote], error) {
+	notes, err := a.noteRepository.GetNotes(filter)
 	if err != nil {
 		return nil, fmt.Errorf("note service: get notes: could not get notes: %v", err)
 	}
 
-	count, err := a.noteRepository.NotesCount(includePrivate, filter)
+	count, err := a.noteRepository.NotesCount(filter)
 	if err != nil {
 		return nil, fmt.Errorf("note service: upload images: get notes count: %v", err)
 	}
@@ -218,9 +220,7 @@ func (n *NoteService) DeleteNotes(ids []string) error {
 }
 
 func (n *NoteService) SyncNotes(notes []models.Note, timestamp time.Time, authorID string) ([]models.Note, error) {
-	my := true
 	filter := models.NoteFilter{
-		My:     &my,
 		From:   &timestamp,
 		UserID: &authorID,
 	}
@@ -231,7 +231,8 @@ func (n *NoteService) SyncNotes(notes []models.Note, timestamp time.Time, author
 		return nil, err
 	}
 
-	notesFromLastSync, err := n.noteRepository.GetNotes(true, filter)
+	notesFromLastSync, err := n.noteRepository.GetNotes(filter)
+
 	if err != nil {
 		return nil, fmt.Errorf("note service: sync notes: could not get notes: %v", err)
 	}
@@ -243,6 +244,8 @@ func (n *NoteService) SyncNotes(notes []models.Note, timestamp time.Time, author
 
 func (n *NoteService) bulkUpdateOutdatedNotes(notes []models.Note, authorID string) error {
 	someNotesPresent := len(notes) > 0
+
+	log.Info().Msgf("note service: notes length: %v", len(notes))
 
 	if !someNotesPresent {
 		return nil

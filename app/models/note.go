@@ -37,16 +37,16 @@ type NoteMeta struct {
 }
 
 type Note struct {
-	ID          string     `json:"id" bson:"_id"`
-	AuthorID    string     `json:"authorId" bson:"authorId"`
-	Content     string     `json:"content" bson:"content"`
-	Meta        NoteMeta   `json:"meta" bson:"meta"`
-	CreatedAt   time.Time  `json:"createdAt" bson:"createdAt"`
-	UpdatedAt   time.Time  `json:"updatedAt" bson:"updatedAt"`
-	FilePath    []string   `json:"filePath" bson:"filePath"`
-	Views       int        `json:"views" bson:"views"`
-	Likes       int        `json:"likes" bson:"likes"`
-	DeletedTime *time.Time `json:"deletedTime" bson:"deletedTime"`
+	ID        string     `json:"id" bson:"_id"`
+	AuthorID  string     `json:"authorId" bson:"authorId"`
+	Content   string     `json:"content" bson:"content"`
+	Meta      NoteMeta   `json:"meta" bson:"meta"`
+	CreatedAt time.Time  `json:"createdAt" bson:"createdAt"`
+	UpdatedAt time.Time  `json:"updatedAt" bson:"updatedAt"`
+	FilePath  []string   `json:"filePath" bson:"filePath"`
+	Views     int        `json:"views" bson:"views"`
+	Likes     int        `json:"likes" bson:"likes"`
+	DeletedAt *time.Time `json:"deletedAt" bson:"deletedAt"`
 }
 
 type PublicNote struct {
@@ -59,10 +59,11 @@ type PublicNote struct {
 }
 
 type NoteFilter struct {
-	Limit      *int64     `json:"limit" extensions:"x-order=1"`
-	Offset     *int64     `json:"offset" extensions:"x-order=2"`
-	UserID     *string    `json:"userId" extensions:"x-order=3"` // User id of which notes to load
-	SearchText *string    `json:"searchText" extensions:"x-order=4"`
-	My         *bool      `json:"my" extensions:"x-order=5"` // Load all my own notes (user will be used from provided token)
-	From       *time.Time `json:"from" extensions:"x-order=6"`
+	Limit          *int64     `json:"limit"`
+	Offset         *int64     `json:"offset"`
+	UserID         *string    `json:"userId"`
+	SearchText     *string    `json:"searchText"`
+	Published      *bool      `json:"my"`
+	From           *time.Time `json:"from" `
+	IncludeDeleted *bool      `json:"includeDeleted"`
 }

@@ -46,11 +46,14 @@ func (a *NoteRepository) initIndexes() {
 	log.Info().Msgf("note repository: created indexes: %v", name)
 }
 
-func (a *NoteRepository) GetNotes(includePrivate bool, f models.NoteFilter) ([]models.Note, error) {
+// TODO: master add includePrivate variable into note filters.
+func (a *NoteRepository) GetNotes(f models.NoteFilter) ([]models.Note, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	notes := []models.Note{}
-	filter := a.getNotesFilter(includePrivate, f, false)
+	// includeDeleted := false
+	// f.IncludeDeleted = &includeDeleted
+	filter := getNotesFilter(f)
 
 	limit, offset := a.getLimitOffset(f)
 	findOptions := options.FindOptions{
@@ -77,37 +80,11 @@ func (a *NoteRepository) GetNotes(includePrivate bool, f models.NoteFilter) ([]m
 	return notes, nil
 }
 
-func (a *NoteRepository) getNotesFilter(includePrivate bool, f models.NoteFilter, includeDeleted bool) bson.M {
-	orQuery := []bson.M{{"deletedAt": bson.M{"$exists": includeDeleted}}}
-	if !includeDeleted {
-		orQuery = append(orQuery, bson.M{"deletedAt": bson.M{"$eq": nil}})
-	}
-	filter := bson.M{
-		"$or": orQuery,
-	}
-	includeMy := f.My != nil && *f.My
-	if includePrivate == false && !includeMy {
-		filter["meta.published"] = true
-	}
-	if f.UserID != nil {
-		filter["authorId"] = *f.UserID
-	}
-
-	if f.From != nil {
-		filter["updatedAt"] = bson.M{"$gte": *f.From}
-	}
-
-	if f.SearchText != nil && *f.SearchText != "" {
-		filter["$text"] = bson.D{bson.E{Key: "$search", Value: *f.SearchText}}
-	}
-	return filter
-}
-
-func (a *NoteRepository) NotesCount(includePrivate bool, f models.NoteFilter) (int64, error) {
+func (a *NoteRepository) NotesCount(f models.NoteFilter) (int64, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	filters := a.getNotesFilter(includePrivate, f, false)
+	filters := getNotesFilter(f)
 	count, err := a.collection.CountDocuments(ctx, filters)
 	if err != nil {
 		return 0, fmt.Errorf("note repository: failed to get notes count: %v", err)
@@ -179,8 +156,8 @@ func (a *NoteRepository) getUpdateNote(note models.Note) bson.M {
 		"updatedAt": note.UpdatedAt,
 		"views":     note.Views,
 		"likes":     note.Likes,
-		"deletedAt": nil,
-		"filePath":  note.FilePath,
+		// "deletedAt": nil,
+		"filePath": note.FilePath,
 	}
 
 	return update
@@ -238,13 +215,13 @@ func (n *NoteRepository) MarkNotesAsDeleted(noteIds []string) error {
 	return nil
 }
 
-func (n *NoteRepository) BulkUpdateOutdated(nodes []models.Note, authorID string) error {
+func (n *NoteRepository) BulkUpdateOutdated(notes []models.Note, authorID string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	notesModel := []mongo.WriteModel{}
 
-	for _, note := range nodes {
+	for _, note := range notes {
 		model, err := n.getUpdateOutdatedModel(note, authorID)
 		if err != nil {
 			return fmt.Errorf("note repository: failed to get update outdated model: %v", err)
@@ -279,6 +256,7 @@ func (n *NoteRepository) getUpdateOutdatedModel(note models.Note, authorID strin
 			"updatedAt": bson.M{"$lt": note.UpdatedAt},
 		}).
 		SetUpdate(bson.M{
-			"$set": updatedNote,
+			"$set":   updatedNote,
+			"$unset": bson.M{"deletedAt": nil},
 		}), nil
 }

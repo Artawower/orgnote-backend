@@ -11,6 +11,7 @@ require (
 	github.com/shareed2k/goth_fiber v0.2.9
 	github.com/stretchr/testify v1.8.4
 	github.com/swaggo/swag v1.16.1
+	github.com/thoas/go-funk v0.9.3
 	go.mongodb.org/mongo-driver v1.12.0
 )
 

@@ -448,6 +448,12 @@ const docTemplate = `{
                         "x-order": "6",
                         "name": "from",
                         "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "x-order": "7",
+                        "name": "includeDeleted",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -917,6 +923,12 @@ const docTemplate = `{
         "handlers.SyncNotesRequest": {
             "type": "object",
             "properties": {
+                "deletedNotesIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "notes": {
                     "type": "array",
                     "items": {

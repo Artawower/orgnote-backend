@@ -97,6 +97,10 @@ definitions:
     type: object
   handlers.SyncNotesRequest:
     properties:
+      deletedNotesIds:
+        items:
+          type: string
+        type: array
       notes:
         items:
           $ref: '#/definitions/handlers.CreatingNote'
@@ -529,6 +533,10 @@ paths:
         name: from
         type: string
         x-order: "6"
+      - in: query
+        name: includeDeleted
+        type: boolean
+        x-order: "7"
       produces:
       - application/json
       responses:
