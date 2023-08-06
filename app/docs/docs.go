@@ -658,7 +658,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/handlers.HttpResponse-array_models_PublicNote-any"
+                            "$ref": "#/definitions/handlers.HttpResponse-handlers_SyncNotesResponse-any"
                         }
                     },
                     "400": {
@@ -801,6 +801,20 @@ const docTemplate = `{
                 }
             }
         },
+        "handlers.DeletedNote": {
+            "type": "object",
+            "properties": {
+                "filePath": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "id": {
+                    "type": "string"
+                }
+            }
+        },
         "handlers.HttpError-any": {
             "type": "object",
             "properties": {
@@ -824,18 +838,6 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/models.APIToken"
-                    }
-                },
-                "meta": {}
-            }
-        },
-        "handlers.HttpResponse-array_models_PublicNote-any": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.PublicNote"
                     }
                 },
                 "meta": {}
@@ -872,6 +874,15 @@ const docTemplate = `{
             "properties": {
                 "data": {
                     "$ref": "#/definitions/handlers.OAuthRedirectData"
+                },
+                "meta": {}
+            }
+        },
+        "handlers.HttpResponse-handlers_SyncNotesResponse-any": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/handlers.SyncNotesResponse"
                 },
                 "meta": {}
             }
@@ -937,6 +948,23 @@ const docTemplate = `{
                 },
                 "timestamp": {
                     "type": "string"
+                }
+            }
+        },
+        "handlers.SyncNotesResponse": {
+            "type": "object",
+            "properties": {
+                "deletedNotes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handlers.DeletedNote"
+                    }
+                },
+                "notes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.PublicNote"
+                    }
                 }
             }
         },

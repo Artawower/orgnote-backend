@@ -56,7 +56,7 @@ func (a *NoteService) BulkCreateOrUpdate(userID string, notes []models.Note) err
 			Likes:     0,
 		})
 		tags = append(tags, note.Meta.FileTags...)
-		go a.udpateNoteGraph(userID, note)
+		go a.updateNoteGraph(userID, note)
 	}
 	// TODO: master add transaction here
 	err := a.noteRepository.BulkUpsert(userID, filteredNotesWithID)
@@ -104,6 +104,22 @@ func (a *NoteService) GetNotes(filter models.NoteFilter) (*models.Paginated[mode
 		Total:  count,
 		Data:   publicNotes,
 	}, nil
+}
+
+func (n *NoteService) GetDeletedNotes(userID string, deletedAt time.Time) ([]models.Note, error) {
+	filter := models.NoteFilter{
+		UserID:    &userID,
+		DeletedAt: &deletedAt,
+	}
+
+	log.Info().Msgf("note service: get deleted notes: deleted at: %v", deletedAt)
+	notes, err := n.noteRepository.GetNotes(filter)
+
+	if err != nil {
+		return nil, fmt.Errorf("note service: get deleted notes: could not get notes: %v", err)
+	}
+
+	return notes, nil
 }
 
 func (a *NoteService) getNotesUsers(notes []models.Note) (map[string]models.User, error) {
@@ -160,7 +176,7 @@ func (a *NoteService) GetNoteGraph(userID string) (*models.NoteGraph, error) {
 	return graph, nil
 }
 
-func (a *NoteService) udpateNoteGraph(userID string, note models.Note) error {
+func (a *NoteService) updateNoteGraph(userID string, note models.Note) error {
 
 	currentNoteNode := a.getGraphNoteNode(note)
 	relatedLinks := a.getRelatedLinks(note)
@@ -219,16 +235,29 @@ func (n *NoteService) DeleteNotes(ids []string) error {
 	return n.noteRepository.MarkNotesAsDeleted(ids)
 }
 
-func (n *NoteService) SyncNotes(notes []models.Note, timestamp time.Time, authorID string) ([]models.Note, error) {
+// TODO: master signature is too complex. Create a struct for params.
+func (n *NoteService) SyncNotes(
+	notes []models.Note,
+	deletedNotesIDs []string,
+	timestamp time.Time,
+	authorID string,
+) ([]models.Note, error) {
 	filter := models.NoteFilter{
-		From:   &timestamp,
-		UserID: &authorID,
+		From:           &timestamp,
+		UserID:         &authorID,
+		IncludeDeleted: new(bool),
 	}
 
 	err := n.bulkUpdateOutdatedNotes(notes, authorID)
 
 	if err != nil {
 		return nil, err
+	}
+
+	err = n.noteRepository.DeleteOutdatedNotes(deletedNotesIDs, authorID, timestamp)
+
+	if err != nil {
+		return nil, fmt.Errorf("note service: sync notes: could not delete outdated notes: %v", err)
 	}
 
 	notesFromLastSync, err := n.noteRepository.GetNotes(filter)

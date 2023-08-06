@@ -16,6 +16,15 @@ definitions:
       updatedAt:
         type: string
     type: object
+  handlers.DeletedNote:
+    properties:
+      filePath:
+        items:
+          type: string
+        type: array
+      id:
+        type: string
+    type: object
   handlers.HttpError-any:
     properties:
       data: {}
@@ -32,14 +41,6 @@ definitions:
       data:
         items:
           $ref: '#/definitions/models.APIToken'
-        type: array
-      meta: {}
-    type: object
-  handlers.HttpResponse-array_models_PublicNote-any:
-    properties:
-      data:
-        items:
-          $ref: '#/definitions/models.PublicNote'
         type: array
       meta: {}
     type: object
@@ -64,6 +65,12 @@ definitions:
     properties:
       data:
         $ref: '#/definitions/handlers.OAuthRedirectData'
+      meta: {}
+    type: object
+  handlers.HttpResponse-handlers_SyncNotesResponse-any:
+    properties:
+      data:
+        $ref: '#/definitions/handlers.SyncNotesResponse'
       meta: {}
     type: object
   handlers.HttpResponse-models_APIToken-any:
@@ -107,6 +114,17 @@ definitions:
         type: array
       timestamp:
         type: string
+    type: object
+  handlers.SyncNotesResponse:
+    properties:
+      deletedNotes:
+        items:
+          $ref: '#/definitions/handlers.DeletedNote'
+        type: array
+      notes:
+        items:
+          $ref: '#/definitions/models.PublicNote'
+        type: array
     type: object
   models.APIToken:
     properties:
@@ -706,7 +724,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/handlers.HttpResponse-array_models_PublicNote-any'
+            $ref: '#/definitions/handlers.HttpResponse-handlers_SyncNotesResponse-any'
         "400":
           description: Bad Request
           schema:

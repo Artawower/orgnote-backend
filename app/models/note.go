@@ -66,4 +66,5 @@ type NoteFilter struct {
 	Published      *bool      `json:"my"`
 	From           *time.Time `json:"from" `
 	IncludeDeleted *bool      `json:"includeDeleted"`
+	DeletedAt      *time.Time `json:"deletedAt"`
 }

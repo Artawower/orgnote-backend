@@ -8,6 +8,11 @@ import (
 )
 
 func addDeletedFilter(filter bson.M, modelFilter models.NoteFilter) {
+	if modelFilter.DeletedAt != nil {
+		t := true
+		modelFilter.IncludeDeleted = &t
+		return
+	}
 	if modelFilter.IncludeDeleted == nil {
 		modelFilter.IncludeDeleted = new(bool)
 	}
@@ -56,11 +61,19 @@ func addSearchFilter(filter *bson.M, modelFilter models.NoteFilter) {
 	}
 }
 
+func addDeletedAtFilter(filter bson.M, modelFilter models.NoteFilter) {
+	if modelFilter.DeletedAt == nil {
+		return
+	}
+	filter["deletedAt"] = bson.M{"$gte": *modelFilter.DeletedAt}
+}
+
 var filterBuilders = []func(filter bson.M, modelFilter models.NoteFilter){
 	addDeletedFilter,
 	addPublishedFilter,
 	addAuthorIdFilter,
 	addUpdatedTimeFilter,
+	addDeletedAtFilter,
 }
 
 func getNotesFilter(modelFilter models.NoteFilter) bson.M {

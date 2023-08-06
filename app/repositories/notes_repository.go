@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"moonbrain/app/models"
-	"reflect"
 	"time"
 
 	"github.com/rs/zerolog/log"
@@ -46,14 +45,13 @@ func (a *NoteRepository) initIndexes() {
 	log.Info().Msgf("note repository: created indexes: %v", name)
 }
 
-// TODO: master add includePrivate variable into note filters.
 func (a *NoteRepository) GetNotes(f models.NoteFilter) ([]models.Note, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	notes := []models.Note{}
-	// includeDeleted := false
-	// f.IncludeDeleted = &includeDeleted
 	filter := getNotesFilter(f)
+
+	log.Info().Msgf("note repository: get notes: filter: %v", filter)
 
 	limit, offset := a.getLimitOffset(f)
 	findOptions := options.FindOptions{
@@ -190,8 +188,6 @@ func (a *NoteRepository) GetNote(id string, authorID string) (*models.Note, erro
 	if err != nil {
 		return nil, fmt.Errorf("note repository: failed to decode note: %v", err)
 	}
-	log.Info().Msgf("note repository: got note: %v", reflect.TypeOf(note.Content).Name())
-
 	return &note, nil
 }
 
@@ -259,4 +255,37 @@ func (n *NoteRepository) getUpdateOutdatedModel(note models.Note, authorID strin
 			"$set":   updatedNote,
 			"$unset": bson.M{"deletedAt": nil},
 		}), nil
+}
+
+func (n *NoteRepository) DeleteOutdatedNotes(noteIDs []string, authorID string, deletedTime time.Time) error {
+	if len(noteIDs) == 0 {
+		return nil
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	notesModel := []mongo.WriteModel{}
+
+	for _, noteID := range noteIDs {
+		model := mongo.NewUpdateOneModel().
+			SetFilter(bson.M{
+				"_id":       noteID,
+				"authorId":  authorID,
+				"updatedAt": bson.M{"$lt": deletedTime},
+			}).
+			SetUpdate(bson.M{
+				"$set":   bson.M{"deletedAt": deletedTime},
+				"$unset": bson.M{"updatedAt": deletedTime},
+			})
+		notesModel = append(notesModel, model)
+	}
+
+	_, err := n.collection.BulkWrite(ctx, notesModel)
+
+	if err != nil {
+		return fmt.Errorf("note repository: failed to bulk update notes: %v", err)
+	}
+
+	return nil
+
 }

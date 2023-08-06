@@ -11,6 +11,7 @@ import (
 
 	fiber "github.com/gofiber/fiber/v2"
 	"github.com/rs/zerolog/log"
+	"github.com/thoas/go-funk"
 )
 
 type NoteHandlers struct {
@@ -257,9 +258,14 @@ type SyncNotesRequest struct {
 	DeletedNotesIDs []string       `json:"deletedNotesIds"`
 }
 
+type DeletedNote struct {
+	ID       string   `json:"id"`
+	FilePath []string `json:"filePath"`
+}
+
 type SyncNotesResponse struct {
-	Notes           []models.PublicNote `json:"notes"`
-	DeletedNotesIDs []string            `json:"deletedNotesIds"`
+	Notes        []models.PublicNote `json:"notes"`
+	DeletedNotes []DeletedNote       `json:"deletedNotes"`
 }
 
 // SyncNotes godoc
@@ -269,30 +275,50 @@ type SyncNotesResponse struct {
 // @Accept       json
 // @Produce      json
 // @Param        data  body     SyncNotesRequest  true  "Sync notes request"
-// @Success      200  {object}  HttpResponse[[]models.PublicNote, any]
+// @Success      200  {object}  HttpResponse[SyncNotesResponse, any]
 // @Failure      400  {object}  HttpError[any]
 // @Failure      404  {object}  HttpError[any]
 // @Failure      500  {object}  HttpError[any]
 // @Router       /notes/sync  [post]
 func (h *NoteHandlers) SyncNotes(c *fiber.Ctx) error {
 	ctxUser := c.Locals("user")
-	userId := ctxUser.(*models.User).ID.Hex()
+	userID := ctxUser.(*models.User).ID.Hex()
 
-	rqst := new(SyncNotesRequest)
-	if err := c.BodyParser(rqst); err != nil {
+	// TODO: master validator!
+	params := new(SyncNotesRequest)
+	if err := c.BodyParser(params); err != nil {
 		log.Info().Msgf("note handler: sync notes: parse body: %v", err)
 		return fmt.Errorf("can't parse body")
 	}
-	notesToSync := mapCreatingNotesToNotes(rqst.Notes)
-	notes, err := h.noteService.SyncNotes(notesToSync, rqst.Timestamp, userId)
+	notesToSync := mapCreatingNotesToNotes(params.Notes)
+	notes, err := h.noteService.SyncNotes(notesToSync, params.DeletedNotesIDs, params.Timestamp, userID)
 	if err != nil {
 		log.Info().Err(err).Msg("note handler: sync notes")
 		return c.Status(http.StatusInternalServerError).JSON(NewHttpError[any]("Couldn't sync notes", nil))
 	}
 	publicNotes := mapNotesToPublicNotes(notes, *ctxUser.(*models.User))
 
+	deletedNotes, err := h.noteService.GetDeletedNotes(userID, params.Timestamp)
+
+	log.Info().Msgf("deleted notes: %v", funk.Map(deletedNotes, func(note models.Note) string {
+		return note.ID
+	}))
+
+	deletedNotesForSync := (funk.Map(deletedNotes, func(note models.Note) DeletedNote {
+		return DeletedNote{
+			ID:       note.ID,
+			FilePath: note.FilePath,
+		}
+	})).([]DeletedNote)
+
+	if err != nil {
+		log.Info().Err(err).Msg("note handler: sync notes")
+		return c.Status(http.StatusInternalServerError).JSON(NewHttpError[any]("Couldn't sync notes", nil))
+	}
+
 	syncNotesResponse := SyncNotesResponse{
-		Notes: publicNotes,
+		Notes:        publicNotes,
+		DeletedNotes: deletedNotesForSync,
 	}
 
 	return c.Status(http.StatusOK).JSON(NewHttpResponse[SyncNotesResponse, any](syncNotesResponse, nil))
