@@ -3,6 +3,8 @@ package handlers
 import (
 	"moonbrain/app/models"
 	"time"
+
+	"github.com/thoas/go-funk"
 )
 
 type CreatingNote struct {
@@ -32,4 +34,14 @@ func mapCreatingNotesToNotes(notes []CreatingNote) (mappedNotes []models.Note) {
 		mappedNotes = append(mappedNotes, mapCreatingNoteToNote(n))
 	}
 	return
+}
+
+func mapNoteToDeletedNote(note models.Note) DeletedNote {
+	return DeletedNote{
+		ID:       note.ID,
+		FilePath: note.FilePath,
+	}
+}
+func mapNotesToDeletedNotes(notes []models.Note) (mappedNotes []DeletedNote) {
+	return (funk.Map(notes, mapNoteToDeletedNote)).([]DeletedNote)
 }

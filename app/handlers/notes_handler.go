@@ -140,9 +140,7 @@ func buildNotesFilter(user *models.User, filter *GetNotesFilter) *models.NoteFil
 // @Failure      500  {object}  HttpError[any]
 // @Router       /notes/  [get]
 func (h *NoteHandlers) GetNotes(c *fiber.Ctx) error {
-	// TODO: expose filter building option
 	filter := new(GetNotesFilter)
-
 	if err := c.QueryParser(filter); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(NewHttpError("Incorrect input query", err))
 	}
@@ -156,6 +154,7 @@ func (h *NoteHandlers) GetNotes(c *fiber.Ctx) error {
 		log.Info().Err(err).Msgf("note handler: get notes: get %v", err)
 		return c.Status(http.StatusInternalServerError).JSON(NewHttpError[any]("Couldn't get notes, something went wrong", nil))
 	}
+
 	return c.Status(http.StatusOK).JSON(
 		NewHttpResponse(paginatedNotes.Data, models.Pagination{
 			Limit:  paginatedNotes.Limit,
@@ -292,33 +291,26 @@ func (h *NoteHandlers) SyncNotes(c *fiber.Ctx) error {
 	}
 	notesToSync := mapCreatingNotesToNotes(params.Notes)
 	notes, err := h.noteService.SyncNotes(notesToSync, params.DeletedNotesIDs, params.Timestamp, userID)
+
 	if err != nil {
 		log.Info().Err(err).Msg("note handler: sync notes")
 		return c.Status(http.StatusInternalServerError).JSON(NewHttpError[any]("Couldn't sync notes", nil))
 	}
-	publicNotes := mapNotesToPublicNotes(notes, *ctxUser.(*models.User))
 
 	deletedNotes, err := h.noteService.GetDeletedNotes(userID, params.Timestamp)
+
+	if err != nil {
+		log.Info().Err(err).Msg("note handler: sync notes")
+		return c.Status(http.StatusInternalServerError).JSON(NewHttpError[any]("Couldn't sync notes", nil))
+	}
 
 	log.Info().Msgf("deleted notes: %v", funk.Map(deletedNotes, func(note models.Note) string {
 		return note.ID
 	}))
 
-	deletedNotesForSync := (funk.Map(deletedNotes, func(note models.Note) DeletedNote {
-		return DeletedNote{
-			ID:       note.ID,
-			FilePath: note.FilePath,
-		}
-	})).([]DeletedNote)
-
-	if err != nil {
-		log.Info().Err(err).Msg("note handler: sync notes")
-		return c.Status(http.StatusInternalServerError).JSON(NewHttpError[any]("Couldn't sync notes", nil))
-	}
-
 	syncNotesResponse := SyncNotesResponse{
-		Notes:        publicNotes,
-		DeletedNotes: deletedNotesForSync,
+		Notes:        mapNotesToPublicNotes(notes, *ctxUser.(*models.User)),
+		DeletedNotes: mapNotesToDeletedNotes(deletedNotes),
 	}
 
 	return c.Status(http.StatusOK).JSON(NewHttpResponse[SyncNotesResponse, any](syncNotesResponse, nil))
