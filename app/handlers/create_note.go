@@ -18,27 +18,25 @@ type CreatingNote struct {
 
 func mapCreatingNoteToNote(note CreatingNote) models.Note {
 	return models.Note{
-		ID:        note.ID,
-		Content:   note.Content,
-		Meta:      note.Meta,
-		FilePath:  note.FilePath,
-		UpdatedAt: note.UpdatedAt,
-		CreatedAt: note.CreatedAt,
+		ExternalID: note.ID,
+		Content:    note.Content,
+		Meta:       note.Meta,
+		FilePath:   note.FilePath,
+		UpdatedAt:  note.UpdatedAt,
+		CreatedAt:  note.CreatedAt,
 	}
 }
 
 func mapCreatingNotesToNotes(notes []CreatingNote) (mappedNotes []models.Note) {
-
-	mappedNotes = make([]models.Note, 0, len(notes))
-	for _, n := range notes {
-		mappedNotes = append(mappedNotes, mapCreatingNoteToNote(n))
-	}
+	mappedNotes = (funk.Map(notes, func(n CreatingNote) models.Note {
+		return mapCreatingNoteToNote(n)
+	})).([]models.Note)
 	return
 }
 
 func mapNoteToDeletedNote(note models.Note) DeletedNote {
 	return DeletedNote{
-		ID:       note.ID,
+		ID:       note.ExternalID,
 		FilePath: note.FilePath,
 	}
 }

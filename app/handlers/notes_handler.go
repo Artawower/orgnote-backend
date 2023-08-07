@@ -217,6 +217,8 @@ func (h *NoteHandlers) UpsertNotes(c *fiber.Ctx) error {
 
 	user := c.Locals("user").(*models.User)
 	notes := mapCreatingNotesToNotes(notesForCreate)
+	log.Info().Msgf("note handler: post note: create note id, note external id: %v", notes[0].ID, notes[0].ExternalID)
+
 	err := h.noteService.BulkCreateOrUpdate(user.ID.Hex(), notes)
 	if err != nil {
 		log.Warn().Msgf("note handlers: save notes: %v", err)
@@ -305,7 +307,7 @@ func (h *NoteHandlers) SyncNotes(c *fiber.Ctx) error {
 	}
 
 	log.Info().Msgf("deleted notes: %v", funk.Map(deletedNotes, func(note models.Note) string {
-		return note.ID
+		return note.ExternalID
 	}))
 
 	syncNotesResponse := SyncNotesResponse{

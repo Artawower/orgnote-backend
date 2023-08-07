@@ -17,7 +17,7 @@ func mapToPublicUserInfo(user *models.User) *models.PublicUser {
 func mapToPublicNote(note *models.Note, user *models.User) *models.PublicNote {
 	u := mapToPublicUserInfo(user)
 	return &models.PublicNote{
-		ID:        note.ID,
+		ID:        note.ExternalID,
 		Content:   note.Content,
 		Meta:      note.Meta,
 		FilePath:  note.FilePath,

@@ -2,6 +2,8 @@ package models
 
 import (
 	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type NoteHeading struct {
@@ -37,20 +39,21 @@ type NoteMeta struct {
 }
 
 type Note struct {
-	ID        string     `json:"id" bson:"_id"`
-	AuthorID  string     `json:"authorId" bson:"authorId"`
-	Content   string     `json:"content" bson:"content"`
-	Meta      NoteMeta   `json:"meta" bson:"meta"`
-	CreatedAt time.Time  `json:"createdAt" bson:"createdAt"`
-	UpdatedAt time.Time  `json:"updatedAt" bson:"updatedAt"`
-	FilePath  []string   `json:"filePath" bson:"filePath"`
-	Views     int        `json:"views" bson:"views"`
-	Likes     int        `json:"likes" bson:"likes"`
-	DeletedAt *time.Time `json:"deletedAt" bson:"deletedAt"`
+	ID         primitive.ObjectID `json:"id" bson:"_id"`                // Generated ID for public notes
+	ExternalID string             `json:"externalId" bson:"externalId"` // Real note id. From source.
+	AuthorID   string             `json:"authorId" bson:"authorId"`
+	Content    string             `json:"content" bson:"content"`
+	Meta       NoteMeta           `json:"meta" bson:"meta"`
+	CreatedAt  time.Time          `json:"createdAt" bson:"createdAt"`
+	UpdatedAt  time.Time          `json:"updatedAt" bson:"updatedAt"`
+	FilePath   []string           `json:"filePath" bson:"filePath"`
+	Views      int                `json:"views" bson:"views"`
+	Likes      int                `json:"likes" bson:"likes"`
+	DeletedAt  *time.Time         `json:"deletedAt" bson:"deletedAt"`
 }
 
 type PublicNote struct {
-	ID        string     `json:"id" bson:"_id"`
+	ID        string     `json:"id"` // It's externalID from original note
 	Author    PublicUser `json:"author" bson:"author"`
 	Content   string     `json:"content" bson:"content"`
 	Meta      NoteMeta   `json:"meta"`

@@ -40,20 +40,21 @@ func (a *NoteService) BulkCreateOrUpdate(userID string, notes []models.Note) err
 	filteredNotesWithID := []models.Note{}
 	tags := []string{}
 	for _, note := range notes {
-		if note.ID == "" {
+		if note.ExternalID == "" {
 			continue
 		}
 		note.AuthorID = userID
 		filteredNotesWithID = append(filteredNotesWithID, models.Note{
-			ID:        note.ID,
-			AuthorID:  userID,
-			Content:   note.Content,
-			Meta:      note.Meta,
-			CreatedAt: time.Now(),
-			UpdatedAt: time.Now(),
-			FilePath:  note.FilePath,
-			Views:     0,
-			Likes:     0,
+			ID:         note.ID,
+			ExternalID: note.ExternalID,
+			AuthorID:   userID,
+			Content:    note.Content,
+			Meta:       note.Meta,
+			CreatedAt:  time.Now(),
+			UpdatedAt:  time.Now(),
+			FilePath:   note.FilePath,
+			Views:      0,
+			Likes:      0,
 		})
 		tags = append(tags, note.Meta.FileTags...)
 		go a.updateNoteGraph(userID, note)
@@ -205,9 +206,9 @@ func (a *NoteService) getGraphNoteNode(note models.Note) models.GraphNoteNode {
 	}
 
 	return models.GraphNoteNode{
-		ID:     note.ID,
-		Title:  title,
-		Weight: weight,
+		ExternalID: note.ExternalID,
+		Title:      title,
+		Weight:     weight,
 	}
 }
 
@@ -223,7 +224,7 @@ func (a *NoteService) getRelatedLinks(note models.Note) (graphNoteLinks []models
 			continue
 		}
 		graphNoteLinks = append(graphNoteLinks, models.GraphNoteLink{
-			Source: note.ID,
+			Source: note.ExternalID,
 			Target: realID,
 		})
 	}

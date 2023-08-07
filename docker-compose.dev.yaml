@@ -13,8 +13,6 @@ services:
       - sb_mongo
     links:
       - sb_mongo
-    expose:
-      - 8000
     volumes:
       - ./:/app
       - ./media:/app/media

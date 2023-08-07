@@ -1,9 +1,9 @@
 package models
 
 type GraphNoteNode struct {
-	ID     string `json:"id" bson:"id"`
-	Title  string `json:"title" bson:"title"`
-	Weight int    `json:"weight" bson:"weight"`
+	ExternalID string `json:"externalId" bson:"externalId"`
+	Title      string `json:"title" bson:"title"`
+	Weight     int    `json:"weight" bson:"weight"`
 }
 
 type GraphNoteLink struct {

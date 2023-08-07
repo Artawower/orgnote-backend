@@ -987,7 +987,7 @@
         "models.GraphNoteNode": {
             "type": "object",
             "properties": {
-                "id": {
+                "externalId": {
                     "type": "string"
                 },
                 "title": {
@@ -1120,6 +1120,7 @@
                     }
                 },
                 "id": {
+                    "description": "It's externalID from original note",
                     "type": "string"
                 },
                 "meta": {

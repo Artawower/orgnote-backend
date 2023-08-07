@@ -996,7 +996,7 @@ const docTemplate = `{
         "models.GraphNoteNode": {
             "type": "object",
             "properties": {
-                "id": {
+                "externalId": {
                     "type": "string"
                 },
                 "title": {
@@ -1129,6 +1129,7 @@ const docTemplate = `{
                     }
                 },
                 "id": {
+                    "description": "It's externalID from original note",
                     "type": "string"
                 },
                 "meta": {

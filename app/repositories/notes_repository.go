@@ -9,6 +9,7 @@ import (
 
 	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -130,10 +131,10 @@ func (a *NoteRepository) BulkUpsert(userID string, notes []models.Note) error {
 	for i, note := range notes {
 		// TODO: master id should be unique for each user
 		notesModels[i] = mongo.NewUpdateOneModel().
-			SetFilter(bson.M{"_id": note.ID}).
+			SetFilter(bson.M{"externalId": note.ExternalID, "authorId": userID}).
 			SetUpdate(bson.M{
 				"$set":         a.getUpdateNote(note),
-				"$setOnInsert": bson.M{"createdAt": note.CreatedAt},
+				"$setOnInsert": bson.M{"_id": primitive.NewObjectID(), "createdAt": note.CreatedAt},
 			}).
 			SetUpsert(true)
 	}
@@ -147,13 +148,13 @@ func (a *NoteRepository) BulkUpsert(userID string, notes []models.Note) error {
 
 func (a *NoteRepository) getUpdateNote(note models.Note) bson.M {
 	update := bson.M{
-		"_id":       note.ID,
-		"authorId":  note.AuthorID,
-		"content":   note.Content,
-		"meta":      note.Meta,
-		"updatedAt": note.UpdatedAt,
-		"views":     note.Views,
-		"likes":     note.Likes,
+		"externalId": note.ExternalID,
+		"authorId":   note.AuthorID,
+		"content":    note.Content,
+		"meta":       note.Meta,
+		"updatedAt":  note.UpdatedAt,
+		"views":      note.Views,
+		"likes":      note.Likes,
 		// "deletedAt": nil,
 		"filePath": note.FilePath,
 	}
@@ -161,14 +162,14 @@ func (a *NoteRepository) getUpdateNote(note models.Note) bson.M {
 	return update
 }
 
-func (a *NoteRepository) GetNote(id string, authorID string) (*models.Note, error) {
+func (a *NoteRepository) GetNote(externalID string, authorID string) (*models.Note, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	res := a.collection.FindOne(
 		ctx,
 		bson.M{
-			"_id": id,
+			"externalId": externalID,
 			"$or": bson.A{
 				bson.M{"authorId": authorID},
 				bson.M{"meta.published": true}}})
@@ -235,7 +236,7 @@ func (n *NoteRepository) BulkUpdateOutdated(notes []models.Note, authorID string
 }
 
 func (n *NoteRepository) getUpdateOutdatedModel(note models.Note, authorID string) (mongo.WriteModel, error) {
-	savedNote, err := n.GetNote(note.ID, authorID)
+	savedNote, err := n.GetNote(note.ExternalID, authorID)
 	if err != nil {
 		return nil, fmt.Errorf("note repository: failed to get note: %v", err)
 	}

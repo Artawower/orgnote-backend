@@ -144,7 +144,7 @@ definitions:
     type: object
   models.GraphNoteNode:
     properties:
-      id:
+      externalId:
         type: string
       title:
         type: string
@@ -231,6 +231,7 @@ definitions:
           type: string
         type: array
       id:
+        description: It's externalID from original note
         type: string
       meta:
         $ref: '#/definitions/models.NoteMeta'
