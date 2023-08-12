@@ -75,7 +75,9 @@ func (a *NoteService) BulkCreateOrUpdate(userID string, notes []models.Note) err
 	return nil
 }
 
-func (a *NoteService) GetNotes(filter models.NoteFilter) (*models.Paginated[models.PublicNote], error) {
+// TODO: master return note. Move public note mapper into handlers.
+// Repository should return full model with author (not an author id)
+func (a *NoteService) GetNotes(filter models.NoteFilter, requestedUserId string) (*models.Paginated[models.PublicNote], error) {
 	notes, err := a.noteRepository.GetNotes(filter)
 	if err != nil {
 		return nil, fmt.Errorf("note service: get notes: could not get notes: %v", err)
@@ -95,7 +97,8 @@ func (a *NoteService) GetNotes(filter models.NoteFilter) (*models.Paginated[mode
 
 	for _, note := range notes {
 		u := usersMap[note.AuthorID]
-		publicNote := mapToPublicNote(&note, &u)
+		my := note.AuthorID == requestedUserId
+		publicNote := mapToPublicNote(&note, &u, my)
 		publicNotes = append(publicNotes, *publicNote)
 	}
 
@@ -165,7 +168,8 @@ func (a *NoteService) GetNote(id string, userID string) (*models.PublicNote, err
 	if err != nil {
 		return nil, fmt.Errorf("note service: get note: could not get user: %v", err)
 	}
-	publicNote := mapToPublicNote(note, user)
+	myNote := userID == note.AuthorID
+	publicNote := mapToPublicNote(note, user, myNote)
 	return publicNote, nil
 }
 

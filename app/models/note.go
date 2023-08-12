@@ -59,6 +59,7 @@ type PublicNote struct {
 	Meta      NoteMeta   `json:"meta"`
 	FilePath  []string   `json:"filePath"`
 	UpdatedAt time.Time  `json:"updatedAt"`
+	IsMy      bool       `json:"isMy"`
 }
 
 type NoteFilter struct {

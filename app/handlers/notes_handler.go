@@ -149,7 +149,12 @@ func (h *NoteHandlers) GetNotes(c *fiber.Ctx) error {
 
 	serviceFilter := buildNotesFilter(ctxUser.(*models.User), filter)
 
-	paginatedNotes, err := h.noteService.GetNotes(*serviceFilter)
+	var userID string
+	if ctxUser != nil {
+		userID = ctxUser.(*models.User).ID.Hex()
+	}
+
+	paginatedNotes, err := h.noteService.GetNotes(*serviceFilter, userID)
 	if err != nil {
 		log.Info().Err(err).Msgf("note handler: get notes: get %v", err)
 		return c.Status(http.StatusInternalServerError).JSON(NewHttpError[any]("Couldn't get notes, something went wrong", nil))

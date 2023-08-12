@@ -1132,6 +1132,9 @@ const docTemplate = `{
                     "description": "It's externalID from original note",
                     "type": "string"
                 },
+                "isMy": {
+                    "type": "boolean"
+                },
                 "meta": {
                     "$ref": "#/definitions/models.NoteMeta"
                 },

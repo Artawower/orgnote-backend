@@ -14,7 +14,7 @@ func mapToPublicUserInfo(user *models.User) *models.PublicUser {
 	}
 }
 
-func mapToPublicNote(note *models.Note, user *models.User) *models.PublicNote {
+func mapToPublicNote(note *models.Note, user *models.User, my bool) *models.PublicNote {
 	u := mapToPublicUserInfo(user)
 	return &models.PublicNote{
 		ID:        note.ExternalID,
@@ -23,5 +23,6 @@ func mapToPublicNote(note *models.Note, user *models.User) *models.PublicNote {
 		FilePath:  note.FilePath,
 		Author:    *u,
 		UpdatedAt: note.UpdatedAt,
+		IsMy:      my,
 	}
 }

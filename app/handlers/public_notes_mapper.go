@@ -22,6 +22,7 @@ func mapNoteToPublicNote(note models.Note, user models.User) models.PublicNote {
 		FilePath:  note.FilePath,
 		Author:    u,
 		UpdatedAt: note.UpdatedAt,
+		IsMy:      user.ID.Hex() == note.AuthorID,
 	}
 }
 
