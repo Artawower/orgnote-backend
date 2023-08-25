@@ -71,13 +71,15 @@ func (h *NoteHandlers) GetNote(c *fiber.Ctx) error {
 // @Failure      500  {object}  HttpError[any]
 // @Router       /notes [delete]
 func (h *NoteHandlers) DeleteNotes(c *fiber.Ctx) error {
+	user := c.Locals("user").(*models.User)
+
 	notesIDs := []string{}
 	err := c.BodyParser(&notesIDs)
 	if err != nil {
 		log.Info().Err(err).Msg("note handler: delete notes: body parser")
 		return c.Status(http.StatusBadRequest).JSON(NewHttpError[any]("Couldn't parse body, something went wrong", nil))
 	}
-	h.noteService.DeleteNotes(notesIDs)
+	h.noteService.DeleteNotes(notesIDs, user.ID.Hex())
 	return nil
 }
 
@@ -222,7 +224,7 @@ func (h *NoteHandlers) UpsertNotes(c *fiber.Ctx) error {
 
 	user := c.Locals("user").(*models.User)
 	notes := mapCreatingNotesToNotes(notesForCreate)
-	log.Info().Msgf("note handler: post note: create note id, note external id: %v", notes[0].ID, notes[0].ExternalID)
+	log.Info().Msgf("note handler: post note: create note id: %v, note external id: %v", notes[0].ID, notes[0].ExternalID)
 
 	err := h.noteService.BulkCreateOrUpdate(user.ID.Hex(), notes)
 	if err != nil {

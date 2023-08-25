@@ -236,8 +236,8 @@ func (a *NoteService) getRelatedLinks(note models.Note) (graphNoteLinks []models
 	return
 }
 
-func (n *NoteService) DeleteNotes(ids []string) error {
-	return n.noteRepository.MarkNotesAsDeleted(ids)
+func (n *NoteService) DeleteNotes(ids []string, authorID string) error {
+	return n.noteRepository.MarkNotesAsDeleted(ids, authorID)
 }
 
 // TODO: master signature is too complex. Create a struct for params.
