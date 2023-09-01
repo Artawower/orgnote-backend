@@ -29,7 +29,7 @@ func configDefault(config ...Config) Config {
 func NewAuthMiddleware() func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		rawUser := c.Locals("user")
-		if rawUser == nil {
+		if rawUser == (*models.User)(nil) {
 			return c.Status(fiber.StatusUnauthorized).JSON(NewHttpError[any](ErrInvalidToken, nil))
 		}
 		return c.Next()
