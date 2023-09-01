@@ -59,6 +59,7 @@ type PublicNote struct {
 	Meta      NoteMeta   `json:"meta"`
 	FilePath  []string   `json:"filePath"`
 	UpdatedAt time.Time  `json:"updatedAt"`
+	CreatedAt time.Time  `json:"createdAt"`
 	IsMy      bool       `json:"isMy"`
 }
 

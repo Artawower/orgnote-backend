@@ -226,6 +226,8 @@ definitions:
         $ref: '#/definitions/models.PublicUser'
       content:
         type: string
+      createdAt:
+        type: string
       filePath:
         items:
           type: string

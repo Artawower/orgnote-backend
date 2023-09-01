@@ -152,7 +152,7 @@ func (h *NoteHandlers) GetNotes(c *fiber.Ctx) error {
 	serviceFilter := buildNotesFilter(ctxUser.(*models.User), filter)
 
 	var userID string
-	if ctxUser != nil {
+	if ctxUser != (*models.User)(nil) {
 		userID = ctxUser.(*models.User).ID.Hex()
 	}
 

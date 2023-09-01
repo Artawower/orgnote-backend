@@ -54,11 +54,14 @@ func NewUserInjectMiddleware(config ...Config) func(*fiber.Ctx) error {
 		}
 
 		token := tools.ExtractBearerTokenFromCtx(c)
+
+		var user *models.User
+		var err error
+
 		if token != "" {
-			user, err := cfg.GetUser(token)
+			user, err = cfg.GetUser(token)
 			if err != nil {
 				log.Info().Msgf("auth middleware: GetUser: %s", err)
-				return c.Next()
 			}
 			c.Locals("user", user)
 		}
