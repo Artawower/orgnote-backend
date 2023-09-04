@@ -54,10 +54,14 @@ func (a *NoteRepository) GetNotes(f models.NoteFilter) ([]models.Note, error) {
 
 	log.Info().Msgf("note repository: get notes: filter: %v", filter)
 
-	limit, offset := a.getLimitOffset(f)
-	findOptions := options.FindOptions{
-		Skip:  &offset,
-		Limit: &limit,
+	findOptions := options.FindOptions{}
+
+	if f.Limit != nil {
+		findOptions.SetLimit(*f.Limit)
+	}
+
+	if f.Offset != nil {
+		findOptions.SetSkip(*f.Offset)
 	}
 
 	findOptions.SetSort(bson.D{bson.E{Key: "createdAt", Value: -1}})
@@ -89,19 +93,6 @@ func (a *NoteRepository) NotesCount(f models.NoteFilter) (int64, error) {
 		return 0, fmt.Errorf("note repository: failed to get notes count: %v", err)
 	}
 	return count, nil
-}
-
-func (a *NoteRepository) getLimitOffset(noteFilter models.NoteFilter) (int64, int64) {
-	limit := int64(10)
-	offset := int64(0)
-
-	if noteFilter.Limit != nil {
-		limit = *noteFilter.Limit
-	}
-	if noteFilter.Offset != nil {
-		offset = *noteFilter.Offset
-	}
-	return limit, offset
 }
 
 func (a *NoteRepository) AddNote(note models.Note) error {
