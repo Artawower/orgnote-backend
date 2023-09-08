@@ -58,20 +58,16 @@ func (u *UserService) DeleteToken(user *models.User, tokenID string) error {
 }
 
 func (u *UserService) CalculateUsedSpace() error {
-	users, err := u.userRepository.GetAll()
-	if err != nil {
-		return fmt.Errorf("user service: calculate used space: %v", err)
-	}
+	// users, err := u.userRepository.GetAll()
+	// if err != nil {
+	// 	return fmt.Errorf("user service: calculate used space: %v", err)
+	// }
 
-	for _, user := range users {
-		err = u.calculateUserUsedSpace(user)
-		if err != nil {
-			return fmt.Errorf("user service: calculate used space: %v", err)
-		}
-	}
+	// for _, user := range users {
+	// 	err = u.calculateUserUsedSpace(user)
+	// 	if err != nil {
+	// 		return fmt.Errorf("user service: calculate used space: %v", err)
+	// 	}
+	// }
 	return nil
 }
-
-// func (u *UserService) calculateUserUsedSpace(user *models.User) error {
-
-// }

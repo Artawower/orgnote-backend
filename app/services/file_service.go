@@ -2,24 +2,28 @@ package services
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"mime/multipart"
 	"moonbrain/app/models"
 	"moonbrain/app/repositories"
-	"path"
 	"sync"
 
 	"github.com/rs/zerolog/log"
 )
 
+type FileStorage interface {
+	Upload(fileName string, file io.Reader) error
+	CalculateFileSize(fileName ...string) (float64, error)
+}
+
 type FileService struct {
-	fileDir        string
+	fileStorage    FileStorage
 	userRepository *repositories.UserRepository
 }
 
-func NewFileService(fileDir string, userRepository *repositories.UserRepository) *FileService {
+func NewFileService(fileStorage FileStorage, userRepository *repositories.UserRepository) *FileService {
 	return &FileService{
-		fileDir:        fileDir,
+		fileStorage:    fileStorage,
 		userRepository: userRepository,
 	}
 }
@@ -34,7 +38,12 @@ func (a *FileService) UploadFiles(user *models.User, fileHeaders []*multipart.Fi
 			wg.Add(1)
 			defer wg.Done()
 
-			err := a.UploadFile(fh)
+			file, err := fh.Open()
+			defer file.Close()
+			if err != nil {
+				log.Err(err).Msgf("file service: upload images: could not open uploaded file: %v", fh.Filename)
+			}
+			err = a.fileStorage.Upload(fh.Filename, file)
 			if err != nil {
 				log.Err(err).Msg("file service: upload images: could not upload image")
 				// TODO: add aggregation of errors
@@ -47,24 +56,6 @@ func (a *FileService) UploadFiles(user *models.User, fileHeaders []*multipart.Fi
 	err := a.userRepository.AddFiles(user.ID.Hex(), fileNames)
 	if err != nil {
 		return fmt.Errorf("file service: upload images: could not add files to user: %v", err)
-	}
-	return nil
-}
-
-func (f *FileService) UploadFile(fileHeader *multipart.FileHeader) error {
-	file, err := fileHeader.Open()
-	if err != nil {
-		return fmt.Errorf("file service: upload image: could not open uploaded file: %v", err)
-	}
-	defer file.Close()
-
-	fileData, err := ioutil.ReadAll(file)
-	if err != nil {
-		return fmt.Errorf("file service: upload image: could not read uploaded file: %v", err)
-	}
-	err = ioutil.WriteFile(path.Join(f.fileDir, fileHeader.Filename), fileData, 0644)
-	if err != nil {
-		return fmt.Errorf("file service: upload image: could not write file: %v", err)
 	}
 	return nil
 }

@@ -73,6 +73,7 @@ func main() {
 	noteRepository := repositories.NewNoteRepository(database)
 	tagRepository := repositories.NewTagRepository(database)
 	userRepository := repositories.NewUserRepository(database)
+	fileStorage := infrastructure.NewFileStorage(config.MediaPath)
 
 	app.Use(cors.New())
 	app.Use(handlers.NewUserInjectMiddleware(handlers.Config{
@@ -85,7 +86,7 @@ func main() {
 	noteService := services.NewNoteService(noteRepository, userRepository, tagRepository)
 	tagService := services.NewTagService(tagRepository)
 	userService := services.NewUserService(userRepository)
-	fileService := services.NewFileService(config.MediaPath, userRepository)
+	fileService := services.NewFileService(fileStorage, userRepository)
 
 	// api.Use(handlers.NewAuthMiddleware())
 	// TODO: expose to external fn
