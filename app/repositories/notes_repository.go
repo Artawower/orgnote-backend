@@ -281,3 +281,44 @@ func (n *NoteRepository) DeleteOutdatedNotes(noteIDs []string, authorID string, 
 	return nil
 
 }
+
+type AvailableSpaceInfo struct {
+	UsedSpace int64    `bson:"usedSpace"`
+	Files     []string `bson:"files"`
+}
+
+func (n *NoteRepository) GetUsedSpaceInfo(userID string) (*AvailableSpaceInfo, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	matchStage := bson.D{{"$match", bson.M{"authorId": userID}}}
+	projectStage := bson.D{{
+		"$project", bson.M{
+			"size":   bson.M{"$bsonSize": "$$ROOT"},
+			"images": "$meta.images",
+		},
+	}}
+	unwindStage := bson.D{{"$unwind", bson.M{"path": "$images", "preserveNullAndEmptyArrays": false}}}
+	groupStage := bson.D{{
+		"$group", bson.M{
+			"_id":       nil,
+			"usedSpace": bson.M{"$sum": "$size"},
+			"files":     bson.M{"$addToSet": "$images"},
+		},
+	}}
+
+	cur, err := n.collection.Aggregate(ctx, mongo.Pipeline{matchStage, projectStage, unwindStage, groupStage})
+	if err != nil {
+		return nil, fmt.Errorf("note repository: get used space info: failed to aggregate: %v", err)
+	}
+
+	var res AvailableSpaceInfo
+	if cur.Next(ctx) {
+		err := cur.Decode(&res)
+		if err != nil {
+			return nil, fmt.Errorf("note repository: get used space info: failed to decode: %v", err)
+		}
+	}
+
+	return &res, nil
+}

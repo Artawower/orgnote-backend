@@ -1,7 +1,6 @@
 package services
 
 import (
-	"fmt"
 	"io"
 	"mime/multipart"
 	"moonbrain/app/models"
@@ -13,7 +12,6 @@ import (
 
 type FileStorage interface {
 	Upload(fileName string, file io.Reader) error
-	CalculateFileSize(fileName ...string) (float64, error)
 }
 
 type FileService struct {
@@ -28,12 +26,10 @@ func NewFileService(fileStorage FileStorage, userRepository *repositories.UserRe
 	}
 }
 
+// TODO: master add async task for deleting files without connected notes
 func (a *FileService) UploadFiles(user *models.User, fileHeaders []*multipart.FileHeader) error {
-	fileNames := []string{}
-
 	wg := sync.WaitGroup{}
 	for _, fh := range fileHeaders {
-		fileNames = append(fileNames, fh.Filename)
 		go func(fh *multipart.FileHeader) {
 			wg.Add(1)
 			defer wg.Done()
@@ -53,9 +49,5 @@ func (a *FileService) UploadFiles(user *models.User, fileHeaders []*multipart.Fi
 		wg.Wait()
 	}
 
-	err := a.userRepository.AddFiles(user.ID.Hex(), fileNames)
-	if err != nil {
-		return fmt.Errorf("file service: upload images: could not add files to user: %v", err)
-	}
 	return nil
 }

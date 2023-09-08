@@ -83,9 +83,9 @@ func main() {
 	authMiddleware := handlers.NewAuthMiddleware()
 	accessMiddleware := handlers.NewAccessMiddleware(accessChecker)
 
-	noteService := services.NewNoteService(noteRepository, userRepository, tagRepository)
+	noteService := services.NewNoteService(noteRepository, userRepository, tagRepository, fileStorage)
 	tagService := services.NewTagService(tagRepository)
-	userService := services.NewUserService(userRepository)
+	userService := services.NewUserService(userRepository, noteRepository)
 	fileService := services.NewFileService(fileStorage, userRepository)
 
 	// api.Use(handlers.NewAuthMiddleware())

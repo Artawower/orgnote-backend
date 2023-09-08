@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -307,27 +306,6 @@ func (u *UserRepository) makeUniqueNodeLinks(source []models.GraphNoteLink, targ
 	return
 }
 
-func (u *UserRepository) AddFiles(userID string, fileNames []string) error {
-	log.Info().Msgf("user repository: add user %v files: %v", userID, fileNames)
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	objID, err := primitive.ObjectIDFromHex(userID)
-	if err != nil {
-		return fmt.Errorf("user repository: add files: convert user id: %v", err)
-	}
-
-	filter := bson.M{"_id": objID}
-
-	update := bson.M{"$addToSet": bson.M{"files": bson.M{"$each": fileNames}}}
-
-	_, err = u.collection.UpdateOne(ctx, filter, update)
-	if err != nil {
-		return fmt.Errorf("user repository: add files: update one user: %v", err)
-	}
-	return nil
-}
-
 func (u *UserRepository) GetAll() ([]models.User, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -346,4 +324,27 @@ func (u *UserRepository) GetAll() ([]models.User, error) {
 		users = append(users, user)
 	}
 	return users, nil
+}
+
+func (u *UserRepository) UpdateUsedSpace(usedID string, usedSpace int64) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	objID, err := primitive.ObjectIDFromHex(usedID)
+
+	if err != nil {
+		return fmt.Errorf("note repository: update used space: convert id: %v", err)
+	}
+
+	filter := bson.M{"_id": objID}
+
+	update := bson.M{"$set": bson.M{"usedSpace": usedSpace}}
+
+	_, err = u.collection.UpdateOne(ctx, filter, update)
+
+	if err != nil {
+		return fmt.Errorf("note repository: update used space: failed to update: %v", err)
+	}
+
+	return nil
 }

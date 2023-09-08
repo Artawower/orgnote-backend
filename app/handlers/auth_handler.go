@@ -37,7 +37,7 @@ func mapToUser(user goth.User) *models.User {
 		Notes:               []models.Note{},
 		APITokens:           []models.APIToken{},
 		SpaceLimit:          100,
-		Files:               []string{},
+		UsedSpace:           0,
 	}
 }
 

@@ -50,6 +50,7 @@ type Note struct {
 	Views      int                `json:"views" bson:"views"`
 	Likes      int                `json:"likes" bson:"likes"`
 	DeletedAt  *time.Time         `json:"deletedAt" bson:"deletedAt"`
+	Size       int64              `json:"size" bson"size"`
 }
 
 type PublicNote struct {
@@ -61,6 +62,7 @@ type PublicNote struct {
 	UpdatedAt time.Time  `json:"updatedAt"`
 	CreatedAt time.Time  `json:"createdAt"`
 	IsMy      bool       `json:"isMy"`
+	Size      int64      `json:"size" bson"size"`
 }
 
 type NoteFilter struct {

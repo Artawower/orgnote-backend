@@ -10,21 +10,28 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+type NoteFileStorage interface {
+	CalculateFileSize(fileName ...string) (int64, error)
+}
+
 type NoteService struct {
 	noteRepository *repositories.NoteRepository
 	userRepository *repositories.UserRepository
 	tagRepository  *repositories.TagRepository
+	fileStorage    NoteFileStorage
 }
 
 func NewNoteService(
 	noteRepository *repositories.NoteRepository,
 	userRepository *repositories.UserRepository,
 	tagRepository *repositories.TagRepository,
+	fileStorage NoteFileStorage,
 ) *NoteService {
 	return &NoteService{
-		noteRepository: noteRepository,
-		tagRepository:  tagRepository,
-		userRepository: userRepository,
+		noteRepository,
+		userRepository,
+		tagRepository,
+		fileStorage,
 	}
 }
 
@@ -273,6 +280,7 @@ func (n *NoteService) SyncNotes(
 
 	updatedNotes := n.excludeSameNotes(notesFromLastSync, notes)
 
+	n.CalculateUserSpace(authorID)
 	return updatedNotes, nil
 }
 
@@ -308,4 +316,27 @@ func (n *NoteService) excludeSameNotes(srcNotes []models.Note, filterNotes []mod
 	}
 
 	return filteredNotes
+}
+
+func (n *NoteService) CalculateUserSpace(userID string) error {
+	spaceInfo, err := n.noteRepository.GetUsedSpaceInfo(userID)
+	if err != nil {
+		return fmt.Errorf("note service: calculate user space: could not calculate user space: %v", err)
+	}
+	log.Info().Msgf("note service: calculate user space: space info: %v", spaceInfo)
+
+	usedFileSpace, err := n.fileStorage.CalculateFileSize(spaceInfo.Files...)
+	if err != nil {
+		return fmt.Errorf("note service: calculate user space: could not calculate file size: %v", err)
+	}
+
+	totalUsedSpace := spaceInfo.UsedSpace + usedFileSpace
+
+	err = n.userRepository.UpdateUsedSpace(userID, totalUsedSpace)
+
+	if err != nil {
+		return fmt.Errorf("note service: calculate user space: could not update used space: %v", err)
+	}
+
+	return nil
 }

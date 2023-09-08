@@ -1141,6 +1141,9 @@ const docTemplate = `{
                 "meta": {
                     "$ref": "#/definitions/models.NoteMeta"
                 },
+                "size": {
+                    "type": "integer"
+                },
                 "updatedAt": {
                     "type": "string"
                 }
