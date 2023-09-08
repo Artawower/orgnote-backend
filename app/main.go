@@ -4,8 +4,10 @@ import (
 	"context"
 	"moonbrain/app/configs"
 	"moonbrain/app/handlers"
+	"moonbrain/app/infrastructure"
 	"moonbrain/app/repositories"
 	"moonbrain/app/services"
+	"net/http"
 	"os"
 	"time"
 
@@ -27,6 +29,7 @@ import (
 // @license.name GPL 3.0
 // @license.url https://www.gnu.org/licenses/gpl-3.0.html
 func main() {
+	// TODO: master use DIG for dependencies
 	config := configs.NewConfig()
 
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
@@ -36,6 +39,8 @@ func main() {
 	if config.Debug {
 		zerolog.SetGlobalLevel(zerolog.InfoLevel)
 	}
+
+	http := http.Client{}
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 
@@ -59,6 +64,8 @@ func main() {
 
 	database := mongoClient.Database("second-brain")
 
+	accessChecker := infrastructure.NewAccessChecker(http, config.AccessCheckerURL)
+
 	app := fiber.New()
 	api := app.Group("/v1")
 
@@ -73,20 +80,21 @@ func main() {
 	}))
 
 	authMiddleware := handlers.NewAuthMiddleware()
+	accessMiddleware := handlers.NewAccessMiddleware(accessChecker)
 
 	noteService := services.NewNoteService(noteRepository, userRepository, tagRepository)
 	tagService := services.NewTagService(tagRepository)
 	userService := services.NewUserService(userRepository)
-	fileService := services.NewFileService(config.MediaPath)
+	fileService := services.NewFileService(config.MediaPath, userRepository)
 
 	// api.Use(handlers.NewAuthMiddleware())
 	// TODO: expose to external fn
 
 	handlers.RegisterSwagger(api, config)
-	handlers.RegisterNoteHandler(api, noteService, authMiddleware)
+	handlers.RegisterNoteHandler(api, noteService, authMiddleware, accessMiddleware)
 	handlers.RegisterTagHandler(api, tagService)
 	handlers.RegisterAuthHandler(api, userService, config, authMiddleware)
-	handlers.RegisterFileHandler(api, fileService, authMiddleware)
+	handlers.RegisterFileHandler(api, fileService, authMiddleware, accessMiddleware)
 	// handlers.RegisterUserHandlers(app)
 	// handlers.RegisterTagHandlers(app)
 	app.Static("media", config.MediaPath)

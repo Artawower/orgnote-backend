@@ -7,21 +7,22 @@ import (
 )
 
 type Config struct {
-	AppAddress    string
-	MongoURI      string
-	Debug         bool
-	MediaPath     string
-	GithubID      string
-	GithubSecret  string
-	BackendSchema string
-	BackendPort   string
-	BackendDomain string
-	ClientAddress string
+	AppAddress       string
+	MongoURI         string
+	Debug            bool
+	MediaPath        string
+	GithubID         string
+	GithubSecret     string
+	BackendSchema    string
+	BackendPort      string
+	BackendDomain    string
+	ClientAddress    string
+	AccessCheckerURL *string
 }
 
 func (c *Config) BackendHost() string {
 	host := c.BackendSchema + "://" + c.BackendDomain
-	if (c.BackendPort != "") {
+	if c.BackendPort != "" {
 		host += ":" + c.BackendPort
 	}
 	// TODO: master add version to environment and config
@@ -60,24 +61,29 @@ func NewConfig() Config {
 
 	backendDomain := os.Getenv("BACKEND_DOMAIN")
 	backendSchema := os.Getenv("BACKEND_SCHEMA")
-	if (backendDomain == "" || backendSchema == "") {
+	if backendDomain == "" || backendSchema == "" {
 		log.Fatal().Msg("BACKEND_DOMAIN or BACKEND_SCHEMA is not set")
 	}
-		
+
+	var accessCheckerURL *string
+	if envAccessCheckURL := os.Getenv("ACCESS_CHECK_URL"); envAccessCheckURL != "" {
+		accessCheckerURL = &envAccessCheckURL
+	}
+
 	backendPort := os.Getenv("BACKEND_PORT")
 
 	config := Config{
-		AppAddress:    appAddress,
-		MongoURI:      mongoURI,
-		Debug:         debug,
-		MediaPath:     "./media",
-		GithubID:      envGithubID,
-		GithubSecret:  envGithubSecret,
-		ClientAddress: clientAddress,
-		BackendSchema: backendSchema,
-		BackendDomain: backendDomain,
-		BackendPort:   backendPort,
-
+		AppAddress:       appAddress,
+		MongoURI:         mongoURI,
+		Debug:            debug,
+		MediaPath:        "./media",
+		GithubID:         envGithubID,
+		GithubSecret:     envGithubSecret,
+		ClientAddress:    clientAddress,
+		BackendSchema:    backendSchema,
+		BackendDomain:    backendDomain,
+		BackendPort:      backendPort,
+		AccessCheckerURL: accessCheckerURL,
 	}
 	log.Info().Msgf("Config: %+v", config)
 

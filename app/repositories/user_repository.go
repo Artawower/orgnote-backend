@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -306,16 +307,43 @@ func (u *UserRepository) makeUniqueNodeLinks(source []models.GraphNoteLink, targ
 	return
 }
 
-// ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-// defer cancel()
-// userObjID, err := primitive.ObjectIDFromHex(userID)
-// if err != nil {
-// 	return fmt.Errorf("user repository: add node: convert user id: %v", err)
-// }
-// filter := bson.M{"_id": userObjID}
-// update := bson.M{"$push": bson.M{"noteGraph.nodes": node}}
-// _, err = u.collection.UpdateOne(ctx, filter, update)
-// if err != nil {
-// 	return fmt.Errorf("user repository: add node: update one user: %v", err)
-// }
-// return nil
+func (u *UserRepository) AddFiles(userID string, fileNames []string) error {
+	log.Info().Msgf("user repository: add user %v files: %v", userID, fileNames)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	objID, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		return fmt.Errorf("user repository: add files: convert user id: %v", err)
+	}
+
+	filter := bson.M{"_id": objID}
+
+	update := bson.M{"$addToSet": bson.M{"files": bson.M{"$each": fileNames}}}
+
+	_, err = u.collection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return fmt.Errorf("user repository: add files: update one user: %v", err)
+	}
+	return nil
+}
+
+func (u *UserRepository) GetAll() ([]models.User, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	users := []models.User{}
+	cur, err := u.collection.Find(ctx, bson.M{})
+	if err != nil {
+		return nil, fmt.Errorf("user repository: get all: find users: %v", err)
+	}
+	defer cur.Close(ctx)
+	for cur.Next(ctx) {
+		var user models.User
+		err := cur.Decode(&user)
+		if err != nil {
+			return nil, fmt.Errorf("user repository: get all: decode user: %v", err)
+		}
+		users = append(users, user)
+	}
+	return users, nil
+}

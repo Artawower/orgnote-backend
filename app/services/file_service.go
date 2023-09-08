@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"mime/multipart"
+	"moonbrain/app/models"
+	"moonbrain/app/repositories"
 	"path"
 	"sync"
 
@@ -11,18 +13,23 @@ import (
 )
 
 type FileService struct {
-	fileDir string
+	fileDir        string
+	userRepository *repositories.UserRepository
 }
 
-func NewFileService(fileDir string) *FileService {
+func NewFileService(fileDir string, userRepository *repositories.UserRepository) *FileService {
 	return &FileService{
-		fileDir: fileDir,
+		fileDir:        fileDir,
+		userRepository: userRepository,
 	}
 }
 
-func (a *FileService) UploadFiles(fileHeaders []*multipart.FileHeader) error {
+func (a *FileService) UploadFiles(user *models.User, fileHeaders []*multipart.FileHeader) error {
+	fileNames := []string{}
+
 	wg := sync.WaitGroup{}
 	for _, fh := range fileHeaders {
+		fileNames = append(fileNames, fh.Filename)
 		go func(fh *multipart.FileHeader) {
 			wg.Add(1)
 			defer wg.Done()
@@ -31,9 +38,15 @@ func (a *FileService) UploadFiles(fileHeaders []*multipart.FileHeader) error {
 			if err != nil {
 				log.Err(err).Msg("file service: upload images: could not upload image")
 				// TODO: add aggregation of errors
+				return
 			}
 		}(fh)
 		wg.Wait()
+	}
+
+	err := a.userRepository.AddFiles(user.ID.Hex(), fileNames)
+	if err != nil {
+		return fmt.Errorf("file service: upload images: could not add files to user: %v", err)
 	}
 	return nil
 }

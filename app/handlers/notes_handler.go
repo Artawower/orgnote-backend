@@ -325,15 +325,20 @@ func (h *NoteHandlers) SyncNotes(c *fiber.Ctx) error {
 	return c.Status(http.StatusOK).JSON(NewHttpResponse[SyncNotesResponse, any](syncNotesResponse, nil))
 }
 
-func RegisterNoteHandler(app fiber.Router, noteService *services.NoteService, authMiddleware func(*fiber.Ctx) error) {
+func RegisterNoteHandler(
+	app fiber.Router,
+	noteService *services.NoteService,
+	authMiddleware func(*fiber.Ctx) error,
+	accessMiddleware func(*fiber.Ctx) error,
+) {
 	noteHandlers := &NoteHandlers{
 		noteService: noteService,
 	}
 	app.Get("/notes/graph", authMiddleware, noteHandlers.GetNoteGraph)
 	app.Get("/notes/:id", noteHandlers.GetNote)
 	app.Get("/notes", noteHandlers.GetNotes)
-	app.Post("/notes/sync", authMiddleware, noteHandlers.SyncNotes)
-	app.Post("/notes", authMiddleware, noteHandlers.CreateNote)
+	app.Post("/notes/sync", authMiddleware, accessMiddleware, noteHandlers.SyncNotes)
+	app.Post("/notes", authMiddleware, accessMiddleware, noteHandlers.CreateNote)
 	app.Put("/notes/bulk-upsert", authMiddleware, noteHandlers.UpsertNotes)
 	app.Delete("/notes", authMiddleware, noteHandlers.DeleteNotes)
 }

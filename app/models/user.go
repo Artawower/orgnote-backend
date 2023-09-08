@@ -30,6 +30,9 @@ type User struct {
 	APITokens           []APIToken         `json:"apiTokens" bson:"apiTokens"`
 	Notes               []Note             `json:"notes" bson:"notes"`
 	NoteGraph           NoteGraph          `json:"noteGraph" bson:"noteGraph"`
+	Files               []string           `json:"files" bson:"files"`
+	SpaceLimit          int                `json:"spaceLimit" bson:"spaceLimit"`
+	OccupiedSpace       int                `json:"occupiedSpace" bson:"occupiedSpace"`
 }
 
 type PublicUser struct {

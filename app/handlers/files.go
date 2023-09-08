@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"moonbrain/app/models"
 	"moonbrain/app/services"
 	"net/http"
 
@@ -21,13 +22,17 @@ import (
 // @Failure      500  {object}  HttpError[any]
 // @Router       /files/upload  [post]
 func (h FilesHandlers) UploadFiles(c *fiber.Ctx) error {
+
+	user := c.Locals("user")
+
 	form, err := c.MultipartForm()
 	if err != nil {
 		log.Error().Err(err).Msg("files handler: upload files: could not get multipart form")
 		return c.Status(http.StatusInternalServerError).JSON(NewHttpError[any]("Can't parse multipart form data", nil))
 	}
 	files := form.File["files"]
-	err = h.fileService.UploadFiles(files)
+	// TODO: master check
+	err = h.fileService.UploadFiles(user.(*models.User), files)
 	if err != nil {
 		log.Error().Err(err).Msg("files handler: upload files: could not upload files")
 		return c.Status(http.StatusInternalServerError).JSON(NewHttpError[any]("Can't upload files", nil))
@@ -40,11 +45,16 @@ type FilesHandlers struct {
 	fileService *services.FileService
 }
 
-func RegisterFileHandler(app fiber.Router, fileService *services.FileService, authMiddleware func(*fiber.Ctx) error) {
+func RegisterFileHandler(
+	app fiber.Router,
+	fileService *services.FileService,
+	authMiddleware func(*fiber.Ctx) error,
+	accessMiddleware func(*fiber.Ctx) error,
+) {
 	fileHandlers := &FilesHandlers{
 		fileService: fileService,
 	}
-	// TODO: master add middleware for max size.
-	app.Post("/files/upload", authMiddleware, fileHandlers.UploadFiles)
+	app.Post("/files/upload", authMiddleware, accessMiddleware, fileHandlers.UploadFiles)
+	// TODO: master implement
 	// app.Delete("/files/:id", noteHandlers.GetNote)
 }

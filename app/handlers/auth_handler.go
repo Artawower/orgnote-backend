@@ -36,6 +36,8 @@ func mapToUser(user goth.User) *models.User {
 		ProfileURL:          user.RawData["html_url"].(string),
 		Notes:               []models.Note{},
 		APITokens:           []models.APIToken{},
+		SpaceLimit:          100,
+		Files:               []string{},
 	}
 }
 
