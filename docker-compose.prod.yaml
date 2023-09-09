@@ -29,6 +29,8 @@ services:
       - BACKEND_SCHEMA=${BACKEND_SCHEMA}
       - BACKEND_PORT=${BACKEND_PORT}
       - CLIENT_ADDRESS=${CLIENT_ADDRESS}
+      - ACCESS_CHECK_URL=${ACCESS_CHECK_URL}
+      - ACCESS_CHECK_TOKEN=${ACCESS_CHECK_TOKEN}
 
   sb_nginx:
     restart: always

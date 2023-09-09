@@ -43,7 +43,9 @@ func (a *NoteService) CreateNote(note models.Note) error {
 	return nil
 }
 
-func (a *NoteService) BulkCreateOrUpdate(userID string, notes []models.Note) error {
+func (n *NoteService) BulkCreateOrUpdate(userID string, notes []models.Note) error {
+	defer func() { go n.CalculateUserSpace(userID) }()
+
 	filteredNotesWithID := []models.Note{}
 	tags := []string{}
 	for _, note := range notes {
@@ -64,17 +66,17 @@ func (a *NoteService) BulkCreateOrUpdate(userID string, notes []models.Note) err
 			Likes:      0,
 		})
 		tags = append(tags, note.Meta.FileTags...)
-		go a.updateNoteGraph(userID, note)
+		go n.updateNoteGraph(userID, note)
 	}
 	// TODO: master add transaction here
-	err := a.noteRepository.BulkUpsert(userID, filteredNotesWithID)
+	err := n.noteRepository.BulkUpsert(userID, filteredNotesWithID)
 	if err != nil {
 		return fmt.Errorf("note service: bulk create or update: could not bulk upsert notes: %v", err)
 	}
 	if len(tags) == 0 {
 		return nil
 	}
-	err = a.tagRepository.BulkUpsert(tags)
+	err = n.tagRepository.BulkUpsert(tags)
 	if err != nil {
 		return fmt.Errorf("note service: bulk create or update: could not bulk upsert tags: %v", err)
 	}
@@ -280,7 +282,7 @@ func (n *NoteService) SyncNotes(
 
 	updatedNotes := n.excludeSameNotes(notesFromLastSync, notes)
 
-	n.CalculateUserSpace(authorID)
+	go n.CalculateUserSpace(authorID)
 	return updatedNotes, nil
 }
 

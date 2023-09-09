@@ -8,19 +8,20 @@ import (
 )
 
 type AccessChecker interface {
-	Check(userEmail string, occupiedSpace int, err chan<- error)
+	Check(userEmail string, occupiedSpace int64, err chan<- error)
 }
 
 func NewAccessMiddleware(checker AccessChecker) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
-		user := c.Locals("user")
+		user := c.Locals("user").(*models.User)
+
 		if user == (*models.User)(nil) {
 			return c.Status(fiber.StatusBadRequest).JSON(NewHttpError[any](ErrAuthRequired, nil))
 		}
 
 		err := make(chan error)
 
-		go checker.Check(user.(*models.User).Email, 100, err)
+		go checker.Check(user.Email, user.UsedSpace, err)
 
 		if err := <-err; err != nil {
 			log.Error().Err(err).Msgf("access middleware: access denied: %v", err)

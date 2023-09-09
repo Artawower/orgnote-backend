@@ -64,7 +64,7 @@ func main() {
 
 	database := mongoClient.Database("second-brain")
 
-	accessChecker := infrastructure.NewAccessChecker(http, config.AccessCheckerURL)
+	accessChecker := infrastructure.NewAccessChecker(http, config.AccessCheckerURL, config.AccessCheckToken)
 
 	app := fiber.New()
 	api := app.Group("/v1")

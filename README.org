@@ -41,6 +41,8 @@ This project is part of [[https://github.com/Artawower/second-brain][second brai
 - ~BACKEND_SCHEMA~ - backend schema (http/https)
 - ~BACKEND_PORT~ - backend port
 - ~CLIENT_ADDRESS~ - client address for oauth redirect
+- ~ACCESS_CHECK_URL~ - url address for checking access to the backend. For self hosted systems this values should not be provided
+- ~ACCESS_CHECK_TOKEN~ - Auth token for request to ~ACCESS_CHECK_URL~. Will be added into ~Authorization~ header
 
 ** Local development
 Make sure that you have 
@@ -60,5 +62,18 @@ for example: http://localhost:8000/v1/swagger/index.html
 * 🍩 Contribute guide
 Any contribution is very much appreciated! Please read the [[./CONTRIBUTE.org][style guide]] before contributing to avoid misunderstandings!
 Also, the project exists solely on donations. I would appreciate it if you would join my patreon.
-contribute
 
+** Access checker
+What is an access checker?
+It is an external web service accessible by ~ACCESS_CHECK_URL~. It is used to verify access to the backend. For self-hosted systems, this value should not be provided unless you have the service implemented. In this case, anyone can access the backend.
+
+This backend service should provide next endpoints:
+
+- =/api/subscription-info= - information about subscription
+#+BEGIN_SRC json
+{
+  "email": "string",
+  "spaceLimit": "bytes",
+  "isActive": "boolean"
+}
+#+END_SRC

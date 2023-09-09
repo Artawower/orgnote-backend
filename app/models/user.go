@@ -31,7 +31,7 @@ type User struct {
 	Notes               []Note             `json:"notes" bson:"notes"`
 	NoteGraph           NoteGraph          `json:"noteGraph" bson:"noteGraph"`
 	SpaceLimit          int64              `json:"spaceLimit" bson:"spaceLimit"`
-	UsedSpace           int64              `json:"occupiedSpace" bson:"occupiedSpace"`
+	UsedSpace           int64              `json:"usedSpace" bson:"usedSpace"`
 }
 
 type PublicUser struct {

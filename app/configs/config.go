@@ -18,6 +18,7 @@ type Config struct {
 	BackendDomain    string
 	ClientAddress    string
 	AccessCheckerURL *string
+	AccessCheckToken *string
 }
 
 func (c *Config) BackendHost() string {
@@ -70,6 +71,11 @@ func NewConfig() Config {
 		accessCheckerURL = &envAccessCheckURL
 	}
 
+	var accessCheckToken *string
+	if envAccessCheckToken := os.Getenv("ACCESS_CHECK_TOKEN"); envAccessCheckToken != "" {
+		accessCheckToken = &envAccessCheckToken
+	}
+
 	backendPort := os.Getenv("BACKEND_PORT")
 
 	config := Config{
@@ -84,6 +90,7 @@ func NewConfig() Config {
 		BackendDomain:    backendDomain,
 		BackendPort:      backendPort,
 		AccessCheckerURL: accessCheckerURL,
+		AccessCheckToken: accessCheckToken,
 	}
 	log.Info().Msgf("Config: %+v", config)
 
