@@ -44,7 +44,12 @@ func (a *NoteService) CreateNote(note models.Note) error {
 }
 
 func (n *NoteService) BulkCreateOrUpdate(userID string, notes []models.Note) error {
-	defer func() { go n.CalculateUserSpace(userID) }()
+	defer func() {
+		if len(notes) == 0 {
+			return
+		}
+		go n.CalculateUserSpace(userID)
+	}()
 
 	filteredNotesWithID := []models.Note{}
 	tags := []string{}
