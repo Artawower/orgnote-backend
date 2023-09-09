@@ -77,6 +77,8 @@ jobs:
             BACKEND_HOST=${{ env.BACKEND_HOST }}
             BACKEND_DOMAIN=${{ env.BACKEND_DOMAIN }}
             BACKEND_SCHEMA=${{ env.BACKEND_SCHEMA }}
+            ACCESS_CHECK_URL=${{ env.ACCESS_CHECK_URL }}
+            ACCESS_CHECK_TOKEN=${{ ACCESS_CHECK_TOKEN }}
             EOT
 
             docker-compose -f docker-compose.db.yaml -f docker-compose.prod.yaml down
