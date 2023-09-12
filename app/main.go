@@ -11,6 +11,7 @@ import (
 	"os"
 	"time"
 
+	cache "github.com/Code-Hex/go-generics-cache"
 	"github.com/gofiber/fiber/v2"
 
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -64,7 +65,13 @@ func main() {
 
 	database := mongoClient.Database("second-brain")
 
-	accessChecker := infrastructure.NewAccessChecker(http, config.AccessCheckerURL, config.AccessCheckToken)
+	accessChecker := infrastructure.NewAccessChecker(
+		http,
+		config.AccessCheckerURL,
+		config.AccessCheckToken,
+		cache.New[string, infrastructure.AccessInfo],
+		config.AccessTokenCacheLifeTime,
+	)
 
 	app := fiber.New()
 	api := app.Group("/v1")

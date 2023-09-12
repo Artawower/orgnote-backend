@@ -2,23 +2,25 @@ package configs
 
 import (
 	"os"
+	"strconv"
 
 	"github.com/rs/zerolog/log"
 )
 
 type Config struct {
-	AppAddress       string
-	MongoURI         string
-	Debug            bool
-	MediaPath        string
-	GithubID         string
-	GithubSecret     string
-	BackendSchema    string
-	BackendPort      string
-	BackendDomain    string
-	ClientAddress    string
-	AccessCheckerURL *string
-	AccessCheckToken *string
+	AppAddress               string
+	MongoURI                 string
+	Debug                    bool
+	MediaPath                string
+	GithubID                 string
+	GithubSecret             string
+	BackendSchema            string
+	BackendPort              string
+	BackendDomain            string
+	ClientAddress            string
+	AccessCheckerURL         *string
+	AccessCheckToken         *string
+	AccessTokenCacheLifeTime int
 }
 
 func (c *Config) BackendHost() string {
@@ -76,21 +78,33 @@ func NewConfig() Config {
 		accessCheckToken = &envAccessCheckToken
 	}
 
+	accessTokenCacheLifeTime := 60
+
+	if envAccessTokenCacheLifeTime := os.Getenv("ACCESS_TOKEN_CACHE_LIFE_TIME"); envAccessTokenCacheLifeTime != "" {
+		val, err := strconv.Atoi(envAccessTokenCacheLifeTime)
+		if err != nil {
+			accessTokenCacheLifeTime = val
+		} else {
+			log.Warn().Msgf("ACCESS_TOKEN_CACHE_LIFE_TIME is not a number, init with default value: %d", accessTokenCacheLifeTime)
+		}
+	}
+
 	backendPort := os.Getenv("BACKEND_PORT")
 
 	config := Config{
-		AppAddress:       appAddress,
-		MongoURI:         mongoURI,
-		Debug:            debug,
-		MediaPath:        "./media",
-		GithubID:         envGithubID,
-		GithubSecret:     envGithubSecret,
-		ClientAddress:    clientAddress,
-		BackendSchema:    backendSchema,
-		BackendDomain:    backendDomain,
-		BackendPort:      backendPort,
-		AccessCheckerURL: accessCheckerURL,
-		AccessCheckToken: accessCheckToken,
+		AppAddress:               appAddress,
+		MongoURI:                 mongoURI,
+		Debug:                    debug,
+		MediaPath:                "./media",
+		GithubID:                 envGithubID,
+		GithubSecret:             envGithubSecret,
+		ClientAddress:            clientAddress,
+		BackendSchema:            backendSchema,
+		BackendDomain:            backendDomain,
+		BackendPort:              backendPort,
+		AccessCheckerURL:         accessCheckerURL,
+		AccessCheckToken:         accessCheckToken,
+		AccessTokenCacheLifeTime: accessTokenCacheLifeTime,
 	}
 	log.Info().Msgf("Config: %+v", config)
 

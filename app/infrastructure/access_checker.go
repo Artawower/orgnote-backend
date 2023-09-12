@@ -7,14 +7,18 @@ import (
 	"moonbrain/app/tools"
 	"net/http"
 	"strconv"
+	"time"
 
+	cache "github.com/Code-Hex/go-generics-cache"
 	"github.com/rs/zerolog/log"
 )
 
 type AccessChecker struct {
-	checkURL   *string
-	checkToken *string
-	httpClient http.Client
+	checkURL      *string
+	checkToken    *string
+	httpClient    http.Client
+	cache         *cache.Cache[string, AccessInfo]
+	cacheLifeTime int
 }
 
 type AccessInfo struct {
@@ -82,6 +86,23 @@ func (a *AccessChecker) getRemoteInfo(userEmail string) (*AccessInfo, error) {
 
 }
 
+func (a *AccessChecker) getInfo(userEmail string) (*AccessInfo, error) {
+	cachedInfo, ok := a.cache.Get(userEmail)
+
+	if ok {
+		return &cachedInfo, nil
+	}
+
+	accessInfo, err := a.getRemoteInfo(userEmail)
+	if err != nil {
+		return nil, err
+	}
+
+	a.cache.Set(userEmail, *accessInfo, cache.WithExpiration(time.Duration(a.cacheLifeTime)*time.Minute))
+
+	return accessInfo, err
+}
+
 func (a *AccessChecker) Check(userEmail string, usedSpace int64, errCh chan<- error) {
 	// TODO: add cache here
 	if a.checkURL == nil {
@@ -90,7 +111,7 @@ func (a *AccessChecker) Check(userEmail string, usedSpace int64, errCh chan<- er
 		return
 	}
 
-	accessInfo, err := a.getRemoteInfo(userEmail)
+	accessInfo, err := a.getInfo(userEmail)
 
 	if err != nil {
 		errCh <- err
@@ -100,10 +121,20 @@ func (a *AccessChecker) Check(userEmail string, usedSpace int64, errCh chan<- er
 	errCh <- a.checkAvailability(*accessInfo, usedSpace)
 }
 
-func NewAccessChecker(httpClient http.Client, checkURL *string, checkToken *string) *AccessChecker {
+type cacheFactory[K comparable, V any] func(...cache.Option[K, V]) *cache.Cache[K, V]
+
+func NewAccessChecker(
+	httpClient http.Client,
+	checkURL *string,
+	checkToken *string,
+	cacheFactory cacheFactory[string, AccessInfo],
+	cacheLifeTime int,
+) *AccessChecker {
 	return &AccessChecker{
 		checkURL,
 		checkToken,
 		httpClient,
+		cacheFactory(),
+		cacheLifeTime,
 	}
 }
