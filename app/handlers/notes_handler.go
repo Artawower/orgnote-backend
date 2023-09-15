@@ -43,7 +43,7 @@ func (h *NoteHandlers) GetNote(c *fiber.Ctx) error {
 
 	var userID string
 
-	if ctxUser != nil {
+	if ctxUser != (*models.User)(nil) {
 		userID = ctxUser.(*models.User).ID.Hex()
 	}
 
