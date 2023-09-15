@@ -1,4 +1,4 @@
-module moonbrain
+module orgnote
 
 go 1.20
 

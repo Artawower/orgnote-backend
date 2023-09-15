@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"moonbrain/app/models"
+	"orgnote/app/models"
 	"time"
 
 	"github.com/rs/zerolog/log"

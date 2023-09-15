@@ -7,6 +7,6 @@ COPY go.mod go.sum ./
 RUN go mod download && go mod verify
 
 COPY app app
-RUN go build -o second-brain app/main.go
+RUN go build -o orgnote app/main.go
 
-ENTRYPOINT ["./second-brain"]
+ENTRYPOINT ["./orgnote"]

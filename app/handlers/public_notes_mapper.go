@@ -1,6 +1,6 @@
 package handlers
 
-import "moonbrain/app/models"
+import "orgnote/app/models"
 
 func mapToPublicUserInfo(user models.User) models.PublicUser {
 	return models.PublicUser{

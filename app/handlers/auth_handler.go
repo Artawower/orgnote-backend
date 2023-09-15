@@ -3,11 +3,11 @@ package handlers
 import (
 	"bytes"
 	"encoding/gob"
-	"moonbrain/app/configs"
-	"moonbrain/app/models"
-	"moonbrain/app/services"
-	"moonbrain/app/tools"
 	"net/url"
+	"orgnote/app/configs"
+	"orgnote/app/models"
+	"orgnote/app/services"
+	"orgnote/app/tools"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/markbates/goth"

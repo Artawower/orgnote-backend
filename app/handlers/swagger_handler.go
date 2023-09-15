@@ -1,12 +1,12 @@
 package handlers
 
 import (
-	"moonbrain/app/configs"
-	_ "moonbrain/app/docs"
+	"orgnote/app/configs"
+	_ "orgnote/app/docs"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/swagger"
-		"moonbrain/app/docs"
+		"orgnote/app/docs"
 
 )
 

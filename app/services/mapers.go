@@ -1,6 +1,6 @@
 package services
 
-import "moonbrain/app/models"
+import "orgnote/app/models"
 
 // TODO: master move to handler layer
 func mapToPublicUserInfo(user *models.User) *models.PublicUser {

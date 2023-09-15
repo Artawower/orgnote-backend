@@ -1,4 +1,4 @@
-name: CI/CD for second brain backend
+name: CI/CD for orgnote backend project
 
 on: [push]
 
@@ -61,7 +61,7 @@ jobs:
           command: |
             eval $(ssh-agent -s)
             ssh-add ~/.ssh/sb-back
-            cd ~/second-brain/second-brain-backend
+            cd ~/orgnote/orgnote-backend
             git checkout master
             git fetch --all
             git reset --hard origin/master
@@ -78,7 +78,7 @@ jobs:
             BACKEND_DOMAIN=${{ env.BACKEND_DOMAIN }}
             BACKEND_SCHEMA=${{ env.BACKEND_SCHEMA }}
             ACCESS_CHECK_URL=${{ env.ACCESS_CHECK_URL }}
-            ACCESS_CHECK_TOKEN=${{ ACCESS_CHECK_TOKEN }}
+            ACCESS_CHECK_TOKEN=${{ env.ACCESS_CHECK_TOKEN }}
             EOT
 
             docker-compose -f docker-compose.db.yaml -f docker-compose.prod.yaml down

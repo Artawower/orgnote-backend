@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"moonbrain/app/services"
+	"orgnote/app/services"
 	"net/http"
 
 	"github.com/gofiber/fiber/v2"

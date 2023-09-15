@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	"moonbrain/app/models"
-	"moonbrain/app/services"
+	"orgnote/app/models"
+	"orgnote/app/services"
 	"net/http"
 
 	"github.com/gofiber/fiber/v2"

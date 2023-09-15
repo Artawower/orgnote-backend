@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"moonbrain/app/models"
+	"orgnote/app/models"
 	"time"
 
 	"github.com/thoas/go-funk"

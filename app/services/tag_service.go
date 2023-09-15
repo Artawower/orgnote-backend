@@ -2,7 +2,7 @@ package services
 
 import (
 	"fmt"
-	"moonbrain/app/repositories"
+	"orgnote/app/repositories"
 
 	"github.com/rs/zerolog/log"
 )

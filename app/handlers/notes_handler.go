@@ -2,12 +2,12 @@ package handlers
 
 import (
 	"fmt"
-	"moonbrain/app/models"
-	"moonbrain/app/services"
 	"net/http"
+	"orgnote/app/models"
+	"orgnote/app/services"
 	"time"
 
-	_ "moonbrain/app/docs"
+	_ "orgnote/app/docs"
 
 	fiber "github.com/gofiber/fiber/v2"
 	"github.com/rs/zerolog/log"

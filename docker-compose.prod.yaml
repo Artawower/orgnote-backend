@@ -1,25 +1,25 @@
 version: "3.8"
 
 services:
-  sb_backend:
+  orgnote_backend:
     restart: always
-    container_name: sb_backend
+    container_name: orgnote_backend
     build:
       context: .
       dockerfile: Dockerfile
     ports:
       - 3000:3000
     networks:
-      - sb_network
+      - orgnote_network
     depends_on:
-      - sb_mongo
+      - orgnote_mongo
     volumes:
       - ./media:/workspace/media
     env_file:
       - .env
     environment:
       - MONGO_USERNAME=${MONGO_USERNAME}
-      - MONGO_URL=sb_mongo
+      - MONGO_URL=orgnote_mongo
       - MONGO_PASSWORD=${MONGO_PASSWORD}
       - MONGO_PORT=27017
       - APP_ADDRESS=0.0.0.0:3000
@@ -32,9 +32,9 @@ services:
       - ACCESS_CHECK_URL=${ACCESS_CHECK_URL}
       - ACCESS_CHECK_TOKEN=${ACCESS_CHECK_TOKEN}
 
-  sb_nginx:
+  orgnote_nginx:
     restart: always
-    container_name: sb_nginx
+    container_name: orgnote_nginx
     image: nginx:stable
     ports:
       - 80:80
@@ -45,13 +45,13 @@ services:
       - ./deploy/nginx/conf.d:/etc/nginx/conf.d:rw
       - ./media:/opt/services/backend/media:rw
     depends_on:
-      - sb_backend
+      - orgnote_backend
     links:
-      - sb_backend
+      - orgnote_backend
     networks:
-      - sb_network
+      - orgnote_network
     command: ["/usr/sbin/nginx", "-g", "daemon off;"]
 
 networks:
-  sb_network:
+  orgnote_network:
     driver: bridge

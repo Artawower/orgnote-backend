@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"moonbrain/app/models"
+	"orgnote/app/models"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/rs/zerolog/log"

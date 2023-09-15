@@ -2,12 +2,12 @@ package main
 
 import (
 	"context"
-	"moonbrain/app/configs"
-	"moonbrain/app/handlers"
-	"moonbrain/app/infrastructure"
-	"moonbrain/app/repositories"
-	"moonbrain/app/services"
 	"net/http"
+	"orgnote/app/configs"
+	"orgnote/app/handlers"
+	"orgnote/app/infrastructure"
+	"orgnote/app/repositories"
+	"orgnote/app/services"
 	"os"
 	"time"
 
@@ -21,9 +21,9 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-// @title Second Brain API
+// @title Org Note API
 // @version 0.0.1
-// @description List of methods for work with second brain.
+// @description List of methods for work with Org Note.
 // @termsOfService http://swagger.io/terms/
 // @contact.name API Support
 // @contact.email artawower@protonmail.com
@@ -63,7 +63,7 @@ func main() {
 		}
 	}()
 
-	database := mongoClient.Database("second-brain")
+	database := mongoClient.Database("orgnote")
 
 	accessChecker := infrastructure.NewAccessChecker(
 		http,

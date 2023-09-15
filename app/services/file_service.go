@@ -3,8 +3,8 @@ package services
 import (
 	"io"
 	"mime/multipart"
-	"moonbrain/app/models"
-	"moonbrain/app/repositories"
+	"orgnote/app/models"
+	"orgnote/app/repositories"
 	"sync"
 
 	"github.com/rs/zerolog/log"

@@ -273,12 +273,12 @@ info:
   contact:
     email: artawower@protonmail.com
     name: API Support
-  description: List of methods for work with second brain.
+  description: List of methods for work with Org Note.
   license:
     name: GPL 3.0
     url: https://www.gnu.org/licenses/gpl-3.0.html
   termsOfService: http://swagger.io/terms/
-  title: Second Brain API
+  title: Org Note API
   version: 0.0.1
 paths:
   /auth/{provider}/callback:

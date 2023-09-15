@@ -2,9 +2,9 @@ package services
 
 import (
 	"fmt"
-	"moonbrain/app/models"
-	"moonbrain/app/repositories"
-	"moonbrain/app/tools"
+	"orgnote/app/models"
+	"orgnote/app/repositories"
+	"orgnote/app/tools"
 	"time"
 
 	"github.com/rs/zerolog/log"

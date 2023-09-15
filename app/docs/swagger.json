@@ -1,8 +1,8 @@
 {
     "swagger": "2.0",
     "info": {
-        "description": "List of methods for work with second brain.",
-        "title": "Second Brain API",
+        "description": "List of methods for work with Org Note.",
+        "title": "Org Note API",
         "termsOfService": "http://swagger.io/terms/",
         "contact": {
             "name": "API Support",

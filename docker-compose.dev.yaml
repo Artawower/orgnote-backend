@@ -1,18 +1,18 @@
 version: "3.8"
 services:
-  sb_backend:
+  orgnote_backend:
     build:
       context: .
       dockerfile: Dockerfile-dev
-    container_name: sb_backend
+    container_name: orgnote_backend
     ports:
       - 8000:8000
     expose:
       - 8000
     depends_on:
-      - sb_mongo
+      - orgnote_mongo
     links:
-      - sb_mongo
+      - orgnote_mongo
     volumes:
       - ./:/app
       - ./media:/app/media
@@ -20,7 +20,7 @@ services:
       - APP_ADDRESS=0.0.0.0:8000
       - CLIENT_ADDRESS=${CLIENT_ADDRESS}
       - GOROOT=/usr/local/go
-      - MONGO_URL=sb_mongo
+      - MONGO_URL=orgnote_mongo
       - MONGO_PORT=27017
       - MONGO_USERNAME=${MONGO_USERNAME}
       - MONGO_PASSWORD=${MONGO_PASSWORD}
@@ -33,4 +33,4 @@ services:
       - ACCESS_CHECK_TOKEN=${ACCESS_CHECK_TOKEN}
 
     networks:
-      - sb_network
+      - orgnote_network

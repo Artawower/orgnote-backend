@@ -1,7 +1,7 @@
 package repositories
 
 import (
-	"moonbrain/app/models"
+	"orgnote/app/models"
 
 	"github.com/thoas/go-funk"
 	"go.mongodb.org/mongo-driver/bson"

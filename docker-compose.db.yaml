@@ -1,8 +1,8 @@
 version: "3.8"
 
 services:
-  sb_mongo:
-    container_name: sb_mongo
+  orgnote_mongo:
+    container_name: orgnote_mongo
     image: mongo:5.0.9
     logging:
       driver: none
@@ -15,11 +15,11 @@ services:
       - mongodb_data_container:/data/db
       - ./media:/workspace/app/media
     networks:
-      - sb_network
+      - orgnote_network
     command: [--auth]
 
 volumes:
   mongodb_data_container:
 
 networks:
-  sb_network:
+  orgnote_network:
