@@ -226,7 +226,7 @@ func (a *AuthHandler) VerifyUser(c *fiber.Ctx) error {
 // @Router       /auth/api-tokens  [get]
 func (a *AuthHandler) GetAPITokens(c *fiber.Ctx) error {
 	ctxUser := c.Locals("user")
-	if ctxUser == nil {
+	if ctxUser == (*models.User)(nil) {
 		return c.Status(fiber.StatusBadRequest).SendString("Could not find api tokens for current user")
 	}
 	user := c.Locals("user").(*models.User)

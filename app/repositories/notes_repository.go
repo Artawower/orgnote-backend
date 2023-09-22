@@ -234,14 +234,17 @@ func (n *NoteRepository) getUpdateOutdatedModel(note models.Note, authorID strin
 	noteNotExist := savedNote == nil
 	updatedNote := n.getUpdateNote(note)
 	updatedNote["authorId"] = authorID
+
 	if noteNotExist {
 		updatedNote["createdAt"] = note.CreatedAt
 		return mongo.NewInsertOneModel().SetDocument(updatedNote), nil
 	}
+
 	return mongo.NewUpdateOneModel().
 		SetFilter(bson.M{
-			"_id":       note.ID,
-			"updatedAt": bson.M{"$lt": note.UpdatedAt},
+			"authorId":   authorID,
+			"externalId": note.ExternalID,
+			"updatedAt":  bson.M{"$lt": note.UpdatedAt},
 		}).
 		SetUpdate(bson.M{
 			"$set":   updatedNote,
