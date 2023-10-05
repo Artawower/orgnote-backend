@@ -104,7 +104,7 @@ func (a *AuthHandler) LoginCallback(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).SendString("Internal server error")
 	}
 	// TODO: master client url for redirect. Read from env
-	redirectURL := a.config.ClientAddress + "/#/auth/login/"
+	redirectURL := a.config.ClientAddress + "/auth/login/"
 	parsedURL, err := url.Parse(redirectURL)
 	if err != nil {
 		log.Error().Err(err).Msgf("auth handlers: github auth handler: parse redirect url %v", err)
@@ -239,8 +239,11 @@ func (a *AuthHandler) GetAPITokens(c *fiber.Ctx) error {
 
 // TODO: master refactor this code.
 func RegisterAuthHandler(app fiber.Router, userService *services.UserService, config configs.Config, authMiddleware fiber.Handler) {
+	redirectURL := config.BackendHost() + "/auth/github/callback"
+	log.Info().Msgf("Redirect url: %s", redirectURL)
+
 	goth.UseProviders(
-		github.New(config.GithubID, config.GithubSecret, config.BackendHost()+"/auth/github/callback"),
+		github.New(config.GithubID, config.GithubSecret, redirectURL),
 	)
 
 	authHandler := &AuthHandler{
