@@ -42,3 +42,14 @@ type PublicUser struct {
 	Email      string `json:"email"`
 	ProfileURL string `json:"profileUrl"`
 }
+
+type UserPersonalInfo struct {
+	ID         string `json:"id"`
+	Name       string `json:"name"`
+	NickName   string `json:"nickName"`
+	AvatarURL  string `json:"avatarUrl"`
+	Email      string `json:"email"`
+	ProfileURL string `json:"profileUrl"`
+	SpaceLimit int64  `json:"spaceLimit"`
+	UsedSpace  int64  `json:"usedSpace"`
+}

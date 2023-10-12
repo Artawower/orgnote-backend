@@ -91,10 +91,10 @@ definitions:
         $ref: '#/definitions/models.PublicNote'
       meta: {}
     type: object
-  handlers.HttpResponse-models_PublicUser-any:
+  handlers.HttpResponse-models_UserPersonalInfo-any:
     properties:
       data:
-        $ref: '#/definitions/models.PublicUser'
+        $ref: '#/definitions/models.UserPersonalInfo'
       meta: {}
     type: object
   handlers.OAuthRedirectData:
@@ -258,6 +258,25 @@ definitions:
         type: string
       profileUrl:
         type: string
+    type: object
+  models.UserPersonalInfo:
+    properties:
+      avatarUrl:
+        type: string
+      email:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      nickName:
+        type: string
+      profileUrl:
+        type: string
+      spaceLimit:
+        type: integer
+      usedSpace:
+        type: integer
     type: object
   models.category:
     enum:
@@ -442,7 +461,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/handlers.HttpResponse-models_PublicUser-any'
+            $ref: '#/definitions/handlers.HttpResponse-models_UserPersonalInfo-any'
         "403":
           description: Forbidden
           schema:

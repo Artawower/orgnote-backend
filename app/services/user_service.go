@@ -34,12 +34,12 @@ func (u *UserService) GetAPITokens(userID string) ([]models.APIToken, error) {
 	return tokens, nil
 }
 
-func (u *UserService) FindUser(token string) (*models.PublicUser, error) {
+func (u *UserService) FindUser(token string) (*models.UserPersonalInfo, error) {
 	user, err := u.userRepository.FindUserByToken(token)
 	if err != nil {
 		return nil, fmt.Errorf("user service: find user: %v", err)
 	}
-	return mapToPublicUserInfo(user), nil
+	return mapToUserPersonalInfo(user), nil
 }
 
 func (u *UserService) CreateToken(user *models.User) (*models.APIToken, error) {
@@ -54,21 +54,6 @@ func (u *UserService) DeleteToken(user *models.User, tokenID string) error {
 	err := u.userRepository.DeleteAPIToken(user, tokenID)
 	if err != nil {
 		return fmt.Errorf("user service: delete token: %v", err)
-	}
-	return nil
-}
-
-func (u *UserService) CalculateUsedSpace() error {
-	users, err := u.userRepository.GetAll()
-	if err != nil {
-		return fmt.Errorf("user service: calculate used space: %v", err)
-	}
-
-	for _, user := range users {
-		err = u.calculateUserUsedSpace(&user)
-		if err != nil {
-			return fmt.Errorf("user service: calculate used space: %v", err)
-		}
 	}
 	return nil
 }

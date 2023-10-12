@@ -170,7 +170,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/handlers.HttpResponse-models_PublicUser-any"
+                            "$ref": "#/definitions/handlers.HttpResponse-models_UserPersonalInfo-any"
                         }
                     },
                     "403": {
@@ -913,11 +913,11 @@ const docTemplate = `{
                 "meta": {}
             }
         },
-        "handlers.HttpResponse-models_PublicUser-any": {
+        "handlers.HttpResponse-models_UserPersonalInfo-any": {
             "type": "object",
             "properties": {
                 "data": {
-                    "$ref": "#/definitions/models.PublicUser"
+                    "$ref": "#/definitions/models.UserPersonalInfo"
                 },
                 "meta": {}
             }
@@ -1168,6 +1168,35 @@ const docTemplate = `{
                 },
                 "profileUrl": {
                     "type": "string"
+                }
+            }
+        },
+        "models.UserPersonalInfo": {
+            "type": "object",
+            "properties": {
+                "avatarUrl": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "nickName": {
+                    "type": "string"
+                },
+                "profileUrl": {
+                    "type": "string"
+                },
+                "spaceLimit": {
+                    "type": "integer"
+                },
+                "usedSpace": {
+                    "type": "integer"
                 }
             }
         },

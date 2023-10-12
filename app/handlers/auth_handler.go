@@ -8,6 +8,7 @@ import (
 	"orgnote/app/models"
 	"orgnote/app/services"
 	"orgnote/app/tools"
+	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/markbates/goth"
@@ -116,6 +117,8 @@ func (a *AuthHandler) LoginCallback(c *fiber.Ctx) error {
 	q.Set("avatarUrl", u.AvatarURL)
 	q.Set("email", u.Email)
 	q.Set("profileUrl", u.ProfileURL)
+	q.Set("spaceLimit", strconv.FormatInt(u.SpaceLimit, 10))
+	q.Set("usedSpace", strconv.FormatInt(u.UsedSpace, 10))
 	parsedURL.RawQuery = q.Encode()
 
 	return c.Redirect(redirectURL + "?" + parsedURL.RawQuery)
@@ -197,7 +200,7 @@ func (a *AuthHandler) DeleteToken(c *fiber.Ctx) error {
 // @Tags         auth
 // @Accept       json
 // @Produce      json
-// @Success      200  {object}  handlers.HttpResponse[models.PublicUser, any]
+// @Success      200  {object}  handlers.HttpResponse[models.UserPersonalInfo, any]
 // @Failure      403  {object}  handlers.HttpError[any]
 // @Failure      500  {object}  handlers.HttpError[any]
 // @Router       /auth/verify  [get]
@@ -211,7 +214,7 @@ func (a *AuthHandler) VerifyUser(c *fiber.Ctx) error {
 		log.Info().Err(err).Msgf("auth handlers: github auth handler: find user")
 		return c.Status(fiber.StatusBadRequest).SendString(ErrInvalidToken)
 	}
-	return c.Status(fiber.StatusOK).JSON(NewHttpResponse[*models.PublicUser, any](user, nil))
+	return c.Status(fiber.StatusOK).JSON(NewHttpResponse[*models.UserPersonalInfo, any](user, nil))
 }
 
 // GetApiTokens godoc

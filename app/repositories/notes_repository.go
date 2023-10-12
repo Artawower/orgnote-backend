@@ -301,16 +301,46 @@ func (n *NoteRepository) GetUsedSpaceInfo(userID string) (*AvailableSpaceInfo, e
 			"images": "$meta.images",
 		},
 	}}
-	unwindStage := bson.D{{"$unwind", bson.M{"path": "$images", "preserveNullAndEmptyArrays": false}}}
-	groupStage := bson.D{{
+	groupedByUsedSpaceStage := bson.D{{
 		"$group", bson.M{
 			"_id":       nil,
 			"usedSpace": bson.M{"$sum": "$size"},
-			"files":     bson.M{"$addToSet": "$images"},
+			"images":    bson.M{"$addToSet": "$images"},
 		},
 	}}
 
-	cur, err := n.collection.Aggregate(ctx, mongo.Pipeline{matchStage, projectStage, unwindStage, groupStage})
+	fileteredFilesProjectStage := bson.D{{
+		"$project", bson.M{
+			"usedSpace": "$usedSpace",
+			"images": bson.M{
+				"$filter": bson.M{
+					"input": "$images",
+					"as":    "img",
+					"cond":  bson.M{"$ne": bson.A{"$$img", nil}},
+				},
+			},
+		},
+	}}
+
+	unwindStage := bson.D{{"$unwind", bson.M{"path": "$images", "preserveNullAndEmptyArrays": false}}}
+
+	groupStage := bson.D{{
+		"$group", bson.M{
+			"_id":       nil,
+			"usedSpace": bson.M{"$last": "$usedSpace"},
+			"files":     bson.M{"$push": "$images"},
+		},
+	}}
+
+	cur, err := n.collection.Aggregate(ctx, mongo.Pipeline{
+		matchStage,
+		projectStage,
+		groupedByUsedSpaceStage,
+		fileteredFilesProjectStage,
+		unwindStage,
+		unwindStage,
+		groupStage,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("note repository: get used space info: failed to aggregate: %v", err)
 	}
