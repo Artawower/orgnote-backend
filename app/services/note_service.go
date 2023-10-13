@@ -267,16 +267,16 @@ func (n *NoteService) SyncNotes(
 		IncludeDeleted: new(bool),
 	}
 
-	err := n.bulkUpdateOutdatedNotes(notes, authorID)
-
-	if err != nil {
-		return nil, err
-	}
-
-	err = n.noteRepository.DeleteOutdatedNotes(deletedNotesIDs, authorID, timestamp)
+	err := n.noteRepository.DeleteOutdatedNotes(deletedNotesIDs, authorID, timestamp)
 
 	if err != nil {
 		return nil, fmt.Errorf("note service: sync notes: could not delete outdated notes: %v", err)
+	}
+
+	err = n.bulkUpdateOutdatedNotes(notes, authorID)
+
+	if err != nil {
+		return nil, err
 	}
 
 	notesFromLastSync, err := n.noteRepository.GetNotes(filter)

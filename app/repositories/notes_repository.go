@@ -264,9 +264,9 @@ func (n *NoteRepository) DeleteOutdatedNotes(noteIDs []string, authorID string, 
 	for _, noteID := range noteIDs {
 		model := mongo.NewUpdateOneModel().
 			SetFilter(bson.M{
-				"_id":       noteID,
-				"authorId":  authorID,
-				"updatedAt": bson.M{"$lt": deletedTime},
+				"externalId": noteID,
+				"authorId":   authorID,
+				"updatedAt":  bson.M{"$lt": deletedTime},
 			}).
 			SetUpdate(bson.M{
 				"$set":   bson.M{"deletedAt": deletedTime},
