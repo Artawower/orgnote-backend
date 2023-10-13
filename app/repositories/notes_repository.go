@@ -290,45 +290,20 @@ type AvailableSpaceInfo struct {
 	Files     []string `bson:"files"`
 }
 
-func (n *NoteRepository) GetUsedSpaceInfo(userID string) (*AvailableSpaceInfo, error) {
+func (n *NoteRepository) getUsedSpace(userID string) (int64, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	matchStage := bson.D{{"$match", bson.M{"authorId": userID}}}
 	projectStage := bson.D{{
 		"$project", bson.M{
-			"size":   bson.M{"$bsonSize": "$$ROOT"},
-			"images": "$meta.images",
+			"size": bson.M{"$bsonSize": "$$ROOT"},
 		},
 	}}
 	groupedByUsedSpaceStage := bson.D{{
 		"$group", bson.M{
 			"_id":       nil,
 			"usedSpace": bson.M{"$sum": "$size"},
-			"images":    bson.M{"$addToSet": "$images"},
-		},
-	}}
-
-	fileteredFilesProjectStage := bson.D{{
-		"$project", bson.M{
-			"usedSpace": "$usedSpace",
-			"images": bson.M{
-				"$filter": bson.M{
-					"input": "$images",
-					"as":    "img",
-					"cond":  bson.M{"$ne": bson.A{"$$img", nil}},
-				},
-			},
-		},
-	}}
-
-	unwindStage := bson.D{{"$unwind", bson.M{"path": "$images", "preserveNullAndEmptyArrays": false}}}
-
-	groupStage := bson.D{{
-		"$group", bson.M{
-			"_id":       nil,
-			"usedSpace": bson.M{"$last": "$usedSpace"},
-			"files":     bson.M{"$push": "$images"},
 		},
 	}}
 
@@ -336,22 +311,83 @@ func (n *NoteRepository) GetUsedSpaceInfo(userID string) (*AvailableSpaceInfo, e
 		matchStage,
 		projectStage,
 		groupedByUsedSpaceStage,
-		fileteredFilesProjectStage,
-		unwindStage,
-		unwindStage,
-		groupStage,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("note repository: get used space info: failed to aggregate: %v", err)
+		return 0, fmt.Errorf("note repository: get used space: failed to aggregate: %v", err)
 	}
 
-	var res AvailableSpaceInfo
+	var res struct {
+		UsedSpace int64 `bson:"usedSpace"`
+	}
+
 	if cur.Next(ctx) {
 		err := cur.Decode(&res)
 		if err != nil {
-			return nil, fmt.Errorf("note repository: get used space info: failed to decode: %v", err)
+			return 0, fmt.Errorf("note repository: get used space: failed to decode: %v", err)
 		}
 	}
 
-	return &res, nil
+	return res.UsedSpace, nil
+}
+
+func (n *NoteRepository) getUploadedFiles(userID string) ([]string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	matchStage := bson.D{{"$match", bson.M{"authorId": userID, "meta.images": bson.M{"$ne": nil}}}}
+
+	documentsWithImages := bson.D{{
+		"$project", bson.M{"images": "$meta.images"},
+	}}
+
+	unwindedImages := bson.D{{
+		"$unwind", bson.M{"path": "$images"},
+	}}
+
+	groupedImages := bson.D{{
+		"$group", bson.M{
+			"_id":   nil,
+			"files": bson.M{"$addToSet": "$images"},
+		}}}
+
+	cur, err := n.collection.Aggregate(ctx, mongo.Pipeline{
+		matchStage,
+		documentsWithImages,
+		unwindedImages,
+		groupedImages,
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("note repository: get uploaded files: failed to aggregate: %v", err)
+	}
+
+	var res struct {
+		Files []string `bson:"files"`
+	}
+
+	if cur.Next(ctx) {
+		err := cur.Decode(&res)
+		if err != nil {
+			return nil, fmt.Errorf("note repository: get uploaded files: failed to decode: %v", err)
+		}
+	}
+
+	return res.Files, nil
+}
+
+func (n *NoteRepository) GetUsedSpaceInfo(userID string) (*AvailableSpaceInfo, error) {
+	usedSpace, err := n.getUsedSpace(userID)
+	if err != nil {
+		return nil, fmt.Errorf("note repository: get used space info: failed to get used space: %v", err)
+	}
+
+	uploadedFiles, err := n.getUploadedFiles(userID)
+	if err != nil {
+		return nil, fmt.Errorf("note repository: get used space info: failed to get uploaded files: %v", err)
+	}
+
+	return &AvailableSpaceInfo{
+		UsedSpace: usedSpace,
+		Files:     uploadedFiles,
+	}, nil
 }
