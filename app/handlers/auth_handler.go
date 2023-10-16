@@ -55,13 +55,14 @@ type AuthHandler struct {
 // @Accept       json
 // @Produce      json
 // @Param        provider path string true "provider"
+// @Param        state query string false "OAuth state"
 // @Success      200  {object}  handlers.HttpResponse[OAuthRedirectData, any]
 // @Failure      400  {object}  handlers.HttpError[any]
 // @Failure      404  {object}  handlers.HttpError[any]
 // @Failure      500  {object}  handlers.HttpError[any]
 // @Router       /auth/{provider}/login  [get]
 func (a *AuthHandler) Login(c *fiber.Ctx) error {
-	log.Info().Msgf("Fiber context: %v", c.BaseURL())
+	goth_fiber.SetState(c)
 	url, err := goth_fiber.GetAuthURL(c)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).SendString(err.Error())
@@ -110,6 +111,8 @@ func (a *AuthHandler) LoginCallback(c *fiber.Ctx) error {
 	if err != nil {
 		log.Error().Err(err).Msgf("auth handlers: github auth handler: parse redirect url %v", err)
 	}
+
+	state := goth_fiber.GetState(c)
 	q := parsedURL.Query()
 	q.Set("token", u.Token)
 	q.Set("id", u.ID.Hex())
@@ -119,6 +122,7 @@ func (a *AuthHandler) LoginCallback(c *fiber.Ctx) error {
 	q.Set("profileUrl", u.ProfileURL)
 	q.Set("spaceLimit", strconv.FormatInt(u.SpaceLimit, 10))
 	q.Set("usedSpace", strconv.FormatInt(u.UsedSpace, 10))
+	q.Set("state", state)
 	parsedURL.RawQuery = q.Encode()
 
 	return c.Redirect(redirectURL + "?" + parsedURL.RawQuery)

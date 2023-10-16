@@ -257,6 +257,12 @@ const docTemplate = `{
                         "name": "provider",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "OAuth state",
+                        "name": "state",
+                        "in": "query"
                     }
                 ],
                 "responses": {

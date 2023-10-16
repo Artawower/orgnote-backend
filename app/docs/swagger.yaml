@@ -343,6 +343,10 @@ paths:
         name: provider
         required: true
         type: string
+      - description: OAuth state
+        in: query
+        name: state
+        type: string
       produces:
       - application/json
       responses:
