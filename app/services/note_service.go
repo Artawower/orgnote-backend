@@ -312,7 +312,7 @@ func (n *NoteService) excludeSameNotes(srcNotes []models.Note, filterNotes []mod
 	for _, srcNote := range srcNotes {
 		exists := false
 		for _, filterNote := range filterNotes {
-			if srcNote.ID == filterNote.ID && srcNote.UpdatedAt.Equal(filterNote.UpdatedAt) {
+			if srcNote.ExternalID == filterNote.ExternalID && srcNote.UpdatedAt.Equal(filterNote.UpdatedAt) {
 				exists = true
 				break
 			}
