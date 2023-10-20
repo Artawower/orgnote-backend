@@ -3,6 +3,7 @@ package handlers
 import (
 	"bytes"
 	"encoding/gob"
+	"errors"
 	"net/url"
 	"orgnote/app/configs"
 	"orgnote/app/models"
@@ -37,8 +38,10 @@ func mapToUser(user goth.User) *models.User {
 		ProfileURL:          user.RawData["html_url"].(string),
 		Notes:               []models.Note{},
 		APITokens:           []models.APIToken{},
-		SpaceLimit:          tools.ConvertMegabyte2Bytes(100),
-		UsedSpace:           0,
+		// TODO: [selfhosted] master get this values from environment
+		SpaceLimit: 0,
+		UsedSpace:  0,
+		Active:     false,
 	}
 }
 
@@ -244,6 +247,42 @@ func (a *AuthHandler) GetAPITokens(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(NewHttpResponse[[]models.APIToken, any](tokens, nil))
 }
 
+type SubscribeBody struct {
+	Token string `json:"token"`
+}
+
+var ErrorActivationMissingEmail = errors.New("Email field is required. Make sure your provider has public email!")
+
+// Subscribe with token inside body
+// @Summary      Subscribe
+// @Description  Subscribe for backend features, like sync notes
+// @Tags         auth
+// @Param 		   data body SubscribeBody true "token"
+// @Accept       json
+// @Produce      json
+// @Success      200  {object}  any
+// @Failure      500  {object}  handlers.HttpError[any]
+// @Router       /auth/subscribe  [post]
+func (a *AuthHandler) Subscribe(c *fiber.Ctx) error {
+	user := c.Locals("user").(*models.User)
+
+	if user.Email == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(NewHttpError[any](ErrorActivationMissingEmail.Error(), nil))
+	}
+
+	body := new(SubscribeBody)
+
+	if err := c.BodyParser(body); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(NewHttpError[any]("Token doesn't provided", nil))
+	}
+
+	err := a.userService.Subscribe(user, body.Token)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(NewHttpError[any]("Could not subscribe with provided information", nil))
+	}
+	return c.Status(fiber.StatusOK).JSON(NewHttpResponse[any, any](nil, nil))
+}
+
 // TODO: master refactor this code.
 func RegisterAuthHandler(app fiber.Router, userService *services.UserService, config configs.Config, authMiddleware fiber.Handler) {
 	redirectURL := config.BackendHost() + "/auth/github/callback"
@@ -266,4 +305,5 @@ func RegisterAuthHandler(app fiber.Router, userService *services.UserService, co
 	app.Delete("/auth/token/:tokenId", authMiddleware, authHandler.DeleteToken)
 	app.Get("/auth/verify", authHandler.VerifyUser)
 	app.Get("/auth/api-tokens", authHandler.GetAPITokens)
+	app.Post("/auth/subscribe", authMiddleware, authHandler.Subscribe)
 }

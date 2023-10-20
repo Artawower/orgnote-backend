@@ -12,6 +12,8 @@ env:
   BACKEND_HOST: ${{ vars.BACKEND_HOST }}
   BACKEND_DOMAIN: ${{ vars.BACKEND_DOMAIN }}
   BACKEND_SCHEMA: ${{ vars.BACKEND_SCHEMA }}
+  ACCESS_CHECK_URL: ${{ vars.ACCESS_CHECK_URL }}
+  ACCESS_CHECK_TOKEN: ${{ secrets.ACCESS_CHECK_TOKEN }}
 
 jobs:
   build:
@@ -67,7 +69,7 @@ jobs:
             git reset --hard origin/master
 
             cat <<EOT > .env
-            DEUBG=true
+            DEBUG=true
             API_URL=${{ env.API_URL }}
             MONGO_USERNAME=${{ env.MONGO_USERNAME }}
             MONGO_PASSWORD=${{ env.MONGO_PASSWORD }}

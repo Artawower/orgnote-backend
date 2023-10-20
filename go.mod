@@ -1,12 +1,16 @@
 module orgnote
 
-go 1.20
+go 1.21
 
 require (
+	github.com/Code-Hex/go-generics-cache v1.3.1
+	github.com/getkin/kin-openapi v0.120.0
 	github.com/gofiber/fiber/v2 v2.48.0
 	github.com/gofiber/swagger v0.1.12
-	github.com/google/uuid v1.3.0
+	github.com/google/uuid v1.3.1
+	github.com/labstack/echo/v4 v4.11.2
 	github.com/markbates/goth v1.77.0
+	github.com/oapi-codegen/runtime v1.0.0
 	github.com/rs/zerolog v1.29.1
 	github.com/shareed2k/goth_fiber v0.2.9
 	github.com/stretchr/testify v1.8.4
@@ -16,9 +20,9 @@ require (
 )
 
 require (
-	github.com/Code-Hex/go-generics-cache v1.3.1 // indirect
 	github.com/KyleBanks/depth v1.2.1 // indirect
 	github.com/andybalholm/brotli v1.0.5 // indirect
+	github.com/apapsch/go-jsonmerge/v2 v2.0.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/go-openapi/jsonpointer v0.20.0 // indirect
 	github.com/go-openapi/jsonreference v0.20.2 // indirect
@@ -29,31 +33,36 @@ require (
 	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/gorilla/securecookie v1.1.1 // indirect
 	github.com/gorilla/sessions v1.2.1 // indirect
+	github.com/invopop/yaml v0.2.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/klauspost/compress v1.16.7 // indirect
+	github.com/labstack/gommon v0.4.0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.19 // indirect
 	github.com/mattn/go-runewidth v0.0.15 // indirect
+	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826 // indirect
 	github.com/montanaflynn/stats v0.7.1 // indirect
+	github.com/perimeterx/marshmallow v1.1.5 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rivo/uniseg v0.4.4 // indirect
 	github.com/rogpeppe/go-internal v1.11.0 // indirect
 	github.com/swaggo/files/v2 v2.0.0 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasthttp v1.48.0 // indirect
+	github.com/valyala/fasttemplate v1.2.2 // indirect
 	github.com/valyala/tcplisten v1.0.0 // indirect
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
 	github.com/xdg-go/scram v1.1.2 // indirect
 	github.com/xdg-go/stringprep v1.0.4 // indirect
 	github.com/youmark/pkcs8 v0.0.0-20201027041543-1326539a0a0a // indirect
-	golang.org/x/crypto v0.11.0 // indirect
+	golang.org/x/crypto v0.14.0 // indirect
 	golang.org/x/exp v0.0.0-20220328175248-053ad81199eb // indirect
-	golang.org/x/net v0.12.0 // indirect
+	golang.org/x/net v0.17.0 // indirect
 	golang.org/x/oauth2 v0.10.0 // indirect
 	golang.org/x/sync v0.3.0 // indirect
-	golang.org/x/sys v0.10.0 // indirect
-	golang.org/x/text v0.11.0 // indirect
+	golang.org/x/sys v0.13.0 // indirect
+	golang.org/x/text v0.13.0 // indirect
 	golang.org/x/tools v0.11.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect

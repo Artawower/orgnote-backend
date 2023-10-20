@@ -7,7 +7,7 @@ tmp_dir = "tmp"
 
 [build]
 # Just plain old shell command. You could use `make` as well.
-cmd = "swag init -d /app/app -o /app/app/docs && go build -o ./tmp/app/engine /app/app/main.go"
+cmd = "sh generate-subscription-api.sh && swag init -d /app/app -o /app/app/docs && go build -o ./tmp/app/engine /app/app/main.go"
 # Binary file yields from `cmd`.
 bin = "tmp/app"
 
@@ -20,7 +20,7 @@ log = "air_errors.log"
 include_ext = ["go", "yaml"]
 # Ignore these filename extensions or directories.
 exclude_dir = ["tmp", "docs"]
-exclude_regex = ["docs", "swagger.yaml", "swagger.json"]
+exclude_regex = ["docs", "swagger.yaml", "swagger.json", "generated"]
 # It's not necessary to trigger build each time file changes if it's too frequent.
 delay = 1000 # ms
 

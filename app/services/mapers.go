@@ -37,6 +37,7 @@ func mapToUserPersonalInfo(user *models.User) *models.UserPersonalInfo {
 		ProfileURL: user.ProfileURL,
 		SpaceLimit: user.SpaceLimit,
 		UsedSpace:  user.UsedSpace,
+		Active:     user.Active,
 	}
 
 }

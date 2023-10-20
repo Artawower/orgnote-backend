@@ -86,6 +86,46 @@ const docTemplate = `{
                 }
             }
         },
+        "/auth/subscribe": {
+            "post": {
+                "description": "Subscribe for backend features, like sync notes",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Subscribe",
+                "parameters": [
+                    {
+                        "description": "token",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.SubscribeBody"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.HttpError-any"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/token": {
             "post": {
                 "description": "Create API token",
@@ -936,6 +976,14 @@ const docTemplate = `{
                 }
             }
         },
+        "handlers.SubscribeBody": {
+            "type": "object",
+            "properties": {
+                "token": {
+                    "type": "string"
+                }
+            }
+        },
         "handlers.SyncNotesRequest": {
             "type": "object",
             "properties": {
@@ -1180,6 +1228,9 @@ const docTemplate = `{
         "models.UserPersonalInfo": {
             "type": "object",
             "properties": {
+                "active": {
+                    "type": "boolean"
+                },
                 "avatarUrl": {
                     "type": "string"
                 },

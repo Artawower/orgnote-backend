@@ -2,19 +2,22 @@ package services
 
 import (
 	"fmt"
+	"orgnote/app/infrastructure"
 	"orgnote/app/models"
 	"orgnote/app/repositories"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/rs/zerolog/log"
 )
 
 type UserService struct {
-	userRepository *repositories.UserRepository
-	noteRepository *repositories.NoteRepository
+	userRepository  *repositories.UserRepository
+	noteRepository  *repositories.NoteRepository
+	subscriptionAPI *infrastructure.SubscriptionAPI
 }
 
-func NewUserService(userRepository *repositories.UserRepository, noteRepository *repositories.NoteRepository) *UserService {
-	return &UserService{userRepository, noteRepository}
+func NewUserService(userRepository *repositories.UserRepository, noteRepository *repositories.NoteRepository, subscriptionAPI *infrastructure.SubscriptionAPI) *UserService {
+	return &UserService{userRepository, noteRepository, subscriptionAPI}
 }
 
 func (u *UserService) Login(user models.User) (*models.User, error) {
@@ -54,6 +57,28 @@ func (u *UserService) DeleteToken(user *models.User, tokenID string) error {
 	err := u.userRepository.DeleteAPIToken(user, tokenID)
 	if err != nil {
 		return fmt.Errorf("user service: delete token: %v", err)
+	}
+	return nil
+}
+
+func (u *UserService) Subscribe(user *models.User, token string) error {
+	// TODO: master transaction with context
+	data, err := u.subscriptionAPI.ActivateSubscription(user.Email, token)
+	spew.Dump(data)
+	if err != nil {
+		return fmt.Errorf("user service: subscribe: activate subscription %v", err)
+	}
+
+	err = u.userRepository.SetActiveStatus(user.ID.Hex(), true)
+	if err != nil {
+		return fmt.Errorf("user service: subscribe: set active status: %v", err)
+	}
+
+	spaceLimit := int64(*data.SpaceLimit)
+
+	err = u.userRepository.UpdateSpaceLimitInfo(user.ID.Hex(), nil, &spaceLimit)
+	if err != nil {
+		return fmt.Errorf("user service: subscribe: update space limit info: %v", err)
 	}
 	return nil
 }

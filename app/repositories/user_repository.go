@@ -326,7 +326,7 @@ func (u *UserRepository) GetAll() ([]models.User, error) {
 	return users, nil
 }
 
-func (u *UserRepository) UpdateUsedSpace(usedID string, usedSpace int64) error {
+func (u *UserRepository) UpdateSpaceLimitInfo(usedID string, usedSpace *int64, spaceLimit *int64) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -338,12 +338,42 @@ func (u *UserRepository) UpdateUsedSpace(usedID string, usedSpace int64) error {
 
 	filter := bson.M{"_id": objID}
 
-	update := bson.M{"$set": bson.M{"usedSpace": usedSpace}}
+	updatedModel := bson.M{}
+	if usedSpace != nil {
+		updatedModel["usedSpace"] = usedSpace
+	}
+	if spaceLimit != nil {
+		updatedModel["spaceLimit"] = spaceLimit
+	}
+	update := bson.M{"$set": updatedModel}
 
 	_, err = u.collection.UpdateOne(ctx, filter, update)
 
 	if err != nil {
 		return fmt.Errorf("note repository: update used space: failed to update: %v", err)
+	}
+
+	return nil
+}
+
+func (u *UserRepository) SetActiveStatus(userID string, activeStatus bool) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	objID, err := primitive.ObjectIDFromHex(userID)
+
+	if err != nil {
+		return fmt.Errorf("note repository: set active status: convert id: %v", err)
+	}
+
+	filter := bson.M{"_id": objID}
+
+	update := bson.M{"$set": bson.M{"active": activeStatus}}
+
+	_, err = u.collection.UpdateOne(ctx, filter, update)
+
+	if err != nil {
+		return fmt.Errorf("note repository: set active status: failed to update: %v", err)
 	}
 
 	return nil

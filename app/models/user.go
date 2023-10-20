@@ -32,6 +32,7 @@ type User struct {
 	NoteGraph           NoteGraph          `json:"noteGraph" bson:"noteGraph"`
 	SpaceLimit          int64              `json:"spaceLimit" bson:"spaceLimit"`
 	UsedSpace           int64              `json:"usedSpace" bson:"usedSpace"`
+	Active              bool               `json:"active" bson:"active"`
 }
 
 type PublicUser struct {
@@ -52,4 +53,5 @@ type UserPersonalInfo struct {
 	ProfileURL string `json:"profileUrl"`
 	SpaceLimit int64  `json:"spaceLimit"`
 	UsedSpace  int64  `json:"usedSpace"`
+	Active     bool   `json:"active"`
 }

@@ -4,6 +4,7 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/rs/zerolog/log"
 )
 
@@ -106,7 +107,7 @@ func NewConfig() Config {
 		AccessCheckToken:         accessCheckToken,
 		AccessTokenCacheLifeTime: accessTokenCacheLifeTime,
 	}
-	log.Info().Msgf("Config: %+v", config)
+	log.Info().Msgf("Config: %+v", spew.Sdump(config))
 
 	return config
 }

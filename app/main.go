@@ -65,13 +65,18 @@ func main() {
 
 	database := mongoClient.Database("orgnote")
 
-	accessChecker := infrastructure.NewAccessChecker(
+	subscriptionAPI, err := infrastructure.NewSubscription(
 		http,
 		config.AccessCheckerURL,
 		config.AccessCheckToken,
-		cache.New[string, infrastructure.AccessInfo],
+		cache.New[string, infrastructure.SubscriptionInfo],
 		config.AccessTokenCacheLifeTime,
 	)
+
+	if err != nil {
+		log.Fatal().Err(err).Msg("failed to create subscription")
+		return
+	}
 
 	app := fiber.New()
 	api := app.Group("/v1")
@@ -88,11 +93,11 @@ func main() {
 	}))
 
 	authMiddleware := handlers.NewAuthMiddleware()
-	accessMiddleware := handlers.NewAccessMiddleware(accessChecker)
+	accessMiddleware := handlers.NewAccessMiddleware(subscriptionAPI)
 
 	noteService := services.NewNoteService(noteRepository, userRepository, tagRepository, fileStorage)
 	tagService := services.NewTagService(tagRepository)
-	userService := services.NewUserService(userRepository, noteRepository)
+	userService := services.NewUserService(userRepository, noteRepository, subscriptionAPI)
 	fileService := services.NewFileService(fileStorage, userRepository)
 
 	// api.Use(handlers.NewAuthMiddleware())

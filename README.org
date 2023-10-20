@@ -46,6 +46,10 @@ This project is part of [[https://github.com/Artawower/orgnote][Org Note project
 - ~ACCESS_CHECK_TOKEN~ - Auth token for request to ~ACCESS_CHECK_URL~. Will be added into ~Authorization~ header
 
 ** Local development
+[[https://github.com/deepmap/oapi-codegen][Install open api codegen and execute script]]
+#+BEGIN_SRC bash
+chmod +x generate-subscription-api.sh && ./generate-subscription-api
+#+END_SRC
 Make sure that you have 
 #+BEGIN_SRC bash
 git clone git@github.com:Artawower/orgnote-backend.git && cd orgnote-backend

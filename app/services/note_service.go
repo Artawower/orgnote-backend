@@ -339,7 +339,7 @@ func (n *NoteService) CalculateUserSpace(userID string) error {
 
 	totalUsedSpace := spaceInfo.UsedSpace + usedFileSpace
 
-	err = n.userRepository.UpdateUsedSpace(userID, totalUsedSpace)
+	err = n.userRepository.UpdateSpaceLimitInfo(userID, &totalUsedSpace, nil)
 
 	if err != nil {
 		return fmt.Errorf("note service: calculate user space: could not update used space: %v", err)
