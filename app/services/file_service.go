@@ -11,7 +11,7 @@ import (
 )
 
 type FileStorage interface {
-	Upload(fileName string, file io.Reader) error
+	Upload(folder string, fileName string, file io.Reader) error
 }
 
 type FileService struct {
@@ -39,9 +39,10 @@ func (a *FileService) UploadFiles(user *models.User, fileHeaders []*multipart.Fi
 			if err != nil {
 				log.Err(err).Msgf("file service: upload images: could not open uploaded file: %v", fh.Filename)
 			}
-			err = a.fileStorage.Upload(fh.Filename, file)
+			userFileDir := user.ID.Hex()
+			err = a.fileStorage.Upload(userFileDir, fh.Filename, file)
 			if err != nil {
-				log.Err(err).Msg("file service: upload images: could not upload image")
+				log.Err(err).Msgf("file service: upload images: could not upload image: %v", err)
 				// TODO: add aggregation of errors
 				return
 			}

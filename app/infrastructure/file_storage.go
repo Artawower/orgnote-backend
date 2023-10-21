@@ -14,13 +14,21 @@ type FileStorage struct {
 	dirPath string
 }
 
-func (f *FileStorage) Upload(fileName string, file io.Reader) error {
+func (f *FileStorage) Upload(folder string, fileName string, file io.Reader) error {
 	fileData, err := ioutil.ReadAll(file)
 	if err != nil {
 		return fmt.Errorf("file storage: upload: could not read file: %v", err)
 	}
 
-	err = ioutil.WriteFile(f.getFullPath(fileName), fileData, 0644)
+	finalFolder := f.getFullPath(folder)
+	err = os.MkdirAll(finalFolder, os.ModePerm)
+
+	if err != nil {
+		return fmt.Errorf("file storage: upload: could not create file directory: %v", err)
+	}
+
+	filePath := f.getFullPath(folder, fileName)
+	err = ioutil.WriteFile(filePath, fileData, 0644)
 	if err != nil {
 		return fmt.Errorf("file storage: upload: could not write file: %v", err)
 	}
@@ -28,18 +36,18 @@ func (f *FileStorage) Upload(fileName string, file io.Reader) error {
 	return nil
 }
 
-func (f *FileStorage) getFullPath(fileName string) string {
-	return path.Join(f.dirPath, fileName)
+func (f *FileStorage) getFullPath(filePath ...string) string {
+	return "./" + path.Join(f.dirPath, path.Join(filePath...))
 }
 
 // Return file size in bytes
-func (f *FileStorage) CalculateFileSize(fileName ...string) (int64, error) {
+func (f *FileStorage) CalculateFileSize(folder string, fileName ...string) (int64, error) {
 	fileSize := int64(0)
 
 	for _, name := range fileName {
 		errCh := make(chan error)
 		resCh := make(chan int64)
-		go f.getFileSize(name, resCh, errCh)
+		go f.getFileSize(folder, name, resCh, errCh)
 
 		select {
 		case err := <-errCh:
@@ -52,8 +60,8 @@ func (f *FileStorage) CalculateFileSize(fileName ...string) (int64, error) {
 	return fileSize, nil
 }
 
-func (f *FileStorage) getFileSize(fileName string, resCh chan<- int64, errCh chan<- error) {
-	file, err := os.Open(f.getFullPath(fileName))
+func (f *FileStorage) getFileSize(folder string, fileName string, resCh chan<- int64, errCh chan<- error) {
+	file, err := os.Open(f.getFullPath(folder, fileName))
 	if err != nil {
 		errCh <- fmt.Errorf("file storage: get file size: could not open file: %v", err)
 		return

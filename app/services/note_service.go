@@ -11,7 +11,7 @@ import (
 )
 
 type NoteFileStorage interface {
-	CalculateFileSize(fileName ...string) (int64, error)
+	CalculateFileSize(folder string, fileName ...string) (int64, error)
 }
 
 type NoteService struct {
@@ -332,7 +332,7 @@ func (n *NoteService) CalculateUserSpace(userID string) error {
 	}
 	log.Info().Msgf("note service: calculate user space: space info: %v", spaceInfo)
 
-	usedFileSpace, err := n.fileStorage.CalculateFileSize(spaceInfo.Files...)
+	usedFileSpace, err := n.fileStorage.CalculateFileSize(userID, spaceInfo.Files...)
 	if err != nil {
 		return fmt.Errorf("note service: calculate user space: could not calculate file size: %v", err)
 	}
