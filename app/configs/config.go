@@ -22,6 +22,7 @@ type Config struct {
 	AccessCheckerURL         *string
 	AccessCheckToken         *string
 	AccessTokenCacheLifeTime int
+	MaximumFileSize          int
 }
 
 func (c *Config) BackendHost() string {
@@ -56,7 +57,7 @@ func NewConfig() Config {
 		log.Warn().Msg("Github OAuth is not configured")
 	}
 
-	debug := os.Getenv("MODE") == "DEBUG"
+	debug := os.Getenv("DEBUG") == "true"
 
 	clientAddress := appAddress
 	if envClientAddress := os.Getenv("CLIENT_ADDRESS"); envClientAddress != "" {
@@ -90,6 +91,16 @@ func NewConfig() Config {
 		}
 	}
 
+	maximumFileSize := 1024 * 1024 * 10
+	if envMaximumFileSize := os.Getenv("MAXIMUM_FILE_SIZE"); envMaximumFileSize != "" {
+		val, err := strconv.Atoi(envMaximumFileSize)
+		if err != nil {
+			maximumFileSize = val
+		} else {
+			log.Warn().Msgf("MAXIMUM_FILE_SIZE is not a number, init with default value: %d", maximumFileSize)
+		}
+	}
+
 	backendPort := os.Getenv("BACKEND_PORT")
 
 	config := Config{
@@ -106,6 +117,7 @@ func NewConfig() Config {
 		AccessCheckerURL:         accessCheckerURL,
 		AccessCheckToken:         accessCheckToken,
 		AccessTokenCacheLifeTime: accessTokenCacheLifeTime,
+		MaximumFileSize:          maximumFileSize,
 	}
 	log.Info().Msgf("Config: %+v", spew.Sdump(config))
 

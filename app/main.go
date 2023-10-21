@@ -78,7 +78,9 @@ func main() {
 		return
 	}
 
-	app := fiber.New()
+	app := fiber.New(fiber.Config{
+		BodyLimit: config.MaximumFileSize,
+	})
 	api := app.Group("/v1")
 
 	// TODO: master May be someday there will be DI
@@ -111,6 +113,11 @@ func main() {
 	// handlers.RegisterUserHandlers(app)
 	// handlers.RegisterTagHandlers(app)
 	app.Static("media", config.MediaPath)
+
+	// NOTE: for local file uploading (tmp quick hack)
+	if config.Debug {
+		app.Static("v1/media", config.MediaPath)
+	}
 
 	log.Info().Msg("Application start debug mode: " + config.AppAddress)
 	app.Listen(config.AppAddress)
