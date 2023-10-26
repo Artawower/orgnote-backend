@@ -1105,6 +1105,12 @@ const docTemplate = `{
                 "category": {
                     "$ref": "#/definitions/models.category"
                 },
+                "connectedNotes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.NoteLink"
+                    }
+                },
                 "description": {
                     "type": "string"
                 },
@@ -1130,12 +1136,6 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "type": "string"
-                    }
-                },
-                "linkedArticles": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.NoteLink"
                     }
                 },
                 "previewImg": {

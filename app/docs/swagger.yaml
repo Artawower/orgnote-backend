@@ -185,6 +185,10 @@ definitions:
     properties:
       category:
         $ref: '#/definitions/models.category'
+      connectedNotes:
+        items:
+          $ref: '#/definitions/models.NoteLink'
+        type: array
       description:
         type: string
       externalLinks:
@@ -202,10 +206,6 @@ definitions:
       images:
         items:
           type: string
-        type: array
-      linkedArticles:
-        items:
-          $ref: '#/definitions/models.NoteLink'
         type: array
       previewImg:
         type: string

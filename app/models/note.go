@@ -30,7 +30,7 @@ type NoteMeta struct {
 	Description    *string        `json:"description" bson:"description"`
 	Category       *category      `json:"category" bson:"category"`
 	Headings       *[]NoteHeading `json:"headings" bson:"headings"`
-	LinkedArticles *[]NoteLink    `json:"linkedArticles" bson:"linkedArticles"`
+	ConnectedNotes *[]NoteLink    `json:"connectedNotes" bson:"connectedNotes"`
 	Published      bool           `json:"published" bson:"published"`
 	ExternalLinks  *[]NoteLink    `json:"externalLinks" bson:"externalLinks"`
 	Startup        *string        `json:"startup" bson:"startup"`

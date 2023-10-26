@@ -212,10 +212,11 @@ func (a *NoteService) updateNoteGraph(userID string, note models.Note) error {
 	return nil
 }
 
+// TODO: master delete everything about graph. Redundant
 func (a *NoteService) getGraphNoteNode(note models.Note) models.GraphNoteNode {
 	weight := 0
-	if note.Meta.LinkedArticles != nil {
-		weight = len(*note.Meta.LinkedArticles)
+	if note.Meta.ConnectedNotes != nil {
+		weight = len(*note.Meta.ConnectedNotes)
 	}
 
 	title := ""
@@ -235,7 +236,7 @@ func (a *NoteService) getRelatedLinks(note models.Note) (graphNoteLinks []models
 	if note.Meta.ExternalLinks == nil {
 		return
 	}
-	for _, relation := range *note.Meta.LinkedArticles {
+	for _, relation := range *note.Meta.ConnectedNotes {
 
 		realID, ok := tools.ExportLinkID(relation.Url)
 		if !ok {
