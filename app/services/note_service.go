@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"orgnote/app/models"
 	"orgnote/app/repositories"
-	"orgnote/app/tools"
 	"time"
 
 	"github.com/rs/zerolog/log"
@@ -71,7 +70,6 @@ func (n *NoteService) BulkCreateOrUpdate(userID string, notes []models.Note) err
 			Likes:      0,
 		})
 		tags = append(tags, note.Meta.FileTags...)
-		go n.updateNoteGraph(userID, note)
 	}
 	// TODO: master add transaction here
 	err := n.noteRepository.BulkUpsert(userID, filteredNotesWithID)
@@ -187,70 +185,7 @@ func (a *NoteService) GetNote(id string, userID string) (*models.PublicNote, err
 	return publicNote, nil
 }
 
-func (a *NoteService) GetNoteGraph(userID string) (*models.NoteGraph, error) {
-	graph, err := a.userRepository.GetNoteGraph(userID)
-	if err != nil {
-		return nil, fmt.Errorf("note service: get note graph: could not get note graph: %v", err)
-	}
-	return graph, nil
-}
-
-func (a *NoteService) updateNoteGraph(userID string, note models.Note) error {
-
-	currentNoteNode := a.getGraphNoteNode(note)
-	relatedLinks := a.getRelatedLinks(note)
-
-	graphNoteLinks := repositories.GraphNoteLinks{
-		Node:  currentNoteNode,
-		Links: relatedLinks,
-	}
-	err := a.userRepository.UpsertGraphNode(userID, graphNoteLinks)
-	if err != nil {
-		// TODO: add this job to queue and log error
-		return fmt.Errorf("note service: update note graph: upser graph node: %v", err)
-	}
-	return nil
-}
-
 // TODO: master delete everything about graph. Redundant
-func (a *NoteService) getGraphNoteNode(note models.Note) models.GraphNoteNode {
-	weight := 0
-	if note.Meta.ConnectedNotes != nil {
-		weight = len(*note.Meta.ConnectedNotes)
-	}
-
-	title := ""
-	if note.Meta.Title != nil {
-		title = *note.Meta.Title
-	}
-
-	return models.GraphNoteNode{
-		ExternalID: note.ExternalID,
-		Title:      title,
-		Weight:     weight,
-	}
-}
-
-func (a *NoteService) getRelatedLinks(note models.Note) (graphNoteLinks []models.GraphNoteLink) {
-	graphNoteLinks = []models.GraphNoteLink{}
-	if note.Meta.ExternalLinks == nil {
-		return
-	}
-	for _, relation := range *note.Meta.ConnectedNotes {
-
-		realID, ok := tools.ExportLinkID(relation.Url)
-		if !ok {
-			continue
-		}
-		graphNoteLinks = append(graphNoteLinks, models.GraphNoteLink{
-			Source: note.ExternalID,
-			Target: realID,
-		})
-	}
-
-	return
-}
-
 func (n *NoteService) DeleteNotes(ids []string, authorID string) error {
 	return n.noteRepository.MarkNotesAsDeleted(ids, authorID)
 }

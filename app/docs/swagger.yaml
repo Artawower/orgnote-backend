@@ -79,12 +79,6 @@ definitions:
         $ref: '#/definitions/models.APIToken'
       meta: {}
     type: object
-  handlers.HttpResponse-models_NoteGraph-any:
-    properties:
-      data:
-        $ref: '#/definitions/models.NoteGraph'
-      meta: {}
-    type: object
   handlers.HttpResponse-models_PublicNote-any:
     properties:
       data:
@@ -140,32 +134,9 @@ definitions:
       token:
         type: string
     type: object
-  models.GraphNoteLink:
-    properties:
-      source:
-        type: string
-      target:
-        type: string
-    type: object
-  models.GraphNoteNode:
-    properties:
-      externalId:
-        type: string
-      title:
-        type: string
-      weight:
-        type: integer
-    type: object
-  models.NoteGraph:
-    properties:
-      links:
-        items:
-          $ref: '#/definitions/models.GraphNoteLink'
-        type: array
-      nodes:
-        items:
-          $ref: '#/definitions/models.GraphNoteNode'
-        type: array
+  models.ConnectedNotes:
+    additionalProperties:
+      type: string
     type: object
   models.NoteHeading:
     properties:
@@ -186,9 +157,7 @@ definitions:
       category:
         $ref: '#/definitions/models.category'
       connectedNotes:
-        items:
-          $ref: '#/definitions/models.NoteLink'
-        type: array
+        $ref: '#/definitions/models.ConnectedNotes'
       description:
         type: string
       externalLinks:
@@ -740,33 +709,6 @@ paths:
           schema:
             $ref: '#/definitions/handlers.HttpError-any'
       summary: Upsert notes
-      tags:
-      - notes
-  /notes/graph:
-    get:
-      consumes:
-      - application/json
-      description: Return graph model with links between connected notes
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/handlers.HttpResponse-models_NoteGraph-any'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/handlers.HttpError-any'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/handlers.HttpError-any'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/handlers.HttpError-any'
-      summary: Get notes graph
       tags:
       - notes
   /notes/sync:

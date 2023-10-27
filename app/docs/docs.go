@@ -634,47 +634,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/notes/graph": {
-            "get": {
-                "description": "Return graph model with links between connected notes",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "notes"
-                ],
-                "summary": "Get notes graph",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.HttpResponse-models_NoteGraph-any"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.HttpError-any"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.HttpError-any"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.HttpError-any"
-                        }
-                    }
-                }
-            }
-        },
         "/notes/sync": {
             "post": {
                 "description": "Synchronize notes with specific timestamp",
@@ -941,15 +900,6 @@ const docTemplate = `{
                 "meta": {}
             }
         },
-        "handlers.HttpResponse-models_NoteGraph-any": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/models.NoteGraph"
-                },
-                "meta": {}
-            }
-        },
         "handlers.HttpResponse-models_PublicNote-any": {
             "type": "object",
             "properties": {
@@ -1035,46 +985,10 @@ const docTemplate = `{
                 }
             }
         },
-        "models.GraphNoteLink": {
+        "models.ConnectedNotes": {
             "type": "object",
-            "properties": {
-                "source": {
-                    "type": "string"
-                },
-                "target": {
-                    "type": "string"
-                }
-            }
-        },
-        "models.GraphNoteNode": {
-            "type": "object",
-            "properties": {
-                "externalId": {
-                    "type": "string"
-                },
-                "title": {
-                    "type": "string"
-                },
-                "weight": {
-                    "type": "integer"
-                }
-            }
-        },
-        "models.NoteGraph": {
-            "type": "object",
-            "properties": {
-                "links": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.GraphNoteLink"
-                    }
-                },
-                "nodes": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.GraphNoteNode"
-                    }
-                }
+            "additionalProperties": {
+                "type": "string"
             }
         },
         "models.NoteHeading": {
@@ -1106,10 +1020,7 @@ const docTemplate = `{
                     "$ref": "#/definitions/models.category"
                 },
                 "connectedNotes": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.NoteLink"
-                    }
+                    "$ref": "#/definitions/models.ConnectedNotes"
                 },
                 "description": {
                     "type": "string"

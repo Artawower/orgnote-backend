@@ -234,32 +234,6 @@ func (h *NoteHandlers) UpsertNotes(c *fiber.Ctx) error {
 	return c.Status(http.StatusOK).JSON(nil)
 }
 
-// GetNoteGraph godoc
-// @Summary      Get notes graph
-// @Description  Return graph model with links between connected notes
-// @Tags         notes
-// @Accept       json
-// @Produce      json
-// @Success      200  {object}  handlers.HttpResponse[models.NoteGraph, any]
-// @Failure      400  {object}  HttpError[any]
-// @Failure      404  {object}  HttpError[any]
-// @Failure      500  {object}  HttpError[any]
-// @Router       /notes/graph  [get]
-func (h *NoteHandlers) GetNoteGraph(c *fiber.Ctx) error {
-	ctxUser := c.Locals("user")
-
-	if ctxUser == nil {
-		return c.Status(http.StatusNotFound).Send(nil)
-	}
-
-	graph, err := h.noteService.GetNoteGraph(ctxUser.(*models.User).ID.Hex())
-	if err != nil {
-		return c.Status(http.StatusInternalServerError).JSON(NewHttpError[any]("Couldn't get note graph", nil))
-	}
-
-	return c.Status(http.StatusOK).JSON(NewHttpResponse[*models.NoteGraph, any](graph, nil))
-}
-
 type SyncNotesRequest struct {
 	Timestamp       time.Time      `json:"timestamp"`
 	Notes           []CreatingNote `json:"notes"`
@@ -334,7 +308,6 @@ func RegisterNoteHandler(
 	noteHandlers := &NoteHandlers{
 		noteService: noteService,
 	}
-	app.Get("/notes/graph", authMiddleware, noteHandlers.GetNoteGraph)
 	app.Get("/notes/:id", noteHandlers.GetNote)
 	app.Get("/notes", noteHandlers.GetNotes)
 	app.Post("/notes/sync", authMiddleware, accessMiddleware, noteHandlers.SyncNotes)

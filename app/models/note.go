@@ -16,6 +16,8 @@ type NoteLink struct {
 	Name string `json:"name"`
 }
 
+type ConnectedNotes map[string]string
+
 type category string
 
 const (
@@ -25,17 +27,17 @@ const (
 )
 
 type NoteMeta struct {
-	PreviewImg     *string        `json:"previewImg" bson:"previewImg"`
-	Title          *string        `json:"title" bson:"title"`
-	Description    *string        `json:"description" bson:"description"`
-	Category       *category      `json:"category" bson:"category"`
-	Headings       *[]NoteHeading `json:"headings" bson:"headings"`
-	ConnectedNotes *[]NoteLink    `json:"connectedNotes" bson:"connectedNotes"`
-	Published      bool           `json:"published" bson:"published"`
-	ExternalLinks  *[]NoteLink    `json:"externalLinks" bson:"externalLinks"`
-	Startup        *string        `json:"startup" bson:"startup"`
-	FileTags       []string       `json:"fileTags" bson:"fileTags"`
-	Images         []string       `json:"images" bson:"images"`
+	PreviewImg     *string         `json:"previewImg" bson:"previewImg"`
+	Title          *string         `json:"title" bson:"title"`
+	Description    *string         `json:"description" bson:"description"`
+	Category       *category       `json:"category" bson:"category"`
+	Headings       *[]NoteHeading  `json:"headings" bson:"headings"`
+	ConnectedNotes *ConnectedNotes `json:"connectedNotes" bson:"connectedNotes"`
+	Published      bool            `json:"published" bson:"published"`
+	ExternalLinks  *[]NoteLink     `json:"externalLinks" bson:"externalLinks"`
+	Startup        *string         `json:"startup" bson:"startup"`
+	FileTags       []string        `json:"fileTags" bson:"fileTags"`
+	Images         []string        `json:"images" bson:"images"`
 }
 
 type Note struct {
