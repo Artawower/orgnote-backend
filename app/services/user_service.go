@@ -61,6 +61,19 @@ func (u *UserService) DeleteToken(user *models.User, tokenID string) error {
 	return nil
 }
 
+func (u *UserService) DeleteUser(user *models.User) error {
+	err := u.userRepository.DeleteUser(user.ID.Hex())
+	if err != nil {
+		return fmt.Errorf("user service: delete user: %v", err)
+	}
+
+	err = u.noteRepository.DeleteUserNotes(user.ID.Hex())
+	if err != nil {
+		return fmt.Errorf("user service: delete user notes: %v", err)
+	}
+	return nil
+}
+
 func (u *UserService) Subscribe(user *models.User, token string) error {
 	// TODO: master transaction with context
 	data, err := u.subscriptionAPI.ActivateSubscription(user.Email, token)

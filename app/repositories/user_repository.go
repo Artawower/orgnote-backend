@@ -378,3 +378,24 @@ func (u *UserRepository) SetActiveStatus(userID string, activeStatus bool) error
 
 	return nil
 }
+
+func (u *UserRepository) DeleteUser(userID string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	objID, err := primitive.ObjectIDFromHex(userID)
+
+	if err != nil {
+		return fmt.Errorf("note repository: delete user: convert id: %v", err)
+	}
+
+	filter := bson.M{"_id": objID}
+
+	_, err = u.collection.DeleteOne(ctx, filter)
+
+	if err != nil {
+		return fmt.Errorf("note repository: delete user: failed to delete: %v", err)
+	}
+
+	return nil
+}

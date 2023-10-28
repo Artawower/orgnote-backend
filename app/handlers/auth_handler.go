@@ -247,6 +247,26 @@ func (a *AuthHandler) GetAPITokens(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(NewHttpResponse[[]models.APIToken, any](tokens, nil))
 }
 
+// DeleteUserAccount godoc
+// @Summary      Delete user account
+// @Description  Delete user account
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Success      200  {object}  any
+// @Failure      500  {object}  handlers.HttpError[any]
+// @Router       /auth/account  [delete]
+func (a *AuthHandler) DeleteUserAccount(c *fiber.Ctx) error {
+	user := c.Locals("user").(*models.User)
+
+	err := a.userService.DeleteUser(user)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).SendString("Could not delete user account")
+	}
+
+	return c.Status(fiber.StatusOK).JSON(NewHttpResponse[any, any](nil, nil))
+}
+
 type SubscribeBody struct {
 	Token string `json:"token"`
 }
@@ -306,4 +326,5 @@ func RegisterAuthHandler(app fiber.Router, userService *services.UserService, co
 	app.Get("/auth/verify", authHandler.VerifyUser)
 	app.Get("/auth/api-tokens", authHandler.GetAPITokens)
 	app.Post("/auth/subscribe", authMiddleware, authHandler.Subscribe)
+	app.Delete("/auth/account", authMiddleware, authHandler.DeleteUserAccount)
 }

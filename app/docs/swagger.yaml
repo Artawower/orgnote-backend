@@ -345,6 +345,25 @@ paths:
       summary: OAuth Login
       tags:
       - auth
+  /auth/account:
+    delete:
+      consumes:
+      - application/json
+      description: Delete user account
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.HttpError-any'
+      summary: Delete user account
+      tags:
+      - auth
   /auth/api-tokens:
     get:
       consumes:

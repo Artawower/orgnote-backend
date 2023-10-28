@@ -391,3 +391,15 @@ func (n *NoteRepository) GetUsedSpaceInfo(userID string) (*AvailableSpaceInfo, e
 		Files:     uploadedFiles,
 	}, nil
 }
+
+func (n *NoteRepository) DeleteUserNotes(userID string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	_, err := n.collection.DeleteMany(ctx, bson.M{"authorId": userID})
+	if err != nil {
+		return fmt.Errorf("note repository: delete user notes: failed to delete notes: %v", err)
+	}
+
+	return nil
+}
