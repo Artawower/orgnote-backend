@@ -45,6 +45,7 @@ services:
       - ~/frontend-build:/opt/services/frontend:rw
       - ./deploy/nginx/conf.d:/etc/nginx/conf.d:rw
       - ./media:/opt/services/backend/media:rw
+      - ./static:/opt/services/backend/static:rw
     depends_on:
       - orgnote_backend
     links:

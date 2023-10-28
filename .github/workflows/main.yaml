@@ -60,10 +60,13 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           user: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          # TODO: master teplace .env with secrets
           command: |
+            cd ~/orgnote/orgnote-backend
+            docker-compose -f docker-compose.db.yaml -f docker-compose.prod.yaml down
+            docker system prune -f
             eval $(ssh-agent -s)
             ssh-add ~/.ssh/sb-back
-            cd ~/orgnote/orgnote-backend
             git checkout master
             git fetch --all
             git reset --hard origin/master
@@ -83,7 +86,5 @@ jobs:
             ACCESS_CHECK_TOKEN=${{ env.ACCESS_CHECK_TOKEN }}
             EOT
 
-            docker-compose -f docker-compose.db.yaml -f docker-compose.prod.yaml down
-            docker system prune -f
             docker-compose -f docker-compose.db.yaml -f docker-compose.prod.yaml up --build -d
           args: "-tt -vvv"
