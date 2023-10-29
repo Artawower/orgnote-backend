@@ -19,6 +19,7 @@ type Config struct {
 	BackendPort              string
 	BackendDomain            string
 	ClientAddress            string
+	MobileAppName            string
 	AccessCheckerURL         *string
 	AccessCheckToken         *string
 	AccessTokenCacheLifeTime int
@@ -118,6 +119,7 @@ func NewConfig() Config {
 		AccessCheckToken:         accessCheckToken,
 		AccessTokenCacheLifeTime: accessTokenCacheLifeTime,
 		MaximumFileSize:          maximumFileSize,
+		MobileAppName:            "orgnote",
 	}
 	log.Info().Msgf("Config: %+v", spew.Sdump(config))
 

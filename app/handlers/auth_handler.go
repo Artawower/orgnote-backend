@@ -109,13 +109,13 @@ func (a *AuthHandler) LoginCallback(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).SendString("Internal server error")
 	}
 	// TODO: master client url for redirect. Read from env
-	redirectURL := a.config.ClientAddress + "/auth/login/"
+	state := goth_fiber.GetState(c)
+	redirectURL := a.getLoginCallbackURL(state)
 	parsedURL, err := url.Parse(redirectURL)
 	if err != nil {
 		log.Error().Err(err).Msgf("auth handlers: github auth handler: parse redirect url %v", err)
 	}
 
-	state := goth_fiber.GetState(c)
 	q := parsedURL.Query()
 	q.Set("token", u.Token)
 	q.Set("id", u.ID.Hex())
@@ -129,7 +129,14 @@ func (a *AuthHandler) LoginCallback(c *fiber.Ctx) error {
 	parsedURL.RawQuery = q.Encode()
 
 	return c.Redirect(redirectURL + "?" + parsedURL.RawQuery)
+}
 
+func (a *AuthHandler) getLoginCallbackURL(state string) string {
+	URL := a.config.ClientAddress
+	if state == "mobile" {
+		URL = a.config.MobileAppName + ":"
+	}
+	return URL + "/auth/login"
 }
 
 // Logout godoc
