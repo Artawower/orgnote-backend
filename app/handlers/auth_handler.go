@@ -124,6 +124,7 @@ func (a *AuthHandler) LoginCallback(c *fiber.Ctx) error {
 	q.Set("email", u.Email)
 	q.Set("profileUrl", u.ProfileURL)
 	q.Set("spaceLimit", strconv.FormatInt(u.SpaceLimit, 10))
+	q.Set("active", strconv.FormatBool(u.Active))
 	q.Set("usedSpace", strconv.FormatInt(u.UsedSpace, 10))
 	q.Set("state", state)
 	parsedURL.RawQuery = q.Encode()
@@ -134,7 +135,7 @@ func (a *AuthHandler) LoginCallback(c *fiber.Ctx) error {
 func (a *AuthHandler) getLoginCallbackURL(state string) string {
 	URL := a.config.ClientAddress
 	if state == "mobile" {
-		URL = a.config.MobileAppName + ":"
+		URL = a.config.MobileAppName + ":/"
 	}
 	return URL + "/auth/login"
 }
