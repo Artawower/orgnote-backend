@@ -15,6 +15,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 
 	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -89,6 +90,9 @@ func main() {
 	userRepository := repositories.NewUserRepository(database)
 	fileStorage := infrastructure.NewFileStorage(config.MediaPath)
 
+	app.Use(recover.New(recover.Config{
+		EnableStackTrace: true,
+	}))
 	app.Use(cors.New())
 	app.Use(handlers.NewUserInjectMiddleware(handlers.Config{
 		GetUser: userRepository.FindUserByToken,
