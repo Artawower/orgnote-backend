@@ -829,6 +829,9 @@ const docTemplate = `{
                 "meta": {
                     "$ref": "#/definitions/models.NoteMeta"
                 },
+                "touchedAt": {
+                    "type": "string"
+                },
                 "updatedAt": {
                     "type": "string"
                 }
@@ -1136,6 +1139,9 @@ const docTemplate = `{
                 },
                 "size": {
                     "type": "integer"
+                },
+                "touchedAt": {
+                    "type": "string"
                 },
                 "updatedAt": {
                     "type": "string"

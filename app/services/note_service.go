@@ -63,8 +63,9 @@ func (n *NoteService) BulkCreateOrUpdate(userID string, notes []models.Note) err
 			AuthorID:   userID,
 			Content:    note.Content,
 			Meta:       note.Meta,
-			CreatedAt:  time.Now(),
+			CreatedAt:  note.CreatedAt,
 			UpdatedAt:  time.Now(),
+			TouchedAt:  note.TouchedAt,
 			FilePath:   note.FilePath,
 			Views:      0,
 			Likes:      0,
@@ -195,8 +196,9 @@ func (n *NoteService) SyncNotes(
 	notes []models.Note,
 	deletedNotesIDs []string,
 	timestamp time.Time,
-	authorID string,
-) ([]models.Note, error) {
+	user *models.User,
+) ([]models.PublicNote, error) {
+	authorID := user.ID.Hex()
 	filter := models.NoteFilter{
 		From:           &timestamp,
 		UserID:         &authorID,
@@ -224,7 +226,7 @@ func (n *NoteService) SyncNotes(
 	updatedNotes := n.excludeSameNotes(notesFromLastSync, notes)
 
 	go n.CalculateUserSpace(authorID)
-	return updatedNotes, nil
+	return mapNotesToPublicNotes(updatedNotes, user, true), nil
 }
 
 func (n *NoteService) bulkUpdateOutdatedNotes(notes []models.Note, authorID string) error {

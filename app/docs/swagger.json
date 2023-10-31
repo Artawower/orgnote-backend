@@ -821,6 +821,9 @@
                 "meta": {
                     "$ref": "#/definitions/models.NoteMeta"
                 },
+                "touchedAt": {
+                    "type": "string"
+                },
                 "updatedAt": {
                     "type": "string"
                 }
@@ -1128,6 +1131,9 @@
                 },
                 "size": {
                     "type": "integer"
+                },
+                "touchedAt": {
+                    "type": "string"
                 },
                 "updatedAt": {
                     "type": "string"

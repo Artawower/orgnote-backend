@@ -2,7 +2,6 @@ package services
 
 import "orgnote/app/models"
 
-// TODO: master move to handler layer
 func mapToPublicUserInfo(user *models.User) *models.PublicUser {
 	return &models.PublicUser{
 		ID:         user.ID.Hex(),
@@ -14,7 +13,7 @@ func mapToPublicUserInfo(user *models.User) *models.PublicUser {
 	}
 }
 
-func mapToPublicNote(note *models.Note, user *models.User, my bool) *models.PublicNote {
+func mapToPublicNote(note *models.Note, user *models.User, isMy bool) *models.PublicNote {
 	u := mapToPublicUserInfo(user)
 	return &models.PublicNote{
 		ID:        note.ExternalID,
@@ -23,7 +22,8 @@ func mapToPublicNote(note *models.Note, user *models.User, my bool) *models.Publ
 		FilePath:  note.FilePath,
 		Author:    *u,
 		UpdatedAt: note.UpdatedAt,
-		IsMy:      my,
+		TouchedAt: note.TouchedAt,
+		IsMy:      isMy,
 	}
 }
 
@@ -40,4 +40,12 @@ func mapToUserPersonalInfo(user *models.User) *models.UserPersonalInfo {
 		Active:     user.Active,
 	}
 
+}
+
+func mapNotesToPublicNotes(notes []models.Note, user *models.User, isMy bool) (mappedNotes []models.PublicNote) {
+	mappedNotes = make([]models.PublicNote, 0, len(notes))
+	for _, n := range notes {
+		mappedNotes = append(mappedNotes, *mapToPublicNote(&n, user, isMy))
+	}
+	return
 }

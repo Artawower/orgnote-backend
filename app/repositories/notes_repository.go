@@ -144,6 +144,7 @@ func (a *NoteRepository) getUpdateNote(note models.Note) bson.M {
 		"content":    note.Content,
 		"meta":       note.Meta,
 		"updatedAt":  note.UpdatedAt,
+		"touchedAt":  note.TouchedAt,
 		"views":      note.Views,
 		"likes":      note.Likes,
 		// "deletedAt": nil,

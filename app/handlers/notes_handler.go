@@ -264,7 +264,7 @@ type SyncNotesResponse struct {
 // @Router       /notes/sync  [post]
 func (h *NoteHandlers) SyncNotes(c *fiber.Ctx) error {
 	ctxUser := c.Locals("user")
-	userID := ctxUser.(*models.User).ID.Hex()
+	user := ctxUser.(*models.User)
 
 	// TODO: master validator!
 	params := new(SyncNotesRequest)
@@ -273,14 +273,14 @@ func (h *NoteHandlers) SyncNotes(c *fiber.Ctx) error {
 		return fmt.Errorf("can't parse body")
 	}
 	notesToSync := mapCreatingNotesToNotes(params.Notes)
-	notes, err := h.noteService.SyncNotes(notesToSync, params.DeletedNotesIDs, params.Timestamp, userID)
+	notes, err := h.noteService.SyncNotes(notesToSync, params.DeletedNotesIDs, params.Timestamp, user)
 
 	if err != nil {
 		log.Info().Err(err).Msg("note handler: sync notes")
 		return c.Status(http.StatusInternalServerError).JSON(NewHttpError[any]("Couldn't sync notes", nil))
 	}
 
-	deletedNotes, err := h.noteService.GetDeletedNotes(userID, params.Timestamp)
+	deletedNotes, err := h.noteService.GetDeletedNotes(user.ID.Hex(), params.Timestamp)
 
 	if err != nil {
 		log.Info().Err(err).Msg("note handler: sync notes")
@@ -292,7 +292,7 @@ func (h *NoteHandlers) SyncNotes(c *fiber.Ctx) error {
 	}))
 
 	syncNotesResponse := SyncNotesResponse{
-		Notes:        mapNotesToPublicNotes(notes, *ctxUser.(*models.User)),
+		Notes:        notes,
 		DeletedNotes: mapNotesToDeletedNotes(deletedNotes),
 	}
 

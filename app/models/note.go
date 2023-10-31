@@ -48,6 +48,7 @@ type Note struct {
 	Meta       NoteMeta           `json:"meta" bson:"meta"`
 	CreatedAt  time.Time          `json:"createdAt" bson:"createdAt"`
 	UpdatedAt  time.Time          `json:"updatedAt" bson:"updatedAt"`
+	TouchedAt  time.Time          `json:"touchedAt" bson:"touchedAt"`
 	FilePath   []string           `json:"filePath" bson:"filePath"`
 	Views      int                `json:"views" bson:"views"`
 	Likes      int                `json:"likes" bson:"likes"`
@@ -63,6 +64,7 @@ type PublicNote struct {
 	FilePath  []string   `json:"filePath"`
 	UpdatedAt time.Time  `json:"updatedAt"`
 	CreatedAt time.Time  `json:"createdAt"`
+	TouchedAt time.Time  `json:"touchedAt"`
 	IsMy      bool       `json:"isMy"`
 	Size      int64      `json:"size" bson"size"`
 }
