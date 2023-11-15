@@ -155,7 +155,7 @@ func (a *AuthHandler) Logout(c *fiber.Ctx) error {
 		return c.Status(500).SendString("Internal server error")
 	}
 	// TODO: master delete user token here
-	c.SendString("logout")
+	// c.SendString("logout")
 	return c.Status(200).JSON(struct{}{})
 }
 

@@ -28,10 +28,6 @@ func NewUserRepository(db *mongo.Database) *UserRepository {
 func (u *UserRepository) CreateOrGet(user models.User) (*models.User, error) {
 	foundUser, err := u.GetUser(&user)
 
-	if err != nil && errors.Is(err, mongo.ErrNilDocument) {
-		return nil, fmt.Errorf("user repository: create or update user: get user: %v", err)
-	}
-
 	if foundUser != nil {
 		updatedUser, err := u.UpdateAuthInfo(user)
 		if err != nil {
@@ -50,8 +46,7 @@ func (u *UserRepository) CreateOrGet(user models.User) (*models.User, error) {
 func (u *UserRepository) UpdateAuthInfo(user models.User) (*models.User, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-
-	filter := bson.M{"email": user.Email, "provider": user.Provider}
+	filter := bson.M{"externalId": user.ExternalID, "provider": user.Provider}
 
 	_, err := u.collection.UpdateOne(ctx, filter, bson.D{
 		bson.E{Key: "$set", Value: bson.D{
@@ -96,8 +91,11 @@ func (u *UserRepository) Create(user models.User) (*models.User, error) {
 func (u *UserRepository) GetUser(user *models.User) (*models.User, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	filter := bson.M{"email": user.Email, "provider": user.Provider}
+	filter := bson.M{"externalId": user.ExternalID, "provider": user.Provider}
 	err := u.collection.FindOne(ctx, filter).Decode(user)
+	if err == mongo.ErrNoDocuments {
+		return nil, nil
+	}
 	if err != nil {
 		return nil, fmt.Errorf("user repository: get user: find one user: %v", err)
 	}
