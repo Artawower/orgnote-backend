@@ -49,6 +49,7 @@ type Note struct {
 	CreatedAt  time.Time          `json:"createdAt" bson:"createdAt"`
 	UpdatedAt  time.Time          `json:"updatedAt" bson:"updatedAt"`
 	TouchedAt  time.Time          `json:"touchedAt" bson:"touchedAt"`
+	LastSyncAt time.Time          `json:"lastSyncAt" bson:"lastSyncAt"`
 	FilePath   []string           `json:"filePath" bson:"filePath"`
 	Views      int                `json:"views" bson:"views"`
 	Likes      int                `json:"likes" bson:"likes"`

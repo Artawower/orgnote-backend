@@ -146,9 +146,9 @@ func (a *NoteRepository) getUpdateNote(note models.Note) bson.M {
 		"updatedAt":  note.UpdatedAt,
 		"touchedAt":  note.TouchedAt,
 		"views":      note.Views,
+		"lastSyncAt": time.Now(),
 		"likes":      note.Likes,
-		// "deletedAt": nil,
-		"filePath": note.FilePath,
+		"filePath":   note.FilePath,
 	}
 
 	return update
@@ -245,7 +245,7 @@ func (n *NoteRepository) getUpdateOutdatedModel(note models.Note, authorID strin
 		SetFilter(bson.M{
 			"authorId":   authorID,
 			"externalId": note.ExternalID,
-			"updatedAt":  bson.M{"$lt": note.UpdatedAt},
+			"lastSyncAt": bson.M{"$lt": note.UpdatedAt},
 		}).
 		SetUpdate(bson.M{
 			"$set":   updatedNote,
@@ -267,10 +267,10 @@ func (n *NoteRepository) DeleteOutdatedNotes(noteIDs []string, authorID string, 
 			SetFilter(bson.M{
 				"externalId": noteID,
 				"authorId":   authorID,
-				"updatedAt":  bson.M{"$lt": deletedTime},
+				"lastSyncAt": bson.M{"$lt": deletedTime},
 			}).
 			SetUpdate(bson.M{
-				"$set":   bson.M{"deletedAt": deletedTime},
+				"$set":   bson.M{"deletedAt": deletedTime, "lastSyncAt": deletedTime},
 				"$unset": bson.M{"updatedAt": deletedTime},
 			})
 		notesModel = append(notesModel, model)

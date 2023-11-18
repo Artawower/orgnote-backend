@@ -51,7 +51,7 @@ func addUpdatedTimeFilter(filter bson.M, modelFilter models.NoteFilter) {
 	if modelFilter.From == nil {
 		return
 	}
-	filter["updatedAt"] = bson.M{"$gte": *modelFilter.From}
+	filter["lastSyncAt"] = bson.M{"$gte": *modelFilter.From}
 }
 
 func addSearchFilter(filter *bson.M, modelFilter models.NoteFilter) {
