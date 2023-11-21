@@ -3,7 +3,7 @@ package handlers
 import (
 	"bytes"
 	"encoding/gob"
-	"errors"
+	"encoding/json"
 	"net/url"
 	"orgnote/app/configs"
 	"orgnote/app/models"
@@ -41,7 +41,7 @@ func mapToUser(user goth.User) *models.User {
 		// TODO: [selfhosted] master get this values from environment
 		SpaceLimit: 0,
 		UsedSpace:  0,
-		Active:     false,
+		Active:     nil,
 	}
 }
 
@@ -49,6 +49,11 @@ type AuthHandler struct {
 	userService    *services.UserService
 	config         configs.Config
 	authMiddleware fiber.Handler
+}
+
+type State struct {
+	Environment string  `json:"environment"`
+	RedirectURL *string `json:"redirectUrl"`
 }
 
 // Login godoc
@@ -124,7 +129,9 @@ func (a *AuthHandler) LoginCallback(c *fiber.Ctx) error {
 	q.Set("email", u.Email)
 	q.Set("profileUrl", u.ProfileURL)
 	q.Set("spaceLimit", strconv.FormatInt(u.SpaceLimit, 10))
-	q.Set("active", strconv.FormatBool(u.Active))
+	if u.Active != nil {
+		q.Set("active", *u.Active)
+	}
 	q.Set("usedSpace", strconv.FormatInt(u.UsedSpace, 10))
 	q.Set("state", state)
 	parsedURL.RawQuery = q.Encode()
@@ -133,7 +140,15 @@ func (a *AuthHandler) LoginCallback(c *fiber.Ctx) error {
 }
 
 func (a *AuthHandler) getLoginCallbackURL(state string) string {
+	parsedState := State{}
 	URL := a.config.ClientAddress
+
+	err := json.Unmarshal([]byte(state), &parsedState)
+	if err != nil {
+		log.Error().Err(err).Msgf("auth handlers: github auth handler: unmarshal state")
+		return URL + "/auth/login"
+	}
+
 	if state == "mobile" {
 		URL = a.config.MobileAppName + ":/"
 	}
@@ -276,10 +291,9 @@ func (a *AuthHandler) DeleteUserAccount(c *fiber.Ctx) error {
 }
 
 type SubscribeBody struct {
-	Token string `json:"token"`
+	Token string  `json:"token"`
+	Email *string `json:"email"`
 }
-
-var ErrorActivationMissingEmail = errors.New("Email field is required. Make sure your provider has public email!")
 
 // Subscribe with token inside body
 // @Summary      Subscribe
@@ -294,18 +308,15 @@ var ErrorActivationMissingEmail = errors.New("Email field is required. Make sure
 func (a *AuthHandler) Subscribe(c *fiber.Ctx) error {
 	user := c.Locals("user").(*models.User)
 
-	if user.Email == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(NewHttpError[any](ErrorActivationMissingEmail.Error(), nil))
-	}
-
 	body := new(SubscribeBody)
 
 	if err := c.BodyParser(body); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(NewHttpError[any]("Token doesn't provided", nil))
 	}
 
-	err := a.userService.Subscribe(user, body.Token)
+	err := a.userService.Subscribe(user, body.Token, body.Email)
 	if err != nil {
+		log.Error().Err(err).Msgf("auth handlers: github auth handler: subscribe")
 		return c.Status(fiber.StatusBadRequest).JSON(NewHttpError[any]("Could not subscribe with provided information", nil))
 	}
 	return c.Status(fiber.StatusOK).JSON(NewHttpResponse[any, any](nil, nil))

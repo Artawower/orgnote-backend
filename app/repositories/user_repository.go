@@ -354,7 +354,7 @@ func (u *UserRepository) UpdateSpaceLimitInfo(usedID string, usedSpace *int64, s
 	return nil
 }
 
-func (u *UserRepository) SetActiveStatus(userID string, activeStatus bool) error {
+func (u *UserRepository) SetActivationKey(userID string, activationKey string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -366,7 +366,7 @@ func (u *UserRepository) SetActiveStatus(userID string, activeStatus bool) error
 
 	filter := bson.M{"_id": objID}
 
-	update := bson.M{"$set": bson.M{"active": activeStatus}}
+	update := bson.M{"$set": bson.M{"active": activationKey}}
 
 	_, err = u.collection.UpdateOne(ctx, filter, update)
 

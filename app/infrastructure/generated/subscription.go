@@ -29,14 +29,18 @@ type Subscription struct {
 
 // SubscriptionActivation defines model for SubscriptionActivation.
 type SubscriptionActivation struct {
-	Email openapi_types.Email `json:"email"`
-	Key   string              `json:"key"`
+	Email            *openapi_types.Email `json:"email,omitempty"`
+	ExternalEmail    *openapi_types.Email `json:"externalEmail,omitempty"`
+	ExternalId       string               `json:"externalId"`
+	ExternalProvider *string              `json:"externalProvider,omitempty"`
+	Key              string               `json:"key"`
 }
 
 // SubscriptionInfo defines model for SubscriptionInfo.
 type SubscriptionInfo struct {
 	Email      openapi_types.Email `json:"email"`
 	IsActive   *bool               `json:"isActive,omitempty"`
+	Key        *string             `json:"key"`
 	SpaceLimit *int                `json:"spaceLimit,omitempty"`
 }
 
@@ -139,7 +143,7 @@ type ClientInterface interface {
 	SubscriptionActivationCreateWithFormdataBody(ctx context.Context, body SubscriptionActivationCreateFormdataRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// SubscriptionInfoRetrieve request
-	SubscriptionInfoRetrieve(ctx context.Context, email string, reqEditors ...RequestEditorFn) (*http.Response, error)
+	SubscriptionInfoRetrieve(ctx context.Context, provider string, externalId string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// SubscriptionsCreateWithBody request with any body
 	SubscriptionsCreateWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -185,8 +189,8 @@ func (c *Client) SubscriptionActivationCreateWithFormdataBody(ctx context.Contex
 	return c.Client.Do(req)
 }
 
-func (c *Client) SubscriptionInfoRetrieve(ctx context.Context, email string, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewSubscriptionInfoRetrieveRequest(c.Server, email)
+func (c *Client) SubscriptionInfoRetrieve(ctx context.Context, provider string, externalId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSubscriptionInfoRetrieveRequest(c.Server, provider, externalId)
 	if err != nil {
 		return nil, err
 	}
@@ -285,12 +289,19 @@ func NewSubscriptionActivationCreateRequestWithBody(server string, contentType s
 }
 
 // NewSubscriptionInfoRetrieveRequest generates requests for SubscriptionInfoRetrieve
-func NewSubscriptionInfoRetrieveRequest(server string, email string) (*http.Request, error) {
+func NewSubscriptionInfoRetrieveRequest(server string, provider string, externalId string) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "email", runtime.ParamLocationPath, email)
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "provider", runtime.ParamLocationPath, provider)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "externalId", runtime.ParamLocationPath, externalId)
 	if err != nil {
 		return nil, err
 	}
@@ -300,7 +311,7 @@ func NewSubscriptionInfoRetrieveRequest(server string, email string) (*http.Requ
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/api/subscription-info/%s", pathParam0)
+	operationPath := fmt.Sprintf("/api/subscription-info/%s/%s", pathParam0, pathParam1)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -420,7 +431,7 @@ type ClientWithResponsesInterface interface {
 	SubscriptionActivationCreateWithFormdataBodyWithResponse(ctx context.Context, body SubscriptionActivationCreateFormdataRequestBody, reqEditors ...RequestEditorFn) (*SubscriptionActivationCreateResponse, error)
 
 	// SubscriptionInfoRetrieveWithResponse request
-	SubscriptionInfoRetrieveWithResponse(ctx context.Context, email string, reqEditors ...RequestEditorFn) (*SubscriptionInfoRetrieveResponse, error)
+	SubscriptionInfoRetrieveWithResponse(ctx context.Context, provider string, externalId string, reqEditors ...RequestEditorFn) (*SubscriptionInfoRetrieveResponse, error)
 
 	// SubscriptionsCreateWithBodyWithResponse request with any body
 	SubscriptionsCreateWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SubscriptionsCreateResponse, error)
@@ -522,8 +533,8 @@ func (c *ClientWithResponses) SubscriptionActivationCreateWithFormdataBodyWithRe
 }
 
 // SubscriptionInfoRetrieveWithResponse request returning *SubscriptionInfoRetrieveResponse
-func (c *ClientWithResponses) SubscriptionInfoRetrieveWithResponse(ctx context.Context, email string, reqEditors ...RequestEditorFn) (*SubscriptionInfoRetrieveResponse, error) {
-	rsp, err := c.SubscriptionInfoRetrieve(ctx, email, reqEditors...)
+func (c *ClientWithResponses) SubscriptionInfoRetrieveWithResponse(ctx context.Context, provider string, externalId string, reqEditors ...RequestEditorFn) (*SubscriptionInfoRetrieveResponse, error) {
+	rsp, err := c.SubscriptionInfoRetrieve(ctx, provider, externalId, reqEditors...)
 	if err != nil {
 		return nil, err
 	}

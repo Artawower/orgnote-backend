@@ -8,7 +8,7 @@ import (
 )
 
 type Subscription interface {
-	Check(userEmail string, occupiedSpace int64, err chan<- error)
+	Check(provider string, eternalID string, occupiedSpace int64, err chan<- error)
 }
 
 func NewAccessMiddleware(subscription Subscription) func(*fiber.Ctx) error {
@@ -19,13 +19,9 @@ func NewAccessMiddleware(subscription Subscription) func(*fiber.Ctx) error {
 			return c.Status(fiber.StatusBadRequest).JSON(NewHttpError[any](ErrAuthRequired, nil))
 		}
 
-		if user.Email == "" {
-			return c.Status(fiber.StatusBadRequest).JSON(NewHttpError[any](ErrNoEmailProvided, nil))
-		}
-
 		err := make(chan error)
 
-		go subscription.Check(user.Email, user.UsedSpace, err)
+		go subscription.Check(user.Provider, user.ExternalID, user.UsedSpace, err)
 
 		if err := <-err; err != nil {
 			log.Error().Err(err).Msgf("access middleware: access denied: %v", err)

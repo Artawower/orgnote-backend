@@ -100,6 +100,8 @@ definitions:
     type: object
   handlers.SubscribeBody:
     properties:
+      email:
+        type: string
       token:
         type: string
     type: object
@@ -240,7 +242,7 @@ definitions:
   models.UserPersonalInfo:
     properties:
       active:
-        type: boolean
+        type: string
       avatarUrl:
         type: string
       email:

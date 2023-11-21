@@ -12,7 +12,6 @@ import (
 	"time"
 
 	cache "github.com/Code-Hex/go-generics-cache"
-	"github.com/oapi-codegen/runtime/types"
 	"github.com/rs/zerolog/log"
 	"github.com/thoas/go-funk"
 )
@@ -52,12 +51,12 @@ func (a *SubscriptionAPI) checkAvailability(info SubscriptionInfo, usedSpace int
 	return nil
 }
 
-func (a *SubscriptionAPI) getRemoteInfo(userEmail string) (*SubscriptionInfo, error) {
+func (a *SubscriptionAPI) getRemoteInfo(provider string, externalID string) (*SubscriptionInfo, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 
 	defer cancel()
 
-	res, err := a.client.SubscriptionInfoRetrieve(ctx, userEmail, a.addAuthHeader)
+	res, err := a.client.SubscriptionInfoRetrieve(ctx, provider, externalID, a.addAuthHeader)
 	if err != nil {
 		return nil, err
 	}
@@ -80,32 +79,32 @@ func (a *SubscriptionAPI) getRemoteInfo(userEmail string) (*SubscriptionInfo, er
 
 }
 
-func (a *SubscriptionAPI) getInfo(userEmail string) (*SubscriptionInfo, error) {
-	cachedInfo, ok := a.cache.Get(userEmail)
-	log.Info().Msgf("User email: %v", userEmail)
+func (a *SubscriptionAPI) getInfo(provider string, externalID string) (*SubscriptionInfo, error) {
+	key := provider + externalID
+	cachedInfo, ok := a.cache.Get(key)
 
 	if ok {
 		return &cachedInfo, nil
 	}
 
-	accessInfo, err := a.getRemoteInfo(userEmail)
+	accessInfo, err := a.getRemoteInfo(provider, externalID)
 	if err != nil {
 		return nil, err
 	}
 
-	a.cache.Set(userEmail, *accessInfo, cache.WithExpiration(time.Duration(a.cacheLifeTime)*time.Minute))
+	a.cache.Set(externalID, *accessInfo, cache.WithExpiration(time.Duration(a.cacheLifeTime)*time.Minute))
 
 	return accessInfo, err
 }
 
-func (a *SubscriptionAPI) Check(userEmail string, usedSpace int64, errCh chan<- error) {
+func (a *SubscriptionAPI) Check(provider string, externalID string, usedSpace int64, errCh chan<- error) {
 	// TODO: add cache here
 	if a.checkURL == nil {
 		errCh <- nil
 		return
 	}
 
-	accessInfo, err := a.getInfo(userEmail)
+	accessInfo, err := a.getInfo(provider, externalID)
 
 	if err != nil {
 		errCh <- err
@@ -122,32 +121,27 @@ func (a *SubscriptionAPI) addAuthHeader(ctx context.Context, req *http.Request) 
 
 var ErrorInvalidToken = fmt.Errorf("invalid activation token")
 
-func (a *SubscriptionAPI) ActivateSubscription(userEmail string, token string) (*subscription.SubscriptionInfo, error) {
+func (a *SubscriptionAPI) ActivateSubscription(data subscription.SubscriptionActivation) (*subscription.SubscriptionInfo, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
 	// TODO: master map errors
-	data, err := a.client.SubscriptionActivationCreateWithResponse(ctx, subscription.SubscriptionActivation{
-		Email: types.Email(userEmail),
-		Key:   token,
-	})
-
-	log.Info().Msgf("IS IT ERR? %v", err)
+	rspns, err := a.client.SubscriptionActivationCreateWithResponse(ctx, data)
 
 	if err != nil {
-		log.Info().Msgf("Subscription activation error: %v", err)
+		log.Info().Msgf("subscription: activate subscription: subscription request: %v", err)
 		return nil, fmt.Errorf("subscription: subscribe: %v", err)
 	}
 
-	if data.HTTPResponse.StatusCode == http.StatusNotFound {
+	if rspns.HTTPResponse.StatusCode == http.StatusNotFound {
 		return nil, ErrorInvalidToken
 	}
 
-	if !funk.Contains([]int{http.StatusOK, http.StatusCreated}, data.HTTPResponse.StatusCode) {
-		return nil, fmt.Errorf("subscription: subscribe: got status code %v", data.HTTPResponse.StatusCode)
+	if !funk.Contains([]int{http.StatusOK, http.StatusCreated}, rspns.HTTPResponse.StatusCode) {
+		return nil, fmt.Errorf("subscription: subscribe: got status code %v", rspns.HTTPResponse.StatusCode)
 	}
 
-	return data.JSON200, nil
+	return rspns.JSON200, nil
 }
 
 type cacheFactory[K comparable, V any] func(...cache.Option[K, V]) *cache.Cache[K, V]

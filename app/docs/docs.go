@@ -961,6 +961,9 @@ const docTemplate = `{
         "handlers.SubscribeBody": {
             "type": "object",
             "properties": {
+                "email": {
+                    "type": "string"
+                },
                 "token": {
                     "type": "string"
                 }
@@ -1175,7 +1178,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "active": {
-                    "type": "boolean"
+                    "type": "string"
                 },
                 "avatarUrl": {
                     "type": "string"

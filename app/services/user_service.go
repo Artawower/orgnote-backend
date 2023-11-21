@@ -3,10 +3,12 @@ package services
 import (
 	"fmt"
 	"orgnote/app/infrastructure"
+	subscription "orgnote/app/infrastructure/generated"
 	"orgnote/app/models"
 	"orgnote/app/repositories"
 
 	"github.com/davecgh/go-spew/spew"
+	"github.com/oapi-codegen/runtime/types"
 	"github.com/rs/zerolog/log"
 )
 
@@ -74,15 +76,25 @@ func (u *UserService) DeleteUser(user *models.User) error {
 	return nil
 }
 
-func (u *UserService) Subscribe(user *models.User, token string) error {
+func (u *UserService) Subscribe(user *models.User, token string, email *string) error {
 	// TODO: master transaction with context
-	data, err := u.subscriptionAPI.ActivateSubscription(user.Email, token)
+	var externalEmail *types.Email
+	if user.Email != "" {
+		externalEmail = (*types.Email)(&user.Email)
+	}
+	data, err := u.subscriptionAPI.ActivateSubscription(subscription.SubscriptionActivation{
+		Key:              token,
+		Email:            (*types.Email)(email),
+		ExternalId:       user.ExternalID,
+		ExternalEmail:    externalEmail,
+		ExternalProvider: &user.Provider,
+	})
 	spew.Dump(data)
 	if err != nil {
 		return fmt.Errorf("user service: subscribe: activate subscription %v", err)
 	}
 
-	err = u.userRepository.SetActiveStatus(user.ID.Hex(), true)
+	err = u.userRepository.SetActivationKey(user.ID.Hex(), token)
 	if err != nil {
 		return fmt.Errorf("user service: subscribe: set active status: %v", err)
 	}
