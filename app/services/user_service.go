@@ -107,7 +107,3 @@ func (u *UserService) Subscribe(user *models.User, token string, email *string) 
 	}
 	return nil
 }
-
-func (u *UserService) calculateUserUsedSpace(user *models.User) error {
-	return nil
-}
