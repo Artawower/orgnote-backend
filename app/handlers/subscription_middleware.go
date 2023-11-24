@@ -4,7 +4,6 @@ import (
 	"orgnote/app/models"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/rs/zerolog/log"
 )
 
 type Subscription interface {
@@ -24,8 +23,7 @@ func NewAccessMiddleware(subscription Subscription) func(*fiber.Ctx) error {
 		go subscription.Check(user.Provider, user.ExternalID, user.UsedSpace, err)
 
 		if err := <-err; err != nil {
-			log.Error().Err(err).Msgf("access middleware: access denied: %v", err)
-			return c.Status(fiber.StatusForbidden).JSON(NewHttpError[any](ErrAccessDenied, nil))
+			return c.Status(fiber.StatusForbidden).JSON(NewHttpError[any](ErrAccessDenied, err.Error()))
 		}
 
 		return c.Next()

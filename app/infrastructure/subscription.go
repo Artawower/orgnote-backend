@@ -44,8 +44,9 @@ func (a *SubscriptionAPI) checkAvailability(info SubscriptionInfo, usedSpace int
 	}
 
 	usedSpaceMb := tools.ConvertBytes2Megabyte(usedSpace)
-	if (info.SpaceLimit - usedSpaceMb) < 0 {
-		return fmt.Errorf("user %s has no space left, %v/%v are used", info.Email, usedSpaceMb, info.SpaceLimit)
+	spaceLimit := tools.ConvertBytes2Megabyte(int64(info.SpaceLimit))
+	if (spaceLimit - usedSpaceMb) < 0 {
+		return fmt.Errorf("user %s has no space left, %v/%v are used", info.Email, usedSpaceMb, spaceLimit)
 	}
 
 	return nil
