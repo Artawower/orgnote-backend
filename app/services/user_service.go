@@ -76,15 +76,19 @@ func (u *UserService) DeleteUser(user *models.User) error {
 	return nil
 }
 
-func (u *UserService) Subscribe(user *models.User, token string, email *string) error {
+func (u *UserService) Subscribe(user *models.User, token string, emailAddress *string) error {
 	// TODO: master transaction with context
+	var email *types.Email
+	if emailAddress != nil {
+		email = (*types.Email)(emailAddress)
+	}
 	var externalEmail *types.Email
 	if user.Email != "" {
-		externalEmail = (*types.Email)(&user.Email)
+		email = (*types.Email)(&user.Email)
 	}
 	data, err := u.subscriptionAPI.ActivateSubscription(subscription.SubscriptionActivation{
 		Key:              token,
-		Email:            (*types.Email)(email),
+		Email:            email,
 		ExternalId:       user.ExternalID,
 		ExternalEmail:    externalEmail,
 		ExternalProvider: &user.Provider,

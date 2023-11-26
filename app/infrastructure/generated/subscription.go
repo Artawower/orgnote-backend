@@ -23,8 +23,8 @@ const (
 
 // Subscription defines model for Subscription.
 type Subscription struct {
-	Description *string             `json:"description"`
-	Email       openapi_types.Email `json:"email"`
+	Description *string              `json:"description"`
+	Email       *openapi_types.Email `json:"email"`
 }
 
 // SubscriptionActivation defines model for SubscriptionActivation.
@@ -38,10 +38,10 @@ type SubscriptionActivation struct {
 
 // SubscriptionInfo defines model for SubscriptionInfo.
 type SubscriptionInfo struct {
-	Email      openapi_types.Email `json:"email"`
-	IsActive   *bool               `json:"isActive,omitempty"`
-	Key        *string             `json:"key"`
-	SpaceLimit *int                `json:"spaceLimit,omitempty"`
+	Email      *openapi_types.Email `json:"email"`
+	IsActive   *bool                `json:"isActive,omitempty"`
+	Key        *string              `json:"key"`
+	SpaceLimit *int                 `json:"spaceLimit,omitempty"`
 }
 
 // SubscriptionActivationCreateJSONRequestBody defines body for SubscriptionActivationCreate for application/json ContentType.
