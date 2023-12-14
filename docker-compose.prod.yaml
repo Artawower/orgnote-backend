@@ -17,6 +17,11 @@ services:
       - ./media:/workspace/media
     env_file:
       - .env
+    healthcheck:
+      test: ["CMD-SHELL", "curl", "-f", "${MONGO_URL}:${MONGO_PORT}"]
+      timeout: 1s
+      interval: 2s
+      retries: 10
     environment:
       - MONGO_USERNAME=${MONGO_USERNAME}
       - MONGO_URL=orgnote_mongo

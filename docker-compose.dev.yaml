@@ -16,6 +16,11 @@ services:
     volumes:
       - ./:/app
       - ./media:/app/media
+    healthcheck:
+      test: ["CMD-SHELL", "curl", "-f", "${MONGO_URL}:${MONGO_PORT}"]
+      timeout: 1s
+      interval: 2s
+      retries: 10
     environment:
       - APP_ADDRESS=0.0.0.0:8000
       - CLIENT_ADDRESS=${CLIENT_ADDRESS}
