@@ -1,4 +1,5 @@
-DS_Store
+.DS_Store
+.dir_locals.el
 *.so
 *.pyc
 ._*

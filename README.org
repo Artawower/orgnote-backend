@@ -46,35 +46,11 @@ This project is part of [[https://github.com/Artawower/orgnote][Org Note project
 - ~ACCESS_CHECK_TOKEN~ - Auth token for request to ~ACCESS_CHECK_URL~. Will be added into ~Authorization~ header
 
 ** Local development
+*** External API schema
 [[https://github.com/deepmap/oapi-codegen][Install open api codegen and execute script]]
 #+BEGIN_SRC bash
 chmod +x generate-subscription-api.sh && ./generate-subscription-api
 #+END_SRC
-Make sure that you have 
-#+BEGIN_SRC bash
-git clone git@github.com:Artawower/orgnote-backend.git && cd orgnote-backend
-#+END_SRC
-
-Make sure the correct ~.env~ file is in the `orgnote-client' directory.
-
-#+BEGIN_SRC bash
-docker-compose -f docker-compose.db.yaml -f docker-compose.dev.yaml up --build
-#+END_SRC
-** Swagger
-The swagger path is {{HOST}}/v1/swagger/index.html
-for example: http://localhost:8000/v1/swagger/index.html
-
-* 🍩 Contribute guide
-Any contribution is very much appreciated! Please read the [[./CONTRIBUTE.org][style guide]] before contributing to avoid misunderstandings!
-
-I would also appreciate it if you would consider becoming my [[https://www.patreon.com/artawower][patron]]
-
-** Access checker
-What is an access checker?
-It is an external web service accessible by ~ACCESS_CHECK_URL~. It is used to verify access to the backend. For self-hosted systems, this value should not be provided unless you have the service implemented. In this case, anyone can access the backend.
-
-This backend service should provide next endpoints:
-
 - =/api/subscription-info= - information about subscription
 #+BEGIN_SRC json
 {
@@ -82,4 +58,23 @@ This backend service should provide next endpoints:
   "spaceLimit": "bytes",
   "isActive": "boolean"
 }
+#+END_SRC
+*** Init .env file for storing environment variables
+#+BEGIN_SRC bash
+DEBUG=debug mode
+MONGO_USERNAME=mongo username
+MONGO_PASSWORD=mongo password
+GITHUB_ID=github id for oauth
+GITHUB_SECRET=github secret for oauth
+CLIENT_ADDRESS=url to redirect after oauth
+BACKEND_HOST=full backend host
+BACKEND_DOMAIN=backend domain
+BACKEND_SCHEMA=backend schema (http)
+ACCESS_CHECK_URL=http://65.108.90.95:8000 // check url for active subscription, leave empty for development
+ACCESS_CHECK_TOKEN=token for working with external service, leave empty for development
+#+END_SRC
+*** Run development docker container
+/Docker & docker-compose/ are required
+#+BEGIN_SRC bash
+docker compose -f docker-compose.db.yaml -f docker-compose.dev.yaml up --build
 #+END_SRC
