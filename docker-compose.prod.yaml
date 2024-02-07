@@ -38,6 +38,14 @@ services:
       - ACCESS_CHECK_TOKEN=${ACCESS_CHECK_TOKEN}
       - DEBUG=${DEBUG}
 
+  orgnote_cors:
+    image: bassetts/warp-cors
+    container_name: orgnote_cors
+    networks:
+      - orgnote_network
+    ports:
+      - 3030:3030
+
   orgnote_nginx:
     restart: always
     container_name: orgnote_nginx
@@ -53,8 +61,10 @@ services:
       - ./static:/opt/services/backend/static:rw
     depends_on:
       - orgnote_backend
+      - orgnote_cors
     links:
       - orgnote_backend
+      - orgnote_cors
     networks:
       - orgnote_network
     command: ["/usr/sbin/nginx", "-g", "daemon off;"]
