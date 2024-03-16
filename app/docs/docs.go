@@ -1124,6 +1124,13 @@ const docTemplate = `{
                 "createdAt": {
                     "type": "string"
                 },
+                "encrypted": {
+                    "description": "Encrypted note content",
+                    "type": "string",
+                    "enum": [
+                        "gpg"
+                    ]
+                },
                 "filePath": {
                     "type": "array",
                     "items": {

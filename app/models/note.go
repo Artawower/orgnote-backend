@@ -42,6 +42,7 @@ type NoteMeta struct {
 
 type Note struct {
 	ID         primitive.ObjectID `json:"id" bson:"_id"`                // Generated ID for public notes
+	Encrypted  *string            `json:"encrypted" bson:"encrypted"`   // Encrypted note content
 	ExternalID string             `json:"externalId" bson:"externalId"` // Real note id. From source.
 	AuthorID   string             `json:"authorId" bson:"authorId"`
 	Content    string             `json:"content" bson:"content"`
@@ -60,6 +61,7 @@ type Note struct {
 type PublicNote struct {
 	ID        string     `json:"id"` // It's externalID from original note
 	Author    PublicUser `json:"author" bson:"author"`
+	Encrypted *string    `json:"encrypted" bson:"encrypted" enums:"gpg"` // Encrypted note content
 	Content   string     `json:"content" bson:"content"`
 	Meta      NoteMeta   `json:"meta"`
 	FilePath  []string   `json:"filePath"`

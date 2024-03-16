@@ -206,6 +206,11 @@ definitions:
         type: string
       createdAt:
         type: string
+      encrypted:
+        description: Encrypted note content
+        enum:
+        - gpg
+        type: string
       filePath:
         items:
           type: string
