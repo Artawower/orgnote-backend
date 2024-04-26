@@ -9,12 +9,13 @@ import (
 
 type CreatingNote struct {
 	ID        string          `json:"id" form:"id"`
-	Content   string          `json:"content" form:"content"`
+	Content   string          `json:"content" form:"content" binding:"required"`
 	Meta      models.NoteMeta `json:"meta" form:"meta"`
 	FilePath  []string        `json:"filePath" form:"filePath"`
 	UpdatedAt time.Time       `json:"updatedAt" form:"updatedAt"`
 	CreatedAt time.Time       `json:"createdAt" form:"createdAt"`
 	TouchedAt time.Time       `json:"touchedAt" form:"touchedAt"`
+	Encrypted *string         `json:"encrypted" form:"encrypted" enums:"gpg,password"`
 }
 
 func mapCreatingNoteToNote(note CreatingNote) models.Note {
@@ -26,6 +27,7 @@ func mapCreatingNoteToNote(note CreatingNote) models.Note {
 		UpdatedAt:  note.UpdatedAt,
 		CreatedAt:  note.CreatedAt,
 		TouchedAt:  note.TouchedAt,
+		Encrypted:  note.Encrypted,
 	}
 }
 

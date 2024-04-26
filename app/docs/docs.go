@@ -810,12 +810,22 @@ const docTemplate = `{
     "definitions": {
         "handlers.CreatingNote": {
             "type": "object",
+            "required": [
+                "content"
+            ],
             "properties": {
                 "content": {
                     "type": "string"
                 },
                 "createdAt": {
                     "type": "string"
+                },
+                "encrypted": {
+                    "type": "string",
+                    "enum": [
+                        "gpg",
+                        "password"
+                    ]
                 },
                 "filePath": {
                     "type": "array",
@@ -1114,6 +1124,10 @@ const docTemplate = `{
         },
         "models.PublicNote": {
             "type": "object",
+            "required": [
+                "content",
+                "meta"
+            ],
             "properties": {
                 "author": {
                     "$ref": "#/definitions/models.PublicUser"
@@ -1128,7 +1142,9 @@ const docTemplate = `{
                     "description": "Encrypted note content",
                     "type": "string",
                     "enum": [
-                        "gpg"
+                        "gpgKeys",
+                        "gpgPassword",
+                        "disabled"
                     ]
                 },
                 "filePath": {

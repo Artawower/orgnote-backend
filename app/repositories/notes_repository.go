@@ -149,6 +149,7 @@ func (a *NoteRepository) getUpdateNote(note models.Note) bson.M {
 		"lastSyncAt": time.Now(),
 		"likes":      note.Likes,
 		"filePath":   note.FilePath,
+		"encrypted":  note.Encrypted,
 	}
 
 	return update

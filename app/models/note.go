@@ -41,12 +41,12 @@ type NoteMeta struct {
 }
 
 type Note struct {
-	ID         primitive.ObjectID `json:"id" bson:"_id"`                // Generated ID for public notes
-	Encrypted  *string            `json:"encrypted" bson:"encrypted"`   // Encrypted note content
-	ExternalID string             `json:"externalId" bson:"externalId"` // Real note id. From source.
+	ID         primitive.ObjectID `json:"id" bson:"_id"`                                                   // Generated ID for public notes
+	Encrypted  *string            `json:"encrypted" bson:"encrypted" enums:"gpgKeys,gpgPassword,disabled"` // Encrypted note content
+	ExternalID string             `json:"externalId" bson:"externalId"`                                    // Real note id. From source.
 	AuthorID   string             `json:"authorId" bson:"authorId"`
-	Content    string             `json:"content" bson:"content"`
-	Meta       NoteMeta           `json:"meta" bson:"meta"`
+	Content    string             `json:"content" bson:"content" binding:"required"`
+	Meta       NoteMeta           `json:"meta" bson:"meta" binding:"required"`
 	CreatedAt  time.Time          `json:"createdAt" bson:"createdAt"`
 	UpdatedAt  time.Time          `json:"updatedAt" bson:"updatedAt"`
 	TouchedAt  time.Time          `json:"touchedAt" bson:"touchedAt"`
@@ -61,9 +61,9 @@ type Note struct {
 type PublicNote struct {
 	ID        string     `json:"id"` // It's externalID from original note
 	Author    PublicUser `json:"author" bson:"author"`
-	Encrypted *string    `json:"encrypted" bson:"encrypted" enums:"gpg"` // Encrypted note content
-	Content   string     `json:"content" bson:"content"`
-	Meta      NoteMeta   `json:"meta"`
+	Encrypted *string    `json:"encrypted" bson:"encrypted" enums:"gpgKeys,gpgPassword,disabled"` // Encrypted note content
+	Content   string     `json:"content" bson:"content" binding:"required"`
+	Meta      NoteMeta   `json:"meta" binding:"required"`
 	FilePath  []string   `json:"filePath"`
 	UpdatedAt time.Time  `json:"updatedAt"`
 	CreatedAt time.Time  `json:"createdAt"`

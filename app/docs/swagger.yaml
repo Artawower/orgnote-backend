@@ -5,6 +5,11 @@ definitions:
         type: string
       createdAt:
         type: string
+      encrypted:
+        enum:
+        - gpg
+        - password
+        type: string
       filePath:
         items:
           type: string
@@ -17,6 +22,8 @@ definitions:
         type: string
       updatedAt:
         type: string
+    required:
+    - content
     type: object
   handlers.DeletedNote:
     properties:
@@ -209,7 +216,9 @@ definitions:
       encrypted:
         description: Encrypted note content
         enum:
-        - gpg
+        - gpgKeys
+        - gpgPassword
+        - disabled
         type: string
       filePath:
         items:
@@ -228,6 +237,9 @@ definitions:
         type: string
       updatedAt:
         type: string
+    required:
+    - content
+    - meta
     type: object
   models.PublicUser:
     properties:

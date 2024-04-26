@@ -22,6 +22,7 @@ func mapToPublicNote(note *models.Note, user *models.User, isMy bool) *models.Pu
 		FilePath:  note.FilePath,
 		Author:    *u,
 		UpdatedAt: note.UpdatedAt,
+		Encrypted: note.Encrypted,
 		TouchedAt: note.TouchedAt,
 		IsMy:      isMy,
 	}
