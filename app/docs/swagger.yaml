@@ -196,6 +196,15 @@ definitions:
       title:
         type: string
     type: object
+  models.OrgNoteClientUpdateInfo:
+    properties:
+      changeLog:
+        type: string
+      url:
+        type: string
+      version:
+        type: string
+    type: object
   models.Pagination:
     properties:
       limit:
@@ -787,6 +796,38 @@ paths:
       summary: Synchronize notes
       tags:
       - notes
+  /system-info/client-update/{version}:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: provider
+        in: path
+        name: version
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.OrgNoteClientUpdateInfo'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.HttpError-any'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.HttpError-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.HttpError-any'
+      summary: GetUpdatesFromVersion
+      tags:
+      - system info
   /tags:
     get:
       consumes:

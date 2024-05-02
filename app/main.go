@@ -106,6 +106,11 @@ func main() {
 	userService := services.NewUserService(userRepository, noteRepository, subscriptionAPI)
 	fileService := services.NewFileService(fileStorage, userRepository)
 
+	orgNoteMetaService := services.NewOrgNoteMetaService(services.OrgNoteMetaConfig{
+		ClientRepoName:  config.GithubClientRepoName,
+		ClientRepoOwner: config.GithubClientOwner,
+	})
+
 	// api.Use(handlers.NewAuthMiddleware())
 	// TODO: expose to external fn
 
@@ -114,6 +119,7 @@ func main() {
 	handlers.RegisterTagHandler(api, tagService)
 	handlers.RegisterAuthHandler(api, userService, config, authMiddleware)
 	handlers.RegisterFileHandler(api, fileService, authMiddleware, accessMiddleware)
+	handlers.RegisterSystemInfoHandler(api, orgNoteMetaService)
 	// handlers.RegisterUserHandlers(app)
 	// handlers.RegisterTagHandlers(app)
 	app.Static("media", config.MediaPath)

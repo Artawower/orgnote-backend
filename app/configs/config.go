@@ -24,6 +24,9 @@ type Config struct {
 	AccessCheckToken         *string
 	AccessTokenCacheLifeTime int
 	MaximumFileSize          int
+
+	GithubClientOwner    string
+	GithubClientRepoName string
 }
 
 func (c *Config) BackendHost() string {
@@ -120,6 +123,9 @@ func NewConfig() Config {
 		AccessTokenCacheLifeTime: accessTokenCacheLifeTime,
 		MaximumFileSize:          maximumFileSize,
 		MobileAppName:            "orgnote",
+
+		GithubClientOwner:    "artawower",
+		GithubClientRepoName: "orgnote-client",
 	}
 	log.Info().Msgf("Config: %+v", spew.Sdump(config))
 
