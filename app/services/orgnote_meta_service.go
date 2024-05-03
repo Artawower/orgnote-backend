@@ -62,7 +62,7 @@ func (o *OrgNoteMetaService) GetChangesFrom(version string) *models.OrgNoteClien
 
 	return &models.OrgNoteClientUpdateInfo{
 		Version:   *o.cachedClientInfo.TagName,
-		Url:       *o.cachedClientInfo.URL,
+		Url:       o.cachedClientInfo.GetHTMLURL(),
 		ChangeLog: o.formatChangeLog(o.cachedClientInfo.Body),
 	}
 }
