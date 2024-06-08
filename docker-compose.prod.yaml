@@ -7,8 +7,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    ports:
-      - 3000:3000
+    # ports:
+    #   - 3000:3000
     networks:
       - orgnote_network
     depends_on:
@@ -62,12 +62,24 @@ services:
     depends_on:
       - orgnote_backend
       - orgnote_cors
+      - orgnote_client
     links:
       - orgnote_backend
       - orgnote_cors
+      - orgnote_client
     networks:
       - orgnote_network
     command: ["/usr/sbin/nginx", "-g", "daemon off;"]
+
+  orgnote_client:
+    image: orgnote/client:latest
+    container_name: orgnote_client
+    environment:
+      - DISABLE_LOGGER=1
+    networks:
+      - orgnote_network
+    # ports:
+    #   - "3060:3000"
 
 networks:
   orgnote_network:
