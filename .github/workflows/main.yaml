@@ -1,6 +1,9 @@
 name: CI/CD for orgnote backend project
 
-on: [push]
+on:
+  push:
+  repository_dispatch:
+    types: [trigger-deploy-repo-workflow]
 
 env:
   MONGO_USERNAME: ${{ secrets.MONGO_USERNAME }}
