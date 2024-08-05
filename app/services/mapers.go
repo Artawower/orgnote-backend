@@ -16,15 +16,15 @@ func mapToPublicUserInfo(user *models.User) *models.PublicUser {
 func mapToPublicNote(note *models.Note, user *models.User, isMy bool) *models.PublicNote {
 	u := mapToPublicUserInfo(user)
 	return &models.PublicNote{
-		ID:        note.ExternalID,
-		Content:   note.Content,
-		Meta:      note.Meta,
-		FilePath:  note.FilePath,
-		Author:    *u,
-		UpdatedAt: note.UpdatedAt,
-		Encrypted: note.Encrypted,
-		TouchedAt: note.TouchedAt,
-		IsMy:      isMy,
+		ID:             note.ExternalID,
+		Content:        note.Content,
+		Meta:           note.Meta,
+		FilePath:       note.FilePath,
+		Author:         *u,
+		UpdatedAt:      note.UpdatedAt,
+		EncryptionType: note.EncryptionType,
+		TouchedAt:      note.TouchedAt,
+		IsMy:           isMy,
 	}
 }
 

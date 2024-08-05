@@ -5,10 +5,11 @@ definitions:
         type: string
       createdAt:
         type: string
-      encrypted:
+      encryptionType:
         enum:
-        - gpg
-        - password
+        - gpgKeys
+        - gpgPassword
+        - disabled
         type: string
       filePath:
         items:
@@ -222,7 +223,7 @@ definitions:
         type: string
       createdAt:
         type: string
-      encrypted:
+      encryptionType:
         description: Encrypted note content
         enum:
         - gpgKeys

@@ -869,11 +869,12 @@ const docTemplate = `{
                 "createdAt": {
                     "type": "string"
                 },
-                "encrypted": {
+                "encryptionType": {
                     "type": "string",
                     "enum": [
-                        "gpg",
-                        "password"
+                        "gpgKeys",
+                        "gpgPassword",
+                        "disabled"
                     ]
                 },
                 "filePath": {
@@ -1201,7 +1202,7 @@ const docTemplate = `{
                 "createdAt": {
                     "type": "string"
                 },
-                "encrypted": {
+                "encryptionType": {
                     "description": "Encrypted note content",
                     "type": "string",
                     "enum": [

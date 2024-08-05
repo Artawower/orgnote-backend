@@ -78,3 +78,10 @@ ACCESS_CHECK_TOKEN=token for working with external service, leave empty for deve
 #+BEGIN_SRC bash
 docker compose -f docker-compose.db.yaml -f docker-compose.dev.yaml up --build
 #+END_SRC
+
+
+* Development
+** Migrations
+=migrate create -ext mongodb -dir ./migrations -seq change_encrypted_field_name=
+[[https://github.com/golang-migrate/migrate/blob/master/GETTING_STARTED.md][See more details here]]
+

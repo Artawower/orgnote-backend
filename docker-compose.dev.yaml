@@ -41,12 +41,12 @@ services:
     networks:
       - orgnote_network
 
-  orgnote_client:
-    image: orgnote/client:latest
-    container_name: orgnote_client
-    environment:
-      - DISABLE_LOGGER=1
-      - API_URL=http://localhost:8000/v1
-      - AUTH_URL=http://localhost:8000
-    ports:
-      - "3000:3000"
+  # orgnote_client:
+  #   image: orgnote/client:latest
+  #   container_name: orgnote_client
+  #   environment:
+  #     - DISABLE_LOGGER=1
+  #     - API_URL=http://localhost:8000/v1
+  #     - AUTH_URL=http://localhost:8000
+  #   ports:
+  #     - "3000:3000"
