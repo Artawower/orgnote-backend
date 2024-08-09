@@ -139,17 +139,17 @@ func (a *NoteRepository) BulkUpsert(userID string, notes []models.Note) error {
 
 func (a *NoteRepository) getUpdateNote(note models.Note) bson.M {
 	update := bson.M{
-		"externalId": note.ExternalID,
-		"authorId":   note.AuthorID,
-		"content":    note.Content,
-		"meta":       note.Meta,
-		"updatedAt":  note.UpdatedAt,
-		"touchedAt":  note.TouchedAt,
-		"views":      note.Views,
-		"lastSyncAt": time.Now(),
-		"likes":      note.Likes,
-		"filePath":   note.FilePath,
-		"encrypted":  note.EncryptionType,
+		"externalId":     note.ExternalID,
+		"authorId":       note.AuthorID,
+		"content":        note.Content,
+		"meta":           note.Meta,
+		"updatedAt":      note.UpdatedAt,
+		"touchedAt":      note.TouchedAt,
+		"views":          note.Views,
+		"lastSyncAt":     time.Now(),
+		"likes":          note.Likes,
+		"filePath":       note.FilePath,
+		"encryptionType": note.EncryptionType,
 	}
 
 	return update
