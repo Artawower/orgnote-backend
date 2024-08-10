@@ -191,6 +191,16 @@ func (n *NoteService) DeleteNotes(ids []string, authorID string) error {
 	return n.noteRepository.MarkNotesAsDeleted(ids, authorID)
 }
 
+func (n *NoteService) DeleteAllNotes(userID string) error {
+	err := n.noteRepository.DeleteUserNotes(userID)
+
+	if err != nil {
+		return fmt.Errorf("note service: delete all notes: could not delete user notes: %v", err)
+	}
+
+	return nil
+}
+
 // TODO: master signature is too complex. Create a struct for params.
 func (n *NoteService) SyncNotes(
 	notes []models.Note,

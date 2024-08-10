@@ -83,6 +83,26 @@ func (h *NoteHandlers) DeleteNotes(c *fiber.Ctx) error {
 	return nil
 }
 
+// DeleteNotes godoc
+// @Summary      Drop all user notes
+// @Description  Force delete all user notes. This operation is irreversible
+// @Tags         notes
+// @Accept       json
+// @Produce      json
+// @Success      200
+// @Failure      400  {object}  HttpError[any]
+// @Failure      404  {object}  HttpError[any]
+// @Failure      500  {object}  HttpError[any]
+// @Router       /all-notes [delete]
+func (h *NoteHandlers) DeleteAllNotes(c *fiber.Ctx) error {
+	err := h.noteService.DeleteAllNotes(c.Locals("user").(*models.User).ID.Hex())
+	if err != nil {
+		log.Info().Err(err).Msg("note handler: delete all notes")
+		return c.Status(http.StatusInternalServerError).JSON(NewHttpError[any]("Couldn't delete notes, something went wrong", nil))
+	}
+	return nil
+}
+
 type GetNotesFilter struct {
 	Limit          *int64     `json:"limit" extensions:"x-order=1"`
 	Offset         *int64     `json:"offset" extensions:"x-order=2"`
@@ -314,4 +334,5 @@ func RegisterNoteHandler(
 	app.Post("/notes", authMiddleware, accessMiddleware, noteHandlers.CreateNote)
 	app.Put("/notes/bulk-upsert", authMiddleware, noteHandlers.UpsertNotes)
 	app.Delete("/notes", authMiddleware, noteHandlers.DeleteNotes)
+	app.Delete("/all-notes", authMiddleware, noteHandlers.DeleteAllNotes)
 }
