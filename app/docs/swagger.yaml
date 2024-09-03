@@ -5,6 +5,8 @@ definitions:
         type: string
       createdAt:
         type: string
+      encrypted:
+        type: boolean
       encryptionType:
         enum:
         - gpgKeys
@@ -223,6 +225,8 @@ definitions:
         type: string
       createdAt:
         type: string
+      encrypted:
+        type: boolean
       encryptionType:
         description: Encrypted note content
         enum:

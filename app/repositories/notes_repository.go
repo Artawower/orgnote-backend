@@ -150,6 +150,7 @@ func (a *NoteRepository) getUpdateNote(note models.Note) bson.M {
 		"likes":          note.Likes,
 		"filePath":       note.FilePath,
 		"encryptionType": note.EncryptionType,
+		"encrypted":      note.Encrypted,
 	}
 
 	return update

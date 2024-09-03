@@ -907,6 +907,9 @@ const docTemplate = `{
                 "createdAt": {
                     "type": "string"
                 },
+                "encrypted": {
+                    "type": "boolean"
+                },
                 "encryptionType": {
                     "type": "string",
                     "enum": [
@@ -1239,6 +1242,9 @@ const docTemplate = `{
                 },
                 "createdAt": {
                     "type": "string"
+                },
+                "encrypted": {
+                    "type": "boolean"
                 },
                 "encryptionType": {
                     "description": "Encrypted note content",

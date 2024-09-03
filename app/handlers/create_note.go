@@ -16,9 +16,15 @@ type CreatingNote struct {
 	CreatedAt      time.Time       `json:"createdAt" form:"createdAt"`
 	TouchedAt      time.Time       `json:"touchedAt" form:"touchedAt"`
 	EncryptionType *string         `json:"encryptionType" form:"encryptionType" enums:"gpgKeys,gpgPassword,disabled"`
+	Encrypted      *bool           `json:"encrypted" form:"encrypted"`
 }
 
 func mapCreatingNoteToNote(note CreatingNote) models.Note {
+	encrypted := false
+	if note.Encrypted != nil {
+		encrypted = *note.Encrypted
+	}
+
 	return models.Note{
 		ExternalID:     note.ID,
 		Content:        note.Content,
@@ -28,6 +34,7 @@ func mapCreatingNoteToNote(note CreatingNote) models.Note {
 		CreatedAt:      note.CreatedAt,
 		TouchedAt:      note.TouchedAt,
 		EncryptionType: note.EncryptionType,
+		Encrypted:      encrypted,
 	}
 }
 
