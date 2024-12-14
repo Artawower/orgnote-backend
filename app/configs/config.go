@@ -75,9 +75,8 @@ func NewConfig() Config {
 	}
 
 	var accessCheckerURL *string
-	if envAccessCheckURL := os.Getenv("ACCESS_CHECK_URL"); envAccessCheckURL != "" {
-		accessCheckerURL = &envAccessCheckURL
-	}
+	envAccessCheckURL := os.Getenv("ACCESS_CHECK_URL")
+	accessCheckerURL = &envAccessCheckURL
 
 	var accessCheckToken *string
 	if envAccessCheckToken := os.Getenv("ACCESS_CHECK_TOKEN"); envAccessCheckToken != "" {
