@@ -74,10 +74,7 @@ func NewConfig() Config {
 		log.Fatal().Msg("BACKEND_DOMAIN or BACKEND_SCHEMA is not set")
 	}
 
-	var accessCheckerURL *string
-	if envAccessCheckURL := os.Getenv("ACCESS_CHECK_URL"); envAccessCheckURL != "" {
-		accessCheckerURL = &envAccessCheckURL
-	}
+	envAccessCheckURL := os.Getenv("ACCESS_CHECK_URL")
 
 	var accessCheckToken *string
 	if envAccessCheckToken := os.Getenv("ACCESS_CHECK_TOKEN"); envAccessCheckToken != "" {
@@ -118,7 +115,7 @@ func NewConfig() Config {
 		BackendSchema:            backendSchema,
 		BackendDomain:            backendDomain,
 		BackendPort:              backendPort,
-		AccessCheckerURL:         accessCheckerURL,
+		AccessCheckerURL:         &envAccessCheckURL,
 		AccessCheckToken:         accessCheckToken,
 		AccessTokenCacheLifeTime: accessTokenCacheLifeTime,
 		MaximumFileSize:          maximumFileSize,
