@@ -6,6 +6,8 @@ on:
       - CI for orgnote backend
     types:
       - completed
+    repository_dispatch:
+      types: [trigger-deploy-repo-workflow]
 
 env:
   MONGO_USERNAME: ${{ secrets.MONGO_USERNAME }}
