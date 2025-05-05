@@ -100,7 +100,7 @@ func (a *SubscriptionAPI) getInfo(provider string, externalID string) (*Subscrip
 
 func (a *SubscriptionAPI) Check(provider string, externalID string, usedSpace int64, errCh chan<- error) {
 	// TODO: add cache here
-	if a.checkURL == nil {
+	if a.checkURL == nil || *a.checkURL == "" {
 		errCh <- nil
 		return
 	}
