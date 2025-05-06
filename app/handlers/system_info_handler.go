@@ -8,6 +8,7 @@ import (
 
 type OrgNoteMetaService interface {
 	GetChangesFrom(version string) *models.OrgNoteClientUpdateInfo
+	GetEnvironmentInfo() models.EnvironmentInfo
 }
 
 type SystemInfoHandler struct {
@@ -30,7 +31,7 @@ func NewSystemInfoHandler(metaService OrgNoteMetaService) *SystemInfoHandler {
 // @Failure      404  {object}  handlers.HttpError[any]
 // @Failure      500  {object}  handlers.HttpError[any]
 // @Router       /system-info/client-update/{version} [get]
-func (s *SystemInfoHandler) LoginCallback(c *fiber.Ctx) error {
+func (s *SystemInfoHandler) ClientVersion(c *fiber.Ctx) error {
 	version := c.Params("version")
 	updateInfo := s.metaService.GetChangesFrom(version)
 	if updateInfo == nil {
@@ -39,7 +40,37 @@ func (s *SystemInfoHandler) LoginCallback(c *fiber.Ctx) error {
 	return c.JSON(updateInfo)
 }
 
+type SystemInfo struct {
+	Environment models.EnvironmentInfo          `json:"environment"`
+	Update      *models.OrgNoteClientUpdateInfo `json:"update"`
+}
+
+// Function to get system info, including env.CHECK_URL
+
+// @Summary      GetSystemInfo
+// @Description  Get system info
+// @Tags         system info
+// @Accept       json
+// @Produce      json
+// @Param        version path string true "provider"
+// @Success      200  {object}  SystemInfo
+// @Failure      500  {object}  handlers.HttpError[any]
+// @Router       /system-info/{version} [get]
+func (s *SystemInfoHandler) SystemInfo(c *fiber.Ctx) error {
+	systemInfo := s.metaService.GetEnvironmentInfo()
+	version := c.Params("version")
+	updateInfo := s.metaService.GetChangesFrom(version)
+
+	systemMetadata := SystemInfo{
+		Environment: systemInfo,
+		Update:      updateInfo,
+	}
+
+	return c.JSON(systemMetadata)
+}
+
 func RegisterSystemInfoHandler(app fiber.Router, metaService OrgNoteMetaService) {
 	handler := NewSystemInfoHandler(metaService)
-	app.Get("/system-info/client-update/:version", handler.LoginCallback)
+	app.Get("/system-info/:version", handler.SystemInfo)
+	app.Get("/system-info/client-update/:version", handler.ClientVersion)
 }

@@ -1,6 +1,7 @@
 package services
 
 import (
+	"orgnote/app/configs"
 	"testing"
 
 	"github.com/gkampitakis/go-snaps/snaps"
@@ -17,10 +18,13 @@ func TestChangelogShouldBeFormatted(t *testing.T) {
 - 7aa69fb feat: build main action toolbar from commands (#22)`
 
 	disableScheduler := true
-	config := OrgNoteMetaConfig{
+	repoConfig := OrgNoteMetaConfig{
 		DisableScheduler: &disableScheduler,
 	}
-	orgNoteMetaService := NewOrgNoteMetaService(config)
+
+	config := configs.Config{}
+
+	orgNoteMetaService := NewOrgNoteMetaService(repoConfig, config)
 
 	formatted := orgNoteMetaService.formatChangeLog(&link)
 

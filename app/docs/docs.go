@@ -836,6 +836,44 @@ const docTemplate = `{
                 }
             }
         },
+        "/system-info/{version}": {
+            "get": {
+                "description": "Get system info",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "system info"
+                ],
+                "summary": "GetSystemInfo",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "provider",
+                        "name": "version",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.SystemInfo"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.HttpError-any"
+                        }
+                    }
+                }
+            }
+        },
         "/tags": {
             "get": {
                 "description": "Return list of al registered tags",
@@ -1091,6 +1129,17 @@ const docTemplate = `{
                 }
             }
         },
+        "handlers.SystemInfo": {
+            "type": "object",
+            "properties": {
+                "environment": {
+                    "$ref": "#/definitions/models.EnvironmentInfo"
+                },
+                "update": {
+                    "$ref": "#/definitions/models.OrgNoteClientUpdateInfo"
+                }
+            }
+        },
         "models.APIToken": {
             "type": "object",
             "properties": {
@@ -1109,6 +1158,14 @@ const docTemplate = `{
             "type": "object",
             "additionalProperties": {
                 "type": "string"
+            }
+        },
+        "models.EnvironmentInfo": {
+            "type": "object",
+            "properties": {
+                "selfHosted": {
+                    "type": "boolean"
+                }
             }
         },
         "models.NoteHeading": {

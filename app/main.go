@@ -109,7 +109,7 @@ func main() {
 	orgNoteMetaService := services.NewOrgNoteMetaService(services.OrgNoteMetaConfig{
 		ClientRepoName:  config.GithubClientRepoName,
 		ClientRepoOwner: config.GithubClientOwner,
-	})
+	}, config)
 
 	// api.Use(handlers.NewAuthMiddleware())
 	// TODO: expose to external fn

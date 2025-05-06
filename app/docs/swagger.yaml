@@ -139,6 +139,13 @@ definitions:
           $ref: '#/definitions/models.PublicNote'
         type: array
     type: object
+  handlers.SystemInfo:
+    properties:
+      environment:
+        $ref: '#/definitions/models.EnvironmentInfo'
+      update:
+        $ref: '#/definitions/models.OrgNoteClientUpdateInfo'
+    type: object
   models.APIToken:
     properties:
       id:
@@ -151,6 +158,11 @@ definitions:
   models.ConnectedNotes:
     additionalProperties:
       type: string
+    type: object
+  models.EnvironmentInfo:
+    properties:
+      selfHosted:
+        type: boolean
     type: object
   models.NoteHeading:
     properties:
@@ -818,6 +830,31 @@ paths:
       summary: Synchronize notes
       tags:
       - notes
+  /system-info/{version}:
+    get:
+      consumes:
+      - application/json
+      description: Get system info
+      parameters:
+      - description: provider
+        in: path
+        name: version
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.SystemInfo'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.HttpError-any'
+      summary: GetSystemInfo
+      tags:
+      - system info
   /system-info/client-update/{version}:
     get:
       consumes:

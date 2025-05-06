@@ -3,7 +3,6 @@ package infrastructure
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path"
 
@@ -15,7 +14,7 @@ type FileStorage struct {
 }
 
 func (f *FileStorage) Upload(folder string, fileName string, file io.Reader) error {
-	fileData, err := ioutil.ReadAll(file)
+	fileData, err := io.ReadAll(file)
 	if err != nil {
 		return fmt.Errorf("file storage: upload: could not read file: %v", err)
 	}
@@ -28,7 +27,7 @@ func (f *FileStorage) Upload(folder string, fileName string, file io.Reader) err
 	}
 
 	filePath := f.getFullPath(folder, fileName)
-	err = ioutil.WriteFile(filePath, fileData, 0644)
+	err = os.WriteFile(filePath, fileData, 0644)
 	if err != nil {
 		return fmt.Errorf("file storage: upload: could not write file: %v", err)
 	}

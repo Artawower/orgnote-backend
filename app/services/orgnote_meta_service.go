@@ -2,6 +2,7 @@ package services
 
 import (
 	"fmt"
+	"orgnote/app/configs"
 	"orgnote/app/models"
 	"orgnote/app/tools"
 	"regexp"
@@ -19,14 +20,15 @@ type OrgNoteMetaConfig struct {
 }
 
 type OrgNoteMetaService struct {
-	config           OrgNoteMetaConfig
+	repoConfig       OrgNoteMetaConfig
+	config           configs.Config
 	cachedClientInfo *github.RepositoryRelease
 	queue            *cron.Cron
 }
 
-func NewOrgNoteMetaService(config OrgNoteMetaConfig) *OrgNoteMetaService {
-	metaService := &OrgNoteMetaService{config, nil, nil}
-	if config.DisableScheduler == nil || !*config.DisableScheduler {
+func NewOrgNoteMetaService(repoConfig OrgNoteMetaConfig, config configs.Config) *OrgNoteMetaService {
+	metaService := &OrgNoteMetaService{repoConfig, config, nil, nil}
+	if repoConfig.DisableScheduler == nil || !*repoConfig.DisableScheduler {
 		metaService.RunScheduler()
 	}
 	return metaService
@@ -35,7 +37,7 @@ func NewOrgNoteMetaService(config OrgNoteMetaConfig) *OrgNoteMetaService {
 func (o *OrgNoteMetaService) LoadClientMeta() error {
 	client := github.NewClient(nil)
 	ctx, _ := tools.DefaultContextTimeout()
-	release, _, err := client.Repositories.GetLatestRelease(ctx, o.config.ClientRepoOwner, o.config.ClientRepoName)
+	release, _, err := client.Repositories.GetLatestRelease(ctx, o.repoConfig.ClientRepoOwner, o.repoConfig.ClientRepoName)
 
 	if err != nil {
 		return fmt.Errorf("orgnote meta: load client version: %w", err)
@@ -95,4 +97,10 @@ func (o *OrgNoteMetaService) RunScheduler() {
 	})
 
 	o.queue.Start()
+}
+
+func (o *OrgNoteMetaService) GetEnvironmentInfo() models.EnvironmentInfo {
+	return models.EnvironmentInfo{
+		SelfHosted: tools.IsEmpty(o.config.AccessCheckerURL) || tools.IsEmpty(o.config.AccessCheckToken),
+	}
 }
