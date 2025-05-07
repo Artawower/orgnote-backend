@@ -42,6 +42,7 @@ jobs:
             cd ~/orgnote/orgnote-backend
             docker-compose -f docker-compose.db.yaml -f docker-compose.prod.yaml down
             docker system prune -f
+            docker rmi orgnote/client:latest || true
             eval $(ssh-agent -s)
             ssh-add ~/.ssh/sb-back
             git checkout master
