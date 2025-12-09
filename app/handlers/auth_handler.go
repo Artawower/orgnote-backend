@@ -146,13 +146,14 @@ func (a *AuthHandler) getLoginCallbackURL(state string) string {
 	err := json.Unmarshal([]byte(state), &parsedState)
 	if err != nil {
 		log.Error().Err(err).Msgf("auth handlers: github auth handler: unmarshal state")
-		return URL + "/auth/login"
+		return URL + "/#/auth/login"
 	}
 
-	if state == "mobile" {
+	if parsedState.Environment == "mobile" {
 		URL = a.config.MobileAppName + ":/"
+		return URL + "/auth/login"
 	}
-	return URL + "/auth/login"
+	return URL + "/#/auth/login"
 }
 
 // Logout godoc
