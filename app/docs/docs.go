@@ -1370,6 +1370,9 @@ const docTemplate = `{
                 "profileUrl": {
                     "type": "string"
                 },
+                "provider": {
+                    "type": "string"
+                },
                 "spaceLimit": {
                     "type": "integer"
                 },

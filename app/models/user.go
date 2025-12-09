@@ -50,6 +50,7 @@ type UserPersonalInfo struct {
 	NickName   string  `json:"nickName"`
 	AvatarURL  string  `json:"avatarUrl"`
 	Email      string  `json:"email"`
+	Provider   string  `json:"provider"`
 	ProfileURL string  `json:"profileUrl"`
 	SpaceLimit int64   `json:"spaceLimit"`
 	UsedSpace  int64   `json:"usedSpace"`

@@ -128,6 +128,7 @@ func (a *AuthHandler) LoginCallback(c *fiber.Ctx) error {
 	q.Set("avatarUrl", u.AvatarURL)
 	q.Set("email", u.Email)
 	q.Set("profileUrl", u.ProfileURL)
+	q.Set("provider", u.Provider)
 	q.Set("spaceLimit", strconv.FormatInt(u.SpaceLimit, 10))
 	if u.Active != nil {
 		q.Set("active", *u.Active)

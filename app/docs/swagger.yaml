@@ -298,6 +298,8 @@ definitions:
         type: string
       profileUrl:
         type: string
+      provider:
+        type: string
       spaceLimit:
         type: integer
       usedSpace:
