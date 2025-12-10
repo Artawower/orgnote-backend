@@ -84,9 +84,6 @@ func main() {
 	})
 	api := app.Group("/v1")
 
-	// TODO: master May be someday there will be DI
-	noteRepository := repositories.NewNoteRepository(database)
-	tagRepository := repositories.NewTagRepository(database)
 	userRepository := repositories.NewUserRepository(database)
 	fileStorage := infrastructure.NewFileStorage(config.MediaPath)
 
@@ -101,9 +98,7 @@ func main() {
 	authMiddleware := handlers.NewAuthMiddleware()
 	accessMiddleware := handlers.NewAccessMiddleware(subscriptionAPI)
 
-	noteService := services.NewNoteService(noteRepository, userRepository, tagRepository, fileStorage)
-	tagService := services.NewTagService(tagRepository)
-	userService := services.NewUserService(userRepository, noteRepository, subscriptionAPI)
+	userService := services.NewUserService(userRepository, subscriptionAPI)
 	fileService := services.NewFileService(fileStorage, userRepository)
 
 	orgNoteMetaService := services.NewOrgNoteMetaService(services.OrgNoteMetaConfig{
@@ -111,20 +106,13 @@ func main() {
 		ClientRepoOwner: config.GithubClientOwner,
 	}, config)
 
-	// api.Use(handlers.NewAuthMiddleware())
-	// TODO: expose to external fn
-
 	handlers.RegisterSwagger(api, config)
-	handlers.RegisterNoteHandler(api, noteService, authMiddleware, accessMiddleware)
-	handlers.RegisterTagHandler(api, tagService)
 	handlers.RegisterAuthHandler(api, userService, config, authMiddleware)
 	handlers.RegisterFileHandler(api, fileService, authMiddleware, accessMiddleware)
 	handlers.RegisterSystemInfoHandler(api, orgNoteMetaService)
-	// handlers.RegisterUserHandlers(app)
-	// handlers.RegisterTagHandlers(app)
+
 	app.Static("media", config.MediaPath)
 
-	// NOTE: for local file uploading (tmp quick hack)
 	if config.Debug {
 		app.Static("v1/media", config.MediaPath)
 	}

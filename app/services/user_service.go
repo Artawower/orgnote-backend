@@ -14,12 +14,11 @@ import (
 
 type UserService struct {
 	userRepository  *repositories.UserRepository
-	noteRepository  *repositories.NoteRepository
 	subscriptionAPI *infrastructure.SubscriptionAPI
 }
 
-func NewUserService(userRepository *repositories.UserRepository, noteRepository *repositories.NoteRepository, subscriptionAPI *infrastructure.SubscriptionAPI) *UserService {
-	return &UserService{userRepository, noteRepository, subscriptionAPI}
+func NewUserService(userRepository *repositories.UserRepository, subscriptionAPI *infrastructure.SubscriptionAPI) *UserService {
+	return &UserService{userRepository, subscriptionAPI}
 }
 
 func (u *UserService) Login(user models.User) (*models.User, error) {
@@ -68,16 +67,10 @@ func (u *UserService) DeleteUser(user *models.User) error {
 	if err != nil {
 		return fmt.Errorf("user service: delete user: %v", err)
 	}
-
-	err = u.noteRepository.DeleteUserNotes(user.ID.Hex())
-	if err != nil {
-		return fmt.Errorf("user service: delete user notes: %v", err)
-	}
 	return nil
 }
 
 func (u *UserService) Subscribe(user *models.User, token string, emailAddress *string) error {
-	// TODO: master transaction with context
 	var email *types.Email
 	if emailAddress != nil {
 		email = (*types.Email)(emailAddress)
@@ -110,4 +103,18 @@ func (u *UserService) Subscribe(user *models.User, token string, emailAddress *s
 		return fmt.Errorf("user service: subscribe: update space limit info: %v", err)
 	}
 	return nil
+}
+
+func mapToUserPersonalInfo(user *models.User) *models.UserPersonalInfo {
+	return &models.UserPersonalInfo{
+		ID:         user.ID.Hex(),
+		Name:       user.Name,
+		NickName:   user.NickName,
+		AvatarURL:  user.AvatarURL,
+		Email:      user.Email,
+		ProfileURL: user.ProfileURL,
+		SpaceLimit: user.SpaceLimit,
+		UsedSpace:  user.UsedSpace,
+		Active:     user.Active,
+	}
 }

@@ -36,9 +36,8 @@ func mapToUser(user goth.User) *models.User {
 		RefreshToken:        &user.RefreshToken,
 		TokenExpirationDate: user.ExpiresAt,
 		ProfileURL:          user.RawData["html_url"].(string),
-		Notes:               []models.Note{},
 		APITokens:           []models.APIToken{},
-		// TODO: [selfhosted] master get this values from environment
+		// TODO: master get this values from environment
 		SpaceLimit: 0,
 		UsedSpace:  0,
 		Active:     nil,

@@ -1,52 +1,9 @@
 definitions:
-  handlers.CreatingNote:
-    properties:
-      content:
-        type: string
-      createdAt:
-        type: string
-      encrypted:
-        type: boolean
-      encryptionType:
-        enum:
-        - gpgKeys
-        - gpgPassword
-        - disabled
-        type: string
-      filePath:
-        items:
-          type: string
-        type: array
-      id:
-        type: string
-      meta:
-        $ref: '#/definitions/models.NoteMeta'
-      touchedAt:
-        type: string
-      updatedAt:
-        type: string
-    required:
-    - content
-    type: object
-  handlers.DeletedNote:
-    properties:
-      filePath:
-        items:
-          type: string
-        type: array
-      id:
-        type: string
-    type: object
   handlers.HttpError-any:
     properties:
       data: {}
       message:
         type: string
-    type: object
-  handlers.HttpResponse-any-any:
-    properties:
-      data: {}
-      meta: {}
     type: object
   handlers.HttpResponse-array_models_APIToken-any:
     properties:
@@ -56,45 +13,16 @@ definitions:
         type: array
       meta: {}
     type: object
-  handlers.HttpResponse-array_models_PublicNote-models_Pagination:
-    properties:
-      data:
-        items:
-          $ref: '#/definitions/models.PublicNote'
-        type: array
-      meta:
-        $ref: '#/definitions/models.Pagination'
-    type: object
-  handlers.HttpResponse-array_string-any:
-    properties:
-      data:
-        items:
-          type: string
-        type: array
-      meta: {}
-    type: object
   handlers.HttpResponse-handlers_OAuthRedirectData-any:
     properties:
       data:
         $ref: '#/definitions/handlers.OAuthRedirectData'
       meta: {}
     type: object
-  handlers.HttpResponse-handlers_SyncNotesResponse-any:
-    properties:
-      data:
-        $ref: '#/definitions/handlers.SyncNotesResponse'
-      meta: {}
-    type: object
   handlers.HttpResponse-models_APIToken-any:
     properties:
       data:
         $ref: '#/definitions/models.APIToken'
-      meta: {}
-    type: object
-  handlers.HttpResponse-models_PublicNote-any:
-    properties:
-      data:
-        $ref: '#/definitions/models.PublicNote'
       meta: {}
     type: object
   handlers.HttpResponse-models_UserPersonalInfo-any:
@@ -115,30 +43,6 @@ definitions:
       token:
         type: string
     type: object
-  handlers.SyncNotesRequest:
-    properties:
-      deletedNotesIds:
-        items:
-          type: string
-        type: array
-      notes:
-        items:
-          $ref: '#/definitions/handlers.CreatingNote'
-        type: array
-      timestamp:
-        type: string
-    type: object
-  handlers.SyncNotesResponse:
-    properties:
-      deletedNotes:
-        items:
-          $ref: '#/definitions/handlers.DeletedNote'
-        type: array
-      notes:
-        items:
-          $ref: '#/definitions/models.PublicNote'
-        type: array
-    type: object
   handlers.SystemInfo:
     properties:
       environment:
@@ -155,61 +59,10 @@ definitions:
       token:
         type: string
     type: object
-  models.ConnectedNotes:
-    additionalProperties:
-      type: string
-    type: object
   models.EnvironmentInfo:
     properties:
       selfHosted:
         type: boolean
-    type: object
-  models.NoteHeading:
-    properties:
-      level:
-        type: integer
-      text:
-        type: string
-    type: object
-  models.NoteLink:
-    properties:
-      name:
-        type: string
-      url:
-        type: string
-    type: object
-  models.NoteMeta:
-    properties:
-      category:
-        $ref: '#/definitions/models.category'
-      connectedNotes:
-        $ref: '#/definitions/models.ConnectedNotes'
-      description:
-        type: string
-      externalLinks:
-        items:
-          $ref: '#/definitions/models.NoteLink'
-        type: array
-      fileTags:
-        items:
-          type: string
-        type: array
-      headings:
-        items:
-          $ref: '#/definitions/models.NoteHeading'
-        type: array
-      images:
-        items:
-          type: string
-        type: array
-      previewImg:
-        type: string
-      published:
-        type: boolean
-      startup:
-        type: string
-      title:
-        type: string
     type: object
   models.OrgNoteClientUpdateInfo:
     properties:
@@ -218,68 +71,6 @@ definitions:
       url:
         type: string
       version:
-        type: string
-    type: object
-  models.Pagination:
-    properties:
-      limit:
-        type: integer
-      offset:
-        type: integer
-      total:
-        type: integer
-    type: object
-  models.PublicNote:
-    properties:
-      author:
-        $ref: '#/definitions/models.PublicUser'
-      content:
-        type: string
-      createdAt:
-        type: string
-      encrypted:
-        type: boolean
-      encryptionType:
-        description: Encrypted note content
-        enum:
-        - gpgKeys
-        - gpgPassword
-        - disabled
-        type: string
-      filePath:
-        items:
-          type: string
-        type: array
-      id:
-        description: It's externalID from original note
-        type: string
-      isMy:
-        type: boolean
-      meta:
-        $ref: '#/definitions/models.NoteMeta'
-      size:
-        type: integer
-      touchedAt:
-        type: string
-      updatedAt:
-        type: string
-    required:
-    - content
-    - meta
-    type: object
-  models.PublicUser:
-    properties:
-      avatarUrl:
-        type: string
-      email:
-        type: string
-      id:
-        type: string
-      name:
-        type: string
-      nickName:
-        type: string
-      profileUrl:
         type: string
     type: object
   models.UserPersonalInfo:
@@ -305,16 +96,6 @@ definitions:
       usedSpace:
         type: integer
     type: object
-  models.category:
-    enum:
-    - article
-    - book
-    - schedule
-    type: string
-    x-enum-varnames:
-    - CategoryArticle
-    - CategoryBook
-    - CategorySchedule
 info:
   contact:
     email: artawower@protonmail.com
@@ -327,31 +108,6 @@ info:
   title: Org Note API
   version: 0.0.1
 paths:
-  /all-notes:
-    delete:
-      consumes:
-      - application/json
-      description: Force delete all user notes. This operation is irreversible
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/handlers.HttpError-any'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/handlers.HttpError-any'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/handlers.HttpError-any'
-      summary: Drop all user notes
-      tags:
-      - notes
   /auth/{provider}/callback:
     get:
       consumes:
@@ -604,234 +360,6 @@ paths:
       summary: Upload files
       tags:
       - files
-  /notes:
-    delete:
-      consumes:
-      - application/json
-      description: Mark notes as deleted by provided list of ids
-      parameters:
-      - description: List of ids of deleted notes
-        in: body
-        name: ids
-        required: true
-        schema:
-          items:
-            type: string
-          type: array
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/handlers.HttpResponse-any-any'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/handlers.HttpError-any'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/handlers.HttpError-any'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/handlers.HttpError-any'
-      summary: Delete notes
-      tags:
-      - notes
-  /notes/:
-    get:
-      consumes:
-      - application/json
-      description: Get all notes with optional filter
-      parameters:
-      - in: query
-        name: limit
-        type: integer
-        x-order: "1"
-      - in: query
-        name: offset
-        type: integer
-        x-order: "2"
-      - description: User id of which notes to load
-        in: query
-        name: userId
-        type: string
-        x-order: "3"
-      - in: query
-        name: searchText
-        type: string
-        x-order: "4"
-      - description: Load all my own notes (user will be used from provided token)
-        in: query
-        name: my
-        type: boolean
-        x-order: "5"
-      - in: query
-        name: from
-        type: string
-        x-order: "6"
-      - in: query
-        name: includeDeleted
-        type: boolean
-        x-order: "7"
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/handlers.HttpResponse-array_models_PublicNote-models_Pagination'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/handlers.HttpError-any'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/handlers.HttpError-any'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/handlers.HttpError-any'
-      summary: Get notes
-      tags:
-      - notes
-    post:
-      consumes:
-      - application/json
-      description: Create note
-      parameters:
-      - description: Note model
-        in: body
-        name: note
-        required: true
-        schema:
-          $ref: '#/definitions/handlers.CreatingNote'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema: {}
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/handlers.HttpError-any'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/handlers.HttpError-any'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/handlers.HttpError-any'
-      summary: Create note
-      tags:
-      - notes
-  /notes/{id}:
-    get:
-      consumes:
-      - application/json
-      description: get note by id
-      parameters:
-      - description: Note ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/handlers.HttpResponse-models_PublicNote-any'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/handlers.HttpError-any'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/handlers.HttpError-any'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/handlers.HttpError-any'
-      summary: Get note
-      tags:
-      - notes
-  /notes/bulk-upsert:
-    put:
-      consumes:
-      - application/json
-      description: Bulk update or insert notes
-      parameters:
-      - description: List of crated notes
-        in: body
-        name: notes
-        required: true
-        schema:
-          items:
-            $ref: '#/definitions/handlers.CreatingNote'
-          type: array
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema: {}
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/handlers.HttpError-any'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/handlers.HttpError-any'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/handlers.HttpError-any'
-      summary: Upsert notes
-      tags:
-      - notes
-  /notes/sync:
-    post:
-      consumes:
-      - application/json
-      description: Synchronize notes with specific timestamp
-      parameters:
-      - description: Sync notes request
-        in: body
-        name: data
-        required: true
-        schema:
-          $ref: '#/definitions/handlers.SyncNotesRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/handlers.HttpResponse-handlers_SyncNotesResponse-any'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/handlers.HttpError-any'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/handlers.HttpError-any'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/handlers.HttpError-any'
-      summary: Synchronize notes
-      tags:
-      - notes
   /system-info/{version}:
     get:
       consumes:
@@ -889,31 +417,4 @@ paths:
       summary: GetUpdatesFromVersion
       tags:
       - system info
-  /tags:
-    get:
-      consumes:
-      - application/json
-      description: Return list of al registered tags
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/handlers.HttpResponse-array_string-any'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/handlers.HttpError-any'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/handlers.HttpError-any'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/handlers.HttpError-any'
-      summary: Get tags
-      tags:
-      - tags
 swagger: "2.0"
