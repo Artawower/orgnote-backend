@@ -344,9 +344,9 @@
                 }
             }
         },
-        "/files/upload": {
-            "post": {
-                "description": "Upload files.",
+        "/sync/changes": {
+            "get": {
+                "description": "Returns file changes since the specified timestamp",
                 "consumes": [
                     "application/json"
                 ],
@@ -354,26 +354,35 @@
                     "application/json"
                 ],
                 "tags": [
-                    "files"
+                    "sync"
                 ],
-                "summary": "Upload files",
+                "summary": "Get file changes",
                 "parameters": [
                     {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "collectionFormat": "csv",
-                        "description": "files",
-                        "name": "files",
-                        "in": "formData",
-                        "required": true
+                        "type": "string",
+                        "description": "ISO8601 timestamp for incremental sync",
+                        "name": "since",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Maximum number of changes to return (default: 100, max: 500)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Pagination cursor",
+                        "name": "cursor",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
-                        "schema": {}
+                        "schema": {
+                            "$ref": "#/definitions/handlers.HttpResponse-SyncChangesResponse-any"
+                        }
                     },
                     "400": {
                         "description": "Bad Request",
@@ -381,8 +390,208 @@
                             "$ref": "#/definitions/handlers.HttpError-any"
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.HttpError-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.HttpError-any"
+                        }
+                    }
+                }
+            }
+        },
+        "/sync/files": {
+            "put": {
+                "description": "Upload a file to sync storage with content-addressable deduplication",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "sync"
+                ],
+                "summary": "Upload a file",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Relative file path",
+                        "name": "filePath",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "File content",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Expected version for optimistic locking",
+                        "name": "expectedVersion",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "SHA-256 hash for verification",
+                        "name": "X-Content-Hash",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.HttpResponse-FileUploadResponse-any"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.HttpError-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.HttpError-any"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.HttpError-any"
+                        }
+                    },
+                    "413": {
+                        "description": "Request Entity Too Large",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.HttpError-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.HttpError-any"
+                        }
+                    }
+                }
+            }
+        },
+        "/sync/files/{id}": {
+            "get": {
+                "description": "Download file content by file ID",
+                "produces": [
+                    "application/octet-stream"
+                ],
+                "tags": [
+                    "sync"
+                ],
+                "summary": "Download a file",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "File ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.HttpError-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.HttpError-any"
+                        }
+                    },
                     "404": {
                         "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.HttpError-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.HttpError-any"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Soft delete a file (creates tombstone for sync)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "sync"
+                ],
+                "summary": "Delete a file",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "File ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Expected version for optimistic locking",
+                        "name": "version",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.HttpResponse-models_FileMetadata-any"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.HttpError-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.HttpError-any"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.HttpError-any"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
                         "schema": {
                             "$ref": "#/definitions/handlers.HttpError-any"
                         }
@@ -485,6 +694,122 @@
         }
     },
     "definitions": {
+        "FileChange": {
+            "description": "File change information for synchronization",
+            "type": "object",
+            "required": [
+                "deleted",
+                "filePath",
+                "id",
+                "updatedAt",
+                "version"
+            ],
+            "properties": {
+                "contentHash": {
+                    "type": "string",
+                    "example": "a1b2c3d4e5f6..."
+                },
+                "deleted": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "deletedAt": {
+                    "type": "string"
+                },
+                "filePath": {
+                    "type": "string",
+                    "example": "notes/todo.org"
+                },
+                "fileSize": {
+                    "type": "integer",
+                    "example": 1024
+                },
+                "id": {
+                    "type": "string",
+                    "example": "507f1f77bcf86cd799439011"
+                },
+                "updatedAt": {
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                },
+                "version": {
+                    "type": "integer",
+                    "example": 1
+                }
+            }
+        },
+        "FileUploadResponse": {
+            "description": "Response after successful file upload",
+            "type": "object",
+            "required": [
+                "contentHash",
+                "filePath",
+                "fileSize",
+                "id",
+                "updatedAt",
+                "uploaded",
+                "version"
+            ],
+            "properties": {
+                "contentHash": {
+                    "type": "string",
+                    "example": "a1b2c3d4e5f6..."
+                },
+                "filePath": {
+                    "type": "string",
+                    "example": "notes/todo.org"
+                },
+                "fileSize": {
+                    "type": "integer",
+                    "example": 1024
+                },
+                "id": {
+                    "type": "string",
+                    "example": "507f1f77bcf86cd799439011"
+                },
+                "updatedAt": {
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                },
+                "uploaded": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "version": {
+                    "type": "integer",
+                    "example": 1
+                }
+            }
+        },
+        "SyncChangesResponse": {
+            "description": "Response containing file changes since last sync",
+            "type": "object",
+            "required": [
+                "changes",
+                "hasMore",
+                "serverTime"
+            ],
+            "properties": {
+                "changes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/FileChange"
+                    }
+                },
+                "cursor": {
+                    "type": "string",
+                    "example": "507f1f77bcf86cd799439011"
+                },
+                "hasMore": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "serverTime": {
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                }
+            }
+        },
         "handlers.HttpError-any": {
             "type": "object",
             "properties": {
@@ -492,6 +817,24 @@
                 "message": {
                     "type": "string"
                 }
+            }
+        },
+        "handlers.HttpResponse-FileUploadResponse-any": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/FileUploadResponse"
+                },
+                "meta": {}
+            }
+        },
+        "handlers.HttpResponse-SyncChangesResponse-any": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/SyncChangesResponse"
+                },
+                "meta": {}
             }
         },
         "handlers.HttpResponse-array_models_APIToken-any": {
@@ -520,6 +863,15 @@
             "properties": {
                 "data": {
                     "$ref": "#/definitions/models.APIToken"
+                },
+                "meta": {}
+            }
+        },
+        "handlers.HttpResponse-models_FileMetadata-any": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/models.FileMetadata"
                 },
                 "meta": {}
             }
@@ -582,6 +934,38 @@
             "properties": {
                 "selfHosted": {
                     "type": "boolean"
+                }
+            }
+        },
+        "models.FileMetadata": {
+            "type": "object",
+            "properties": {
+                "contentHash": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "deletedAt": {
+                    "type": "string"
+                },
+                "filePath": {
+                    "type": "string"
+                },
+                "fileSize": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "userId": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "integer"
                 }
             }
         },

@@ -144,6 +144,9 @@ func (u *UserRepository) GetUsersByIDs(userIDs []string) ([]models.User, error) 
 		}
 		users = append(users, user)
 	}
+	if err := cur.Err(); err != nil {
+		return nil, fmt.Errorf("user repository: get users by ids: cursor error: %v", err)
+	}
 	return users, nil
 }
 
@@ -236,6 +239,9 @@ func (u *UserRepository) GetAll() ([]models.User, error) {
 			return nil, fmt.Errorf("user repository: get all: decode user: %v", err)
 		}
 		users = append(users, user)
+	}
+	if err := cur.Err(); err != nil {
+		return nil, fmt.Errorf("user repository: get all: cursor error: %v", err)
 	}
 	return users, nil
 }

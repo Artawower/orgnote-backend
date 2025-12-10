@@ -1,0 +1,13 @@
+package services
+
+import "errors"
+
+var (
+	ErrStorageQuotaExceeded = errors.New("storage limit exceeded")
+	ErrFileNotFound         = errors.New("file not found")
+	ErrFileDeleted          = errors.New("file deleted")
+	ErrBlobNotFound         = errors.New("blob not found")
+	ErrHashMismatch         = errors.New("hash mismatch")
+	ErrFileTooLarge         = errors.New("file too large")
+	ErrVersionMismatch      = errors.New("version mismatch")
+)

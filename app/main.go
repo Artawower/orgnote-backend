@@ -80,12 +80,26 @@ func main() {
 	}
 
 	app := fiber.New(fiber.Config{
-		BodyLimit: config.MaximumFileSize,
+		BodyLimit: int(config.MaxFileSize),
 	})
 	api := app.Group("/v1")
 
 	userRepository := repositories.NewUserRepository(database)
-	fileStorage := infrastructure.NewFileStorage(config.MediaPath)
+	fileMetadataRepository := repositories.NewFileMetadataRepository(database)
+
+	blobStorage, err := infrastructure.NewS3Storage(infrastructure.S3Config{
+		Endpoint:        config.S3Endpoint,
+		AccessKeyID:     config.S3AccessKey,
+		SecretAccessKey: config.S3SecretKey,
+		BucketName:      config.S3Bucket,
+		UseSSL:          config.S3UseSSL,
+		UploadTimeout:   config.S3UploadTimeout,
+		DownloadTimeout: config.S3DownloadTimeout,
+	})
+	if err != nil {
+		log.Fatal().Err(err).Msg("failed to create s3 storage")
+		return
+	}
 
 	app.Use(recover.New(recover.Config{
 		EnableStackTrace: true,
@@ -99,7 +113,14 @@ func main() {
 	accessMiddleware := handlers.NewAccessMiddleware(subscriptionAPI)
 
 	userService := services.NewUserService(userRepository, subscriptionAPI)
-	fileService := services.NewFileService(fileStorage, userRepository)
+	syncService := services.NewSyncService(
+		fileMetadataRepository,
+		blobStorage,
+		services.SyncServiceConfig{
+			MaxFileSize:  config.MaxFileSize,
+			TombstoneTTL: time.Duration(config.TombstoneTTL) * 24 * time.Hour,
+		},
+	)
 
 	orgNoteMetaService := services.NewOrgNoteMetaService(services.OrgNoteMetaConfig{
 		ClientRepoName:  config.GithubClientRepoName,
@@ -108,7 +129,7 @@ func main() {
 
 	handlers.RegisterSwagger(api, config)
 	handlers.RegisterAuthHandler(api, userService, config, authMiddleware)
-	handlers.RegisterFileHandler(api, fileService, authMiddleware, accessMiddleware)
+	handlers.RegisterSyncHandler(api, syncService, authMiddleware, accessMiddleware)
 	handlers.RegisterSystemInfoHandler(api, orgNoteMetaService)
 
 	app.Static("media", config.MediaPath)
