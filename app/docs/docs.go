@@ -367,8 +367,8 @@ const docTemplate = `{
                 "summary": "Get file changes",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "ISO8601 timestamp for incremental sync",
+                        "type": "integer",
+                        "description": "Unix timestamp in milliseconds for incremental sync",
                         "name": "since",
                         "in": "query"
                     },
@@ -414,6 +414,57 @@ const docTemplate = `{
             }
         },
         "/sync/files": {
+            "get": {
+                "description": "Download file content by path",
+                "produces": [
+                    "application/octet-stream"
+                ],
+                "tags": [
+                    "sync"
+                ],
+                "summary": "Download a file",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "File path",
+                        "name": "path",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.HttpError-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.HttpError-any"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.HttpError-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.HttpError-any"
+                        }
+                    }
+                }
+            },
             "put": {
                 "description": "Upload a file to sync storage with content-addressable deduplication",
                 "consumes": [
@@ -476,64 +527,11 @@ const docTemplate = `{
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/handlers.HttpError-any"
+                            "$ref": "#/definitions/VersionConflictResponse"
                         }
                     },
                     "413": {
                         "description": "Request Entity Too Large",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.HttpError-any"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.HttpError-any"
-                        }
-                    }
-                }
-            }
-        },
-        "/sync/files/{id}": {
-            "get": {
-                "description": "Download file content by file ID",
-                "produces": [
-                    "application/octet-stream"
-                ],
-                "tags": [
-                    "sync"
-                ],
-                "summary": "Download a file",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "File ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "file"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.HttpError-any"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.HttpError-any"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/handlers.HttpError-any"
                         }
@@ -561,9 +559,9 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "File ID",
-                        "name": "id",
-                        "in": "path",
+                        "description": "File path",
+                        "name": "path",
+                        "in": "query",
                         "required": true
                     },
                     {
@@ -601,7 +599,7 @@ const docTemplate = `{
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/handlers.HttpError-any"
+                            "$ref": "#/definitions/VersionConflictResponse"
                         }
                     },
                     "500": {
@@ -707,8 +705,8 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "deleted",
-                "filePath",
                 "id",
+                "path",
                 "updatedAt",
                 "version"
             ],
@@ -724,17 +722,17 @@ const docTemplate = `{
                 "deletedAt": {
                     "type": "string"
                 },
-                "filePath": {
-                    "type": "string",
-                    "example": "notes/todo.org"
-                },
-                "fileSize": {
-                    "type": "integer",
-                    "example": 1024
-                },
                 "id": {
                     "type": "string",
                     "example": "507f1f77bcf86cd799439011"
+                },
+                "path": {
+                    "type": "string",
+                    "example": "notes/todo.org"
+                },
+                "size": {
+                    "type": "integer",
+                    "example": 1024
                 },
                 "updatedAt": {
                     "type": "string",
@@ -751,9 +749,9 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "contentHash",
-                "filePath",
-                "fileSize",
                 "id",
+                "path",
+                "size",
                 "updatedAt",
                 "uploaded",
                 "version"
@@ -763,17 +761,17 @@ const docTemplate = `{
                     "type": "string",
                     "example": "a1b2c3d4e5f6..."
                 },
-                "filePath": {
-                    "type": "string",
-                    "example": "notes/todo.org"
-                },
-                "fileSize": {
-                    "type": "integer",
-                    "example": 1024
-                },
                 "id": {
                     "type": "string",
                     "example": "507f1f77bcf86cd799439011"
+                },
+                "path": {
+                    "type": "string",
+                    "example": "notes/todo.org"
+                },
+                "size": {
+                    "type": "integer",
+                    "example": 1024
                 },
                 "updatedAt": {
                     "type": "string",
@@ -815,6 +813,29 @@ const docTemplate = `{
                 "serverTime": {
                     "type": "string",
                     "example": "2024-01-01T00:00:00Z"
+                }
+            }
+        },
+        "VersionConflictResponse": {
+            "description": "Response when optimistic locking fails due to version mismatch",
+            "type": "object",
+            "required": [
+                "error",
+                "path",
+                "serverVersion"
+            ],
+            "properties": {
+                "error": {
+                    "type": "string",
+                    "example": "version mismatch"
+                },
+                "path": {
+                    "type": "string",
+                    "example": "notes/todo.org"
+                },
+                "serverVersion": {
+                    "type": "integer",
+                    "example": 5
                 }
             }
         },
@@ -957,14 +978,14 @@ const docTemplate = `{
                 "deletedAt": {
                     "type": "string"
                 },
-                "filePath": {
-                    "type": "string"
-                },
-                "fileSize": {
-                    "type": "integer"
-                },
                 "id": {
                     "type": "string"
+                },
+                "path": {
+                    "type": "string"
+                },
+                "size": {
+                    "type": "integer"
                 },
                 "updatedAt": {
                     "type": "string"

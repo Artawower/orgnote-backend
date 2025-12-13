@@ -10,15 +10,15 @@ definitions:
         type: boolean
       deletedAt:
         type: string
-      filePath:
-        example: notes/todo.org
-        type: string
-      fileSize:
-        example: 1024
-        type: integer
       id:
         example: 507f1f77bcf86cd799439011
         type: string
+      path:
+        example: notes/todo.org
+        type: string
+      size:
+        example: 1024
+        type: integer
       updatedAt:
         example: "2024-01-01T00:00:00Z"
         type: string
@@ -27,8 +27,8 @@ definitions:
         type: integer
     required:
     - deleted
-    - filePath
     - id
+    - path
     - updatedAt
     - version
     type: object
@@ -38,15 +38,15 @@ definitions:
       contentHash:
         example: a1b2c3d4e5f6...
         type: string
-      filePath:
-        example: notes/todo.org
-        type: string
-      fileSize:
-        example: 1024
-        type: integer
       id:
         example: 507f1f77bcf86cd799439011
         type: string
+      path:
+        example: notes/todo.org
+        type: string
+      size:
+        example: 1024
+        type: integer
       updatedAt:
         example: "2024-01-01T00:00:00Z"
         type: string
@@ -58,9 +58,9 @@ definitions:
         type: integer
     required:
     - contentHash
-    - filePath
-    - fileSize
     - id
+    - path
+    - size
     - updatedAt
     - uploaded
     - version
@@ -85,6 +85,23 @@ definitions:
     - changes
     - hasMore
     - serverTime
+    type: object
+  VersionConflictResponse:
+    description: Response when optimistic locking fails due to version mismatch
+    properties:
+      error:
+        example: version mismatch
+        type: string
+      path:
+        example: notes/todo.org
+        type: string
+      serverVersion:
+        example: 5
+        type: integer
+    required:
+    - error
+    - path
+    - serverVersion
     type: object
   handlers.HttpError-any:
     properties:
@@ -177,12 +194,12 @@ definitions:
         type: string
       deletedAt:
         type: string
-      filePath:
-        type: string
-      fileSize:
-        type: integer
       id:
         type: string
+      path:
+        type: string
+      size:
+        type: integer
       updatedAt:
         type: string
       userId:
@@ -457,10 +474,10 @@ paths:
       - application/json
       description: Returns file changes since the specified timestamp
       parameters:
-      - description: ISO8601 timestamp for incremental sync
+      - description: Unix timestamp in milliseconds for incremental sync
         in: query
         name: since
-        type: string
+        type: integer
       - description: 'Maximum number of changes to return (default: 100, max: 500)'
         in: query
         name: limit
@@ -492,6 +509,84 @@ paths:
       tags:
       - sync
   /sync/files:
+    delete:
+      consumes:
+      - application/json
+      description: Soft delete a file (creates tombstone for sync)
+      parameters:
+      - description: File path
+        in: query
+        name: path
+        required: true
+        type: string
+      - description: Expected version for optimistic locking
+        in: query
+        name: version
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.HttpResponse-models_FileMetadata-any'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.HttpError-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.HttpError-any'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.HttpError-any'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/VersionConflictResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.HttpError-any'
+      summary: Delete a file
+      tags:
+      - sync
+    get:
+      description: Download file content by path
+      parameters:
+      - description: File path
+        in: query
+        name: path
+        required: true
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.HttpError-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.HttpError-any'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.HttpError-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.HttpError-any'
+      summary: Download a file
+      tags:
+      - sync
     put:
       consumes:
       - multipart/form-data
@@ -533,7 +628,7 @@ paths:
         "409":
           description: Conflict
           schema:
-            $ref: '#/definitions/handlers.HttpError-any'
+            $ref: '#/definitions/VersionConflictResponse'
         "413":
           description: Request Entity Too Large
           schema:
@@ -543,85 +638,6 @@ paths:
           schema:
             $ref: '#/definitions/handlers.HttpError-any'
       summary: Upload a file
-      tags:
-      - sync
-  /sync/files/{id}:
-    delete:
-      consumes:
-      - application/json
-      description: Soft delete a file (creates tombstone for sync)
-      parameters:
-      - description: File ID
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Expected version for optimistic locking
-        in: query
-        name: version
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/handlers.HttpResponse-models_FileMetadata-any'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/handlers.HttpError-any'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/handlers.HttpError-any'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/handlers.HttpError-any'
-        "409":
-          description: Conflict
-          schema:
-            $ref: '#/definitions/handlers.HttpError-any'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/handlers.HttpError-any'
-      summary: Delete a file
-      tags:
-      - sync
-    get:
-      description: Download file content by file ID
-      parameters:
-      - description: File ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/octet-stream
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: file
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/handlers.HttpError-any'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/handlers.HttpError-any'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/handlers.HttpError-any'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/handlers.HttpError-any'
-      summary: Download a file
       tags:
       - sync
   /system-info/{version}:

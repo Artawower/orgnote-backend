@@ -8,17 +8,12 @@ import (
 	"net/http"
 	"orgnote/app/models"
 	"orgnote/app/services"
-	"regexp"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/rs/zerolog/log"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
-
-var reservedNamesPattern = regexp.MustCompile(`(?i)^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(\.|$)`)
 
 type SyncHandler struct {
 	syncService *services.SyncService
@@ -32,18 +27,18 @@ type GetChangesRequest struct {
 }
 
 type UploadFileRequest struct {
-	FilePath        string `validate:"required,min=1"`
-	FileContent     []byte `validate:"required,min=1"`
+	FilePath        string `validate:"required,filepath,min=1"`
+	FileContent     []byte `validate:"required"`
 	ClientHash      string
 	ExpectedVersion *int
 }
 
-type FilePathParams struct {
-	ID string `params:"id"`
+type FilePathQuery struct {
+	Path string `query:"path" validate:"required,filepath,min=1"`
 }
 
 type DeleteFileRequest struct {
-	FilePathParams
+	FilePathQuery
 	Version int `query:"version"`
 }
 
@@ -64,9 +59,6 @@ func (h *SyncHandler) parseGetChangesRequest(c *fiber.Ctx) (*GetChangesRequest, 
 
 func (h *SyncHandler) parseUploadFileRequest(c *fiber.Ctx) (*UploadFileRequest, error) {
 	filePath := c.FormValue("filePath")
-	if err := validateFilePath(filePath); err != nil {
-		return nil, err
-	}
 
 	fileHeader, err := c.FormFile("file")
 	if err != nil {
@@ -100,31 +92,6 @@ func (h *SyncHandler) parseUploadFileRequest(c *fiber.Ctx) (*UploadFileRequest, 
 	return req, nil
 }
 
-func validateFilePath(path string) error {
-	if path == "" {
-		return fmt.Errorf("filePath is required")
-	}
-
-	if strings.HasPrefix(path, "/") {
-		return fmt.Errorf("file path cannot be absolute")
-	}
-
-	if strings.Contains(path, "..") {
-		return fmt.Errorf("file path cannot contain '..'")
-	}
-
-	for _, part := range strings.Split(path, "/") {
-		if part == "" {
-			return fmt.Errorf("file path contains empty segment")
-		}
-		if reservedNamesPattern.MatchString(part) {
-			return fmt.Errorf("file path contains reserved name: %s", part)
-		}
-	}
-
-	return nil
-}
-
 func (h *SyncHandler) readFileContent(fileHeader *multipart.FileHeader) ([]byte, error) {
 	file, err := fileHeader.Open()
 	if err != nil {
@@ -135,27 +102,26 @@ func (h *SyncHandler) readFileContent(fileHeader *multipart.FileHeader) ([]byte,
 	return io.ReadAll(file)
 }
 
-func (h *SyncHandler) parseFilePathParams(c *fiber.Ctx) (*FilePathParams, error) {
-	req := &FilePathParams{}
-	if err := c.ParamsParser(req); err != nil {
+func (h *SyncHandler) parseFilePathQuery(c *fiber.Ctx) (*FilePathQuery, error) {
+	req := &FilePathQuery{}
+	if err := c.QueryParser(req); err != nil {
 		return nil, err
 	}
-	if req.ID == "" {
-		return nil, fmt.Errorf("file ID is required")
+
+	if errs := h.validate.Validate(req); len(errs) > 0 {
+		return nil, fmt.Errorf("validation failed: %v", errs)
 	}
 	return req, nil
 }
 
 func (h *SyncHandler) parseDeleteFileRequest(c *fiber.Ctx) (*DeleteFileRequest, error) {
 	req := &DeleteFileRequest{}
-	if err := c.ParamsParser(req); err != nil {
-		return nil, err
-	}
 	if err := c.QueryParser(req); err != nil {
 		return nil, err
 	}
-	if req.ID == "" {
-		return nil, fmt.Errorf("file ID is required")
+
+	if errs := h.validate.Validate(req); len(errs) > 0 {
+		return nil, fmt.Errorf("validation failed: %v", errs)
 	}
 	return req, nil
 }
@@ -173,13 +139,38 @@ func (h *SyncHandler) serverError(c *fiber.Ctx, err error, context string) error
 	return c.Status(http.StatusInternalServerError).JSON(NewHttpError[any](err.Error(), nil))
 }
 
+func (h *SyncHandler) handleError(c *fiber.Ctx, err error, context string) error {
+	if versionErr, ok := err.(*services.VersionMismatchError); ok {
+		return c.Status(http.StatusConflict).JSON(models.VersionConflictResponse{
+			Error:         "version mismatch",
+			Path:          versionErr.Path,
+			ServerVersion: versionErr.ServerVersion,
+		})
+	}
+
+	switch {
+	case errors.Is(err, services.ErrStorageQuotaExceeded):
+		return c.Status(http.StatusRequestEntityTooLarge).JSON(NewHttpError[any]("storage limit exceeded", nil))
+	case errors.Is(err, services.ErrFileTooLarge):
+		return c.Status(http.StatusRequestEntityTooLarge).JSON(NewHttpError[any]("file too large", nil))
+	case errors.Is(err, services.ErrHashMismatch):
+		return h.badRequest(c, "hash mismatch")
+	case errors.Is(err, services.ErrVersionMismatch):
+		return c.Status(http.StatusConflict).JSON(NewHttpError[any]("version mismatch: file was modified", nil))
+	case errors.Is(err, services.ErrFileDeleted):
+		return h.notFound(c, "file deleted")
+	default:
+		return h.serverError(c, err, context)
+	}
+}
+
 // GetChanges godoc
 // @Summary      Get file changes
 // @Description  Returns file changes since the specified timestamp
 // @Tags         sync
 // @Accept       json
 // @Produce      json
-// @Param        since query string false "ISO8601 timestamp for incremental sync"
+// @Param        since query integer false "Unix timestamp in milliseconds for incremental sync"
 // @Param        limit query int false "Maximum number of changes to return (default: 100, max: 500)"
 // @Param        cursor query string false "Pagination cursor"
 // @Success      200  {object}  HttpResponse[models.SyncChangesResponse, any]
@@ -204,7 +195,7 @@ func (h *SyncHandler) GetChanges(c *fiber.Ctx) error {
 
 	resp, err := h.syncService.GetChanges(user.ID, since, req.Limit, cursor)
 	if err != nil {
-		return h.serverError(c, err, "sync handler: get changes")
+		return h.handleError(c, err, "sync handler: get changes")
 	}
 
 	response := &models.SyncChangesResponse{
@@ -230,7 +221,7 @@ func (h *SyncHandler) GetChanges(c *fiber.Ctx) error {
 // @Success      200  {object}  HttpResponse[models.FileUploadResponse, any]
 // @Failure      400  {object}  HttpError[any]
 // @Failure      401  {object}  HttpError[any]
-// @Failure      409  {object}  HttpError[any]
+// @Failure      409  {object}  models.VersionConflictResponse
 // @Failure      413  {object}  HttpError[any]
 // @Failure      500  {object}  HttpError[any]
 // @Router       /sync/files [put]
@@ -244,25 +235,14 @@ func (h *SyncHandler) UploadFile(c *fiber.Ctx) error {
 
 	result, err := h.syncService.UploadFile(user.ID, req.FilePath, req.FileContent, req.ClientHash, user.SpaceLimit, req.ExpectedVersion)
 	if err != nil {
-		switch {
-		case errors.Is(err, services.ErrStorageQuotaExceeded):
-			return c.Status(http.StatusRequestEntityTooLarge).JSON(NewHttpError[any]("storage limit exceeded", nil))
-		case errors.Is(err, services.ErrFileTooLarge):
-			return c.Status(http.StatusRequestEntityTooLarge).JSON(NewHttpError[any]("file too large", nil))
-		case errors.Is(err, services.ErrHashMismatch):
-			return h.badRequest(c, "hash mismatch")
-		case errors.Is(err, services.ErrVersionMismatch):
-			return c.Status(http.StatusConflict).JSON(NewHttpError[any]("version mismatch: file was modified", nil))
-		default:
-			return h.serverError(c, err, "sync handler: upload")
-		}
+		return h.handleError(c, err, "sync handler: upload")
 	}
 
 	response := &models.FileUploadResponse{
 		ID:          result.Metadata.ID.Hex(),
-		FilePath:    result.Metadata.FilePath,
+		Path:        result.Metadata.Path,
 		ContentHash: result.Metadata.ContentHash,
-		FileSize:    result.Metadata.FileSize,
+		Size:        result.Metadata.Size,
 		UpdatedAt:   result.Metadata.UpdatedAt,
 		Version:     result.Metadata.Version,
 		Uploaded:    result.Uploaded,
@@ -273,39 +253,27 @@ func (h *SyncHandler) UploadFile(c *fiber.Ctx) error {
 
 // DownloadFile godoc
 // @Summary      Download a file
-// @Description  Download file content by file ID
+// @Description  Download file content by path
 // @Tags         sync
 // @Produce      octet-stream
-// @Param        id path string true "File ID"
+// @Param        path query string true "File path"
 // @Success      200  {file}  binary
 // @Failure      400  {object}  HttpError[any]
 // @Failure      401  {object}  HttpError[any]
 // @Failure      404  {object}  HttpError[any]
 // @Failure      500  {object}  HttpError[any]
-// @Router       /sync/files/{id} [get]
+// @Router       /sync/files [get]
 func (h *SyncHandler) DownloadFile(c *fiber.Ctx) error {
 	user := c.Locals("user").(*models.User)
 
-	params, err := h.parseFilePathParams(c)
+	query, err := h.parseFilePathQuery(c)
 	if err != nil {
 		return h.badRequest(c, err.Error())
 	}
 
-	fileID, err := primitive.ObjectIDFromHex(params.ID)
+	content, metadata, err := h.syncService.DownloadFile(user.ID, query.Path)
 	if err != nil {
-		return h.badRequest(c, "invalid file ID")
-	}
-
-	content, metadata, err := h.syncService.DownloadFile(user.ID, fileID)
-	if err != nil {
-		switch {
-		case errors.Is(err, services.ErrFileDeleted):
-			return h.notFound(c, "file deleted")
-		case errors.Is(err, services.ErrBlobNotFound):
-			return h.serverError(c, err, "sync handler: download: blob not found")
-		default:
-			return h.serverError(c, err, "sync handler: download")
-		}
+		return h.handleError(c, err, "sync handler: download")
 	}
 
 	if metadata == nil {
@@ -314,8 +282,8 @@ func (h *SyncHandler) DownloadFile(c *fiber.Ctx) error {
 
 	c.Set("Content-Type", "application/octet-stream")
 	c.Set("X-Content-Hash", metadata.ContentHash)
-	c.Set("X-File-Path", metadata.FilePath)
-	c.Set("Content-Length", strconv.FormatInt(metadata.FileSize, 10))
+	c.Set("X-File-Path", metadata.Path)
+	c.Set("Content-Length", strconv.FormatInt(metadata.Size, 10))
 
 	return c.Send(content)
 }
@@ -326,15 +294,15 @@ func (h *SyncHandler) DownloadFile(c *fiber.Ctx) error {
 // @Tags         sync
 // @Accept       json
 // @Produce      json
-// @Param        id path string true "File ID"
+// @Param        path query string true "File path"
 // @Param        version query int false "Expected version for optimistic locking"
 // @Success      200  {object}  HttpResponse[models.FileMetadata, any]
 // @Failure      400  {object}  HttpError[any]
 // @Failure      401  {object}  HttpError[any]
 // @Failure      404  {object}  HttpError[any]
-// @Failure      409  {object}  HttpError[any]
+// @Failure      409  {object}  models.VersionConflictResponse
 // @Failure      500  {object}  HttpError[any]
-// @Router       /sync/files/{id} [delete]
+// @Router       /sync/files [delete]
 func (h *SyncHandler) DeleteFile(c *fiber.Ctx) error {
 	user := c.Locals("user").(*models.User)
 
@@ -343,23 +311,18 @@ func (h *SyncHandler) DeleteFile(c *fiber.Ctx) error {
 		return h.badRequest(c, err.Error())
 	}
 
-	fileID, err := primitive.ObjectIDFromHex(req.ID)
-	if err != nil {
-		return h.badRequest(c, "invalid file ID")
-	}
-
 	var expectedVersion *int
 	if req.Version > 0 {
 		expectedVersion = &req.Version
 	}
 
-	metadata, err := h.syncService.DeleteFile(user.ID, fileID, expectedVersion)
+	metadata, err := h.syncService.DeleteFile(user.ID, req.Path, expectedVersion)
 	if err != nil {
-		return h.serverError(c, err, "sync handler: delete")
+		return h.handleError(c, err, "sync handler: delete")
 	}
 
 	if metadata == nil {
-		return h.notFound(c, "file not found or version mismatch")
+		return h.notFound(c, "file not found")
 	}
 
 	return c.JSON(NewHttpResponse[*models.FileMetadata, any](metadata, nil))
@@ -378,6 +341,6 @@ func RegisterSyncHandler(
 
 	app.Get("/sync/changes", authMiddleware, accessMiddleware, handler.GetChanges)
 	app.Put("/sync/files", authMiddleware, accessMiddleware, handler.UploadFile)
-	app.Get("/sync/files/:id", authMiddleware, accessMiddleware, handler.DownloadFile)
-	app.Delete("/sync/files/:id", authMiddleware, accessMiddleware, handler.DeleteFile)
+	app.Get("/sync/files", authMiddleware, accessMiddleware, handler.DownloadFile)
+	app.Delete("/sync/files", authMiddleware, accessMiddleware, handler.DeleteFile)
 }

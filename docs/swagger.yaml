@@ -1,29 +1,107 @@
 definitions:
-  handlers.CreatingNote:
+  FileChange:
+    description: File change information for synchronization
     properties:
-      content:
+      contentHash:
+        example: a1b2c3d4e5f6...
         type: string
-      createdAt:
+      deleted:
+        example: false
+        type: boolean
+      deletedAt:
         type: string
-      filePath:
-        items:
-          type: string
-        type: array
       id:
+        example: 507f1f77bcf86cd799439011
         type: string
-      meta:
-        $ref: '#/definitions/models.NoteMeta'
+      path:
+        example: notes/todo.org
+        type: string
+      size:
+        example: 1024
+        type: integer
       updatedAt:
+        example: "2024-01-01T00:00:00Z"
         type: string
+      version:
+        example: 1
+        type: integer
+    required:
+    - deleted
+    - id
+    - path
+    - updatedAt
+    - version
     type: object
-  handlers.DeletedNote:
+  FileUploadResponse:
+    description: Response after successful file upload
     properties:
-      filePath:
-        items:
-          type: string
-        type: array
-      id:
+      contentHash:
+        example: a1b2c3d4e5f6...
         type: string
+      id:
+        example: 507f1f77bcf86cd799439011
+        type: string
+      path:
+        example: notes/todo.org
+        type: string
+      size:
+        example: 1024
+        type: integer
+      updatedAt:
+        example: "2024-01-01T00:00:00Z"
+        type: string
+      uploaded:
+        example: true
+        type: boolean
+      version:
+        example: 1
+        type: integer
+    required:
+    - contentHash
+    - id
+    - path
+    - size
+    - updatedAt
+    - uploaded
+    - version
+    type: object
+  SyncChangesResponse:
+    description: Response containing file changes since last sync
+    properties:
+      changes:
+        items:
+          $ref: '#/definitions/FileChange'
+        type: array
+      cursor:
+        example: 507f1f77bcf86cd799439011
+        type: string
+      hasMore:
+        example: false
+        type: boolean
+      serverTime:
+        example: "2024-01-01T00:00:00Z"
+        type: string
+    required:
+    - changes
+    - hasMore
+    - serverTime
+    type: object
+  VersionConflictResponse:
+    description: Response when optimistic locking fails due to version mismatch
+    properties:
+      error:
+        example: version mismatch
+        type: string
+      path:
+        example: notes/todo.org
+        type: string
+      serverVersion:
+        example: 5
+        type: integer
+    required:
+    - error
+    - path
+    - serverVersion
     type: object
   handlers.HttpError-any:
     properties:
@@ -31,9 +109,16 @@ definitions:
       message:
         type: string
     type: object
-  handlers.HttpResponse-any-any:
+  handlers.HttpResponse-FileUploadResponse-any:
     properties:
-      data: {}
+      data:
+        $ref: '#/definitions/FileUploadResponse'
+      meta: {}
+    type: object
+  handlers.HttpResponse-SyncChangesResponse-any:
+    properties:
+      data:
+        $ref: '#/definitions/SyncChangesResponse'
       meta: {}
     type: object
   handlers.HttpResponse-array_models_APIToken-any:
@@ -44,33 +129,10 @@ definitions:
         type: array
       meta: {}
     type: object
-  handlers.HttpResponse-array_models_PublicNote-models_Pagination:
-    properties:
-      data:
-        items:
-          $ref: '#/definitions/models.PublicNote'
-        type: array
-      meta:
-        $ref: '#/definitions/models.Pagination'
-    type: object
-  handlers.HttpResponse-array_string-any:
-    properties:
-      data:
-        items:
-          type: string
-        type: array
-      meta: {}
-    type: object
   handlers.HttpResponse-handlers_OAuthRedirectData-any:
     properties:
       data:
         $ref: '#/definitions/handlers.OAuthRedirectData'
-      meta: {}
-    type: object
-  handlers.HttpResponse-handlers_SyncNotesResponse-any:
-    properties:
-      data:
-        $ref: '#/definitions/handlers.SyncNotesResponse'
       meta: {}
     type: object
   handlers.HttpResponse-models_APIToken-any:
@@ -79,16 +141,10 @@ definitions:
         $ref: '#/definitions/models.APIToken'
       meta: {}
     type: object
-  handlers.HttpResponse-models_NoteGraph-any:
+  handlers.HttpResponse-models_FileMetadata-any:
     properties:
       data:
-        $ref: '#/definitions/models.NoteGraph'
-      meta: {}
-    type: object
-  handlers.HttpResponse-models_PublicNote-any:
-    properties:
-      data:
-        $ref: '#/definitions/models.PublicNote'
+        $ref: '#/definitions/models.FileMetadata'
       meta: {}
     type: object
   handlers.HttpResponse-models_UserPersonalInfo-any:
@@ -104,32 +160,17 @@ definitions:
     type: object
   handlers.SubscribeBody:
     properties:
+      email:
+        type: string
       token:
         type: string
     type: object
-  handlers.SyncNotesRequest:
+  handlers.SystemInfo:
     properties:
-      deletedNotesIds:
-        items:
-          type: string
-        type: array
-      notes:
-        items:
-          $ref: '#/definitions/handlers.CreatingNote'
-        type: array
-      timestamp:
-        type: string
-    type: object
-  handlers.SyncNotesResponse:
-    properties:
-      deletedNotes:
-        items:
-          $ref: '#/definitions/handlers.DeletedNote'
-        type: array
-      notes:
-        items:
-          $ref: '#/definitions/models.PublicNote'
-        type: array
+      environment:
+        $ref: '#/definitions/models.EnvironmentInfo'
+      update:
+        $ref: '#/definitions/models.OrgNoteClientUpdateInfo'
     type: object
   models.APIToken:
     properties:
@@ -140,134 +181,45 @@ definitions:
       token:
         type: string
     type: object
-  models.GraphNoteLink:
+  models.EnvironmentInfo:
     properties:
-      source:
-        type: string
-      target:
-        type: string
-    type: object
-  models.GraphNoteNode:
-    properties:
-      externalId:
-        type: string
-      title:
-        type: string
-      weight:
-        type: integer
-    type: object
-  models.NoteGraph:
-    properties:
-      links:
-        items:
-          $ref: '#/definitions/models.GraphNoteLink'
-        type: array
-      nodes:
-        items:
-          $ref: '#/definitions/models.GraphNoteNode'
-        type: array
-    type: object
-  models.NoteHeading:
-    properties:
-      level:
-        type: integer
-      text:
-        type: string
-    type: object
-  models.NoteLink:
-    properties:
-      name:
-        type: string
-      url:
-        type: string
-    type: object
-  models.NoteMeta:
-    properties:
-      category:
-        $ref: '#/definitions/models.category'
-      connectedNotes:
-        items:
-          $ref: '#/definitions/models.NoteLink'
-        type: array
-      description:
-        type: string
-      externalLinks:
-        items:
-          $ref: '#/definitions/models.NoteLink'
-        type: array
-      fileTags:
-        items:
-          type: string
-        type: array
-      headings:
-        items:
-          $ref: '#/definitions/models.NoteHeading'
-        type: array
-      images:
-        items:
-          type: string
-        type: array
-      previewImg:
-        type: string
-      published:
+      selfHosted:
         type: boolean
-      startup:
-        type: string
-      title:
-        type: string
     type: object
-  models.Pagination:
+  models.FileMetadata:
     properties:
-      limit:
-        type: integer
-      offset:
-        type: integer
-      total:
-        type: integer
-    type: object
-  models.PublicNote:
-    properties:
-      author:
-        $ref: '#/definitions/models.PublicUser'
-      content:
+      contentHash:
         type: string
       createdAt:
         type: string
-      filePath:
-        items:
-          type: string
-        type: array
-      id:
-        description: It's externalID from original note
+      deletedAt:
         type: string
-      isMy:
-        type: boolean
-      meta:
-        $ref: '#/definitions/models.NoteMeta'
+      id:
+        type: string
+      path:
+        type: string
       size:
         type: integer
       updatedAt:
         type: string
+      userId:
+        type: string
+      version:
+        type: integer
     type: object
-  models.PublicUser:
+  models.OrgNoteClientUpdateInfo:
     properties:
-      avatarUrl:
+      changeLog:
         type: string
-      email:
+      url:
         type: string
-      id:
-        type: string
-      name:
-        type: string
-      nickName:
-        type: string
-      profileUrl:
+      version:
         type: string
     type: object
   models.UserPersonalInfo:
     properties:
       active:
-        type: boolean
+        type: string
       avatarUrl:
         type: string
       email:
@@ -279,22 +231,14 @@ definitions:
       nickName:
         type: string
       profileUrl:
+        type: string
+      provider:
         type: string
       spaceLimit:
         type: integer
       usedSpace:
         type: integer
     type: object
-  models.category:
-    enum:
-    - article
-    - book
-    - schedule
-    type: string
-    x-enum-varnames:
-    - CategoryArticle
-    - CategoryBook
-    - CategorySchedule
 info:
   contact:
     email: artawower@protonmail.com
@@ -322,8 +266,7 @@ paths:
       responses:
         "200":
           description: OK
-          schema:
-            type: object
+          schema: {}
         "400":
           description: Bad Request
           schema:
@@ -376,6 +319,24 @@ paths:
       summary: OAuth Login
       tags:
       - auth
+  /auth/account:
+    delete:
+      consumes:
+      - application/json
+      description: Delete user account
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema: {}
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.HttpError-any'
+      summary: Delete user account
+      tags:
+      - auth
   /auth/api-tokens:
     get:
       consumes:
@@ -408,8 +369,7 @@ paths:
       responses:
         "200":
           description: OK
-          schema:
-            type: object
+          schema: {}
         "500":
           description: Internal Server Error
           schema:
@@ -434,8 +394,7 @@ paths:
       responses:
         "200":
           description: OK
-          schema:
-            type: object
+          schema: {}
         "500":
           description: Internal Server Error
           schema:
@@ -478,8 +437,7 @@ paths:
       responses:
         "200":
           description: OK
-          schema:
-            type: object
+          schema: {}
         "500":
           description: Internal Server Error
           schema:
@@ -510,189 +468,112 @@ paths:
       summary: Verify user
       tags:
       - auth
-  /files/upload:
-    post:
+  /sync/changes:
+    get:
       consumes:
       - application/json
-      description: Upload files.
+      description: Returns file changes since the specified timestamp
       parameters:
-      - collectionFormat: csv
-        description: files
-        in: formData
-        items:
-          type: string
-        name: files
-        required: true
-        type: array
+      - description: Unix timestamp in milliseconds for incremental sync
+        in: query
+        name: since
+        type: integer
+      - description: 'Maximum number of changes to return (default: 100, max: 500)'
+        in: query
+        name: limit
+        type: integer
+      - description: Pagination cursor
+        in: query
+        name: cursor
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            type: object
+            $ref: '#/definitions/handlers.HttpResponse-SyncChangesResponse-any'
         "400":
           description: Bad Request
           schema:
             $ref: '#/definitions/handlers.HttpError-any'
-        "404":
-          description: Not Found
+        "401":
+          description: Unauthorized
           schema:
             $ref: '#/definitions/handlers.HttpError-any'
         "500":
           description: Internal Server Error
           schema:
             $ref: '#/definitions/handlers.HttpError-any'
-      summary: Upload files
+      summary: Get file changes
       tags:
-      - files
-  /notes:
+      - sync
+  /sync/files:
     delete:
       consumes:
       - application/json
-      description: Mark notes as deleted by provided list of ids
+      description: Soft delete a file (creates tombstone for sync)
       parameters:
-      - description: List of ids of deleted notes
-        in: body
-        name: ids
-        required: true
-        schema:
-          items:
-            type: string
-          type: array
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/handlers.HttpResponse-any-any'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/handlers.HttpError-any'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/handlers.HttpError-any'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/handlers.HttpError-any'
-      summary: Delete notes
-      tags:
-      - notes
-  /notes/:
-    get:
-      consumes:
-      - application/json
-      description: Get all notes with optional filter
-      parameters:
-      - in: query
-        name: limit
-        type: integer
-        x-order: "1"
-      - in: query
-        name: offset
-        type: integer
-        x-order: "2"
-      - description: User id of which notes to load
+      - description: File path
         in: query
-        name: userId
+        name: path
+        required: true
         type: string
-        x-order: "3"
-      - in: query
-        name: searchText
-        type: string
-        x-order: "4"
-      - description: Load all my own notes (user will be used from provided token)
+      - description: Expected version for optimistic locking
         in: query
-        name: my
-        type: boolean
-        x-order: "5"
-      - in: query
-        name: from
-        type: string
-        x-order: "6"
-      - in: query
-        name: includeDeleted
-        type: boolean
-        x-order: "7"
+        name: version
+        type: integer
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/handlers.HttpResponse-array_models_PublicNote-models_Pagination'
+            $ref: '#/definitions/handlers.HttpResponse-models_FileMetadata-any'
         "400":
           description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.HttpError-any'
+        "401":
+          description: Unauthorized
           schema:
             $ref: '#/definitions/handlers.HttpError-any'
         "404":
           description: Not Found
           schema:
             $ref: '#/definitions/handlers.HttpError-any'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/VersionConflictResponse'
         "500":
           description: Internal Server Error
           schema:
             $ref: '#/definitions/handlers.HttpError-any'
-      summary: Get notes
+      summary: Delete a file
       tags:
-      - notes
-    post:
-      consumes:
-      - application/json
-      description: Create note
-      parameters:
-      - description: Note model
-        in: body
-        name: note
-        required: true
-        schema:
-          $ref: '#/definitions/handlers.CreatingNote'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/handlers.HttpError-any'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/handlers.HttpError-any'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/handlers.HttpError-any'
-      summary: Create note
-      tags:
-      - notes
-  /notes/{id}:
+      - sync
     get:
-      consumes:
-      - application/json
-      description: get note by id
+      description: Download file content by path
       parameters:
-      - description: Note ID
-        in: path
-        name: id
+      - description: File path
+        in: query
+        name: path
         required: true
         type: string
       produces:
-      - application/json
+      - application/octet-stream
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/handlers.HttpResponse-models_PublicNote-any'
+            type: file
         "400":
           description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.HttpError-any'
+        "401":
+          description: Unauthorized
           schema:
             $ref: '#/definitions/handlers.HttpError-any'
         "404":
@@ -703,118 +584,104 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/handlers.HttpError-any'
-      summary: Get note
+      summary: Download a file
       tags:
-      - notes
-  /notes/bulk-upsert:
+      - sync
     put:
       consumes:
-      - application/json
-      description: Bulk update or insert notes
+      - multipart/form-data
+      description: Upload a file to sync storage with content-addressable deduplication
       parameters:
-      - description: List of crated notes
-        in: body
-        name: notes
+      - description: Relative file path
+        in: formData
+        name: filePath
         required: true
-        schema:
-          items:
-            $ref: '#/definitions/handlers.CreatingNote'
-          type: array
+        type: string
+      - description: File content
+        in: formData
+        name: file
+        required: true
+        type: file
+      - description: Expected version for optimistic locking
+        in: formData
+        name: expectedVersion
+        type: integer
+      - description: SHA-256 hash for verification
+        in: header
+        name: X-Content-Hash
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            type: object
+            $ref: '#/definitions/handlers.HttpResponse-FileUploadResponse-any'
         "400":
           description: Bad Request
           schema:
             $ref: '#/definitions/handlers.HttpError-any'
-        "404":
-          description: Not Found
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.HttpError-any'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/VersionConflictResponse'
+        "413":
+          description: Request Entity Too Large
           schema:
             $ref: '#/definitions/handlers.HttpError-any'
         "500":
           description: Internal Server Error
           schema:
             $ref: '#/definitions/handlers.HttpError-any'
-      summary: Upsert notes
+      summary: Upload a file
       tags:
-      - notes
-  /notes/graph:
+      - sync
+  /system-info/{version}:
     get:
       consumes:
       - application/json
-      description: Return graph model with links between connected notes
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/handlers.HttpResponse-models_NoteGraph-any'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/handlers.HttpError-any'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/handlers.HttpError-any'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/handlers.HttpError-any'
-      summary: Get notes graph
-      tags:
-      - notes
-  /notes/sync:
-    post:
-      consumes:
-      - application/json
-      description: Synchronize notes with specific timestamp
+      description: Get system info
       parameters:
-      - description: Sync notes request
-        in: body
-        name: data
+      - description: provider
+        in: path
+        name: version
         required: true
-        schema:
-          $ref: '#/definitions/handlers.SyncNotesRequest'
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/handlers.HttpResponse-handlers_SyncNotesResponse-any'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/handlers.HttpError-any'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/handlers.HttpError-any'
+            $ref: '#/definitions/handlers.SystemInfo'
         "500":
           description: Internal Server Error
           schema:
             $ref: '#/definitions/handlers.HttpError-any'
-      summary: Synchronize notes
+      summary: GetSystemInfo
       tags:
-      - notes
-  /tags:
+      - system info
+  /system-info/client-update/{version}:
     get:
       consumes:
       - application/json
-      description: Return list of al registered tags
+      parameters:
+      - description: provider
+        in: path
+        name: version
+        required: true
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/handlers.HttpResponse-array_string-any'
+            $ref: '#/definitions/models.OrgNoteClientUpdateInfo'
         "400":
           description: Bad Request
           schema:
@@ -827,7 +694,7 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/handlers.HttpError-any'
-      summary: Get tags
+      summary: GetUpdatesFromVersion
       tags:
-      - tags
+      - system info
 swagger: "2.0"

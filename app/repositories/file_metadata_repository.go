@@ -20,8 +20,9 @@ type FileMetadataRepository struct {
 }
 
 type GetChangesResult struct {
-	Files   []models.FileMetadata
-	HasMore bool
+	Files      []models.FileMetadata
+	HasMore    bool
+	NextCursor *string
 }
 
 func NewFileMetadataRepository(db *mongo.Database) *FileMetadataRepository {
@@ -56,9 +57,41 @@ func (r *FileMetadataRepository) ensureIndexes() {
 	r.collection.Indexes().CreateMany(ctx, indexes)
 }
 
+type VersionMismatchError struct {
+	Path          string
+	ServerVersion int
+}
+
+func (e *VersionMismatchError) Error() string {
+	return "version mismatch"
+}
+
 var ErrVersionMismatch = fmt.Errorf("version mismatch")
 
-func (r *FileMetadataRepository) Upsert(userID primitive.ObjectID, filePath string, contentHash string, fileSize int64, expectedVersion *int) (*models.FileMetadata, error) {
+func parseCursor(cursor string) (time.Time, primitive.ObjectID, error) {
+	parts := strings.Split(cursor, "_")
+	if len(parts) != 2 {
+		return time.Time{}, primitive.NilObjectID, fmt.Errorf("invalid cursor format")
+	}
+
+	updatedAt, err := time.Parse(time.RFC3339Nano, parts[0])
+	if err != nil {
+		return time.Time{}, primitive.NilObjectID, fmt.Errorf("invalid cursor time: %v", err)
+	}
+
+	id, err := primitive.ObjectIDFromHex(parts[1])
+	if err != nil {
+		return time.Time{}, primitive.NilObjectID, fmt.Errorf("invalid cursor id: %v", err)
+	}
+
+	return updatedAt, id, nil
+}
+
+func buildCursor(file models.FileMetadata) string {
+	return file.UpdatedAt.Format(time.RFC3339Nano) + "_" + file.ID.Hex()
+}
+
+func (r *FileMetadataRepository) Upsert(userID primitive.ObjectID, filePath string, contentHash string, size int64, expectedVersion *int) (*models.FileMetadata, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -71,10 +104,10 @@ func (r *FileMetadataRepository) Upsert(userID primitive.ObjectID, filePath stri
 	}
 
 	if existing == nil {
-		return r.createMetadata(ctx, userID, normalizedPath, pathLower, contentHash, fileSize)
+		return r.createMetadata(ctx, userID, normalizedPath, pathLower, contentHash, size)
 	}
 
-	return r.updateMetadata(ctx, userID, pathLower, normalizedPath, contentHash, fileSize, expectedVersion)
+	return r.updateMetadata(ctx, userID, pathLower, normalizedPath, contentHash, size, expectedVersion)
 }
 
 func (r *FileMetadataRepository) findExistingMetadata(ctx context.Context, userID primitive.ObjectID, pathLower string) (*models.FileMetadata, error) {
@@ -101,15 +134,15 @@ func (r *FileMetadataRepository) createMetadata(
 	normalizedPath string,
 	pathLower string,
 	contentHash string,
-	fileSize int64,
+	size int64,
 ) (*models.FileMetadata, error) {
 	now := time.Now()
 	metadata := models.FileMetadata{
 		ID:          primitive.NewObjectID(),
 		UserID:      userID,
-		FilePath:    normalizedPath,
+		Path:        normalizedPath,
 		ContentHash: contentHash,
-		FileSize:    fileSize,
+		Size:        size,
 		CreatedAt:   now,
 		UpdatedAt:   now,
 		DeletedAt:   nil,
@@ -119,10 +152,10 @@ func (r *FileMetadataRepository) createMetadata(
 	doc := bson.M{
 		"_id":           metadata.ID,
 		"userId":        metadata.UserID,
-		"filePath":      metadata.FilePath,
+		"filePath":      metadata.Path,
 		"filePathLower": pathLower,
 		"contentHash":   metadata.ContentHash,
-		"fileSize":      metadata.FileSize,
+		"fileSize":      metadata.Size,
 		"createdAt":     metadata.CreatedAt,
 		"updatedAt":     metadata.UpdatedAt,
 		"deletedAt":     nil,
@@ -142,7 +175,7 @@ func (r *FileMetadataRepository) updateMetadata(
 	pathLower string,
 	normalizedPath string,
 	contentHash string,
-	fileSize int64,
+	size int64,
 	expectedVersion *int,
 ) (*models.FileMetadata, error) {
 	filter := bson.M{
@@ -158,7 +191,7 @@ func (r *FileMetadataRepository) updateMetadata(
 		"$set": bson.M{
 			"filePath":    normalizedPath,
 			"contentHash": contentHash,
-			"fileSize":    fileSize,
+			"fileSize":    size,
 			"updatedAt":   time.Now(),
 			"deletedAt":   nil,
 		},
@@ -169,7 +202,14 @@ func (r *FileMetadataRepository) updateMetadata(
 	result := &models.FileMetadata{}
 	err := r.collection.FindOneAndUpdate(ctx, filter, update, opts).Decode(result)
 	if err == mongo.ErrNoDocuments && expectedVersion != nil {
-		return nil, ErrVersionMismatch
+		current, findErr := r.findExistingMetadata(ctx, userID, pathLower)
+		if findErr != nil || current == nil {
+			return nil, ErrVersionMismatch
+		}
+		return nil, &VersionMismatchError{
+			Path:          current.Path,
+			ServerVersion: current.Version,
+		}
 	}
 	if err != nil {
 		return nil, fmt.Errorf("file metadata repository: update: %v", err)
@@ -257,6 +297,55 @@ func (r *FileMetadataRepository) SoftDelete(userID primitive.ObjectID, fileID pr
 	return result, nil
 }
 
+func (r *FileMetadataRepository) SoftDeleteByPath(userID primitive.ObjectID, filePath string, expectedVersion *int) (*models.FileMetadata, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	normalizedPath := normalizePath(filePath)
+	pathLower := strings.ToLower(normalizedPath)
+
+	now := time.Now()
+	filter := bson.M{
+		"userId":        userID,
+		"filePathLower": pathLower,
+		"deletedAt":     nil,
+	}
+
+	if expectedVersion != nil {
+		filter["version"] = *expectedVersion
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"deletedAt": now,
+			"updatedAt": now,
+		},
+		"$inc": bson.M{"version": 1},
+	}
+
+	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
+	result := &models.FileMetadata{}
+	err := r.collection.FindOneAndUpdate(ctx, filter, update, opts).Decode(result)
+	if err == mongo.ErrNoDocuments && expectedVersion != nil {
+		current, findErr := r.findExistingMetadata(ctx, userID, pathLower)
+		if findErr != nil || current == nil {
+			return nil, nil
+		}
+		return nil, &VersionMismatchError{
+			Path:          current.Path,
+			ServerVersion: current.Version,
+		}
+	}
+	if err == mongo.ErrNoDocuments {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("file metadata repository: soft delete by path: %v", err)
+	}
+
+	return result, nil
+}
+
 func (r *FileMetadataRepository) GetChanges(userID primitive.ObjectID, since time.Time, limit int, cursor *string) (*GetChangesResult, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -267,9 +356,13 @@ func (r *FileMetadataRepository) GetChanges(userID primitive.ObjectID, since tim
 	}
 
 	if cursor != nil {
-		cursorID, err := primitive.ObjectIDFromHex(*cursor)
+		cursorTime, cursorID, err := parseCursor(*cursor)
 		if err == nil {
-			filter["_id"] = bson.M{"$gt": cursorID}
+			filter["$or"] = []bson.M{
+				{"updatedAt": bson.M{"$gt": cursorTime}},
+				{"updatedAt": cursorTime, "_id": bson.M{"$gt": cursorID}},
+			}
+			delete(filter, "updatedAt")
 		}
 	}
 
@@ -301,9 +394,16 @@ func (r *FileMetadataRepository) GetChanges(userID primitive.ObjectID, since tim
 		files = files[:limit]
 	}
 
+	var nextCursor *string
+	if hasMore && len(files) > 0 {
+		cursor := buildCursor(files[len(files)-1])
+		nextCursor = &cursor
+	}
+
 	return &GetChangesResult{
-		Files:   files,
-		HasMore: hasMore,
+		Files:      files,
+		HasMore:    hasMore,
+		NextCursor: nextCursor,
 	}, nil
 }
 

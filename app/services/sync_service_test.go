@@ -53,13 +53,13 @@ func newMockFileMetadataRepo() *mockFileMetadataRepo {
 	return &mockFileMetadataRepo{files: make(map[string]*models.FileMetadata)}
 }
 
-func (m *mockFileMetadataRepo) Upsert(userID primitive.ObjectID, filePath string, contentHash string, fileSize int64) (*models.FileMetadata, error) {
+func (m *mockFileMetadataRepo) Upsert(userID primitive.ObjectID, filePath string, contentHash string, fileSize int64, expectedVersion *int) (*models.FileMetadata, error) {
 	metadata := &models.FileMetadata{
 		ID:          primitive.NewObjectID(),
 		UserID:      userID,
-		FilePath:    filePath,
+		Path:        filePath,
 		ContentHash: contentHash,
-		FileSize:    fileSize,
+		Size:        fileSize,
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
 		Version:     1,
@@ -150,7 +150,7 @@ func TestMapToChange_DeletedFile(t *testing.T) {
 
 	metadata := models.FileMetadata{
 		ID:        primitive.NewObjectID(),
-		FilePath:  "deleted.txt",
+		Path:      "deleted.txt",
 		DeletedAt: &now,
 		Version:   2,
 	}
@@ -171,7 +171,7 @@ func TestMapToChange_ActiveFile(t *testing.T) {
 
 	metadata := models.FileMetadata{
 		ID:          primitive.NewObjectID(),
-		FilePath:    "active.txt",
+		Path:        "active.txt",
 		ContentHash: "abc123",
 		DeletedAt:   nil,
 		Version:     1,

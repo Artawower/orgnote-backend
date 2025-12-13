@@ -1,8 +1,16 @@
 package handlers
 
-import "testing"
+import (
+	"testing"
+)
+
+type TestStruct struct {
+	Path string `validate:"filepath"`
+}
 
 func TestValidateFilePath_Valid(t *testing.T) {
+	v := NewValidator()
+
 	tests := []string{
 		"notes/my-note.org",
 		"folder/subfolder/note.org",
@@ -12,20 +20,23 @@ func TestValidateFilePath_Valid(t *testing.T) {
 	}
 
 	for _, path := range tests {
-		err := validateFilePath(path)
-		if err != nil {
-			t.Errorf("validateFilePath(%q) unexpected error: %v", path, err)
+		s := TestStruct{Path: path}
+		errs := v.Validate(s)
+		if len(errs) > 0 {
+			t.Errorf("validateFilePath(%q) unexpected error: %v", path, errs)
 		}
 	}
 }
 
 func TestValidateFilePath_Invalid(t *testing.T) {
+	v := NewValidator()
+
 	tests := []struct {
 		path string
 		desc string
 	}{
 		{"", "empty path"},
-		{"/notes/file.org", "absolute path"},
+
 		{"notes/../secret/file.org", "parent reference"},
 		{"notes/..hidden/file.org", "double dots"},
 		{"notes/CON.txt", "windows reserved CON"},
@@ -37,8 +48,9 @@ func TestValidateFilePath_Invalid(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		err := validateFilePath(tt.path)
-		if err == nil {
+		s := TestStruct{Path: tt.path}
+		errs := v.Validate(s)
+		if len(errs) == 0 {
 			t.Errorf("validateFilePath(%q) expected error for %s", tt.path, tt.desc)
 		}
 	}

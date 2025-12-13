@@ -11,3 +11,12 @@ var (
 	ErrFileTooLarge         = errors.New("file too large")
 	ErrVersionMismatch      = errors.New("version mismatch")
 )
+
+type VersionMismatchError struct {
+	Path          string
+	ServerVersion int
+}
+
+func (e *VersionMismatchError) Error() string {
+	return "version mismatch"
+}

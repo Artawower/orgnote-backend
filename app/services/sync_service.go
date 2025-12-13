@@ -9,6 +9,8 @@ import (
 	"sync"
 	"time"
 
+	"orgnote/app/tools"
+
 	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -16,8 +18,8 @@ import (
 type Syncer interface {
 	GetChanges(userID primitive.ObjectID, since time.Time, limit int, cursor *string) (*ChangesResult, error)
 	UploadFile(userID primitive.ObjectID, filePath string, content []byte, clientHash string, spaceLimit int64, expectedVersion *int) (*UploadResult, error)
-	DownloadFile(userID primitive.ObjectID, fileID primitive.ObjectID) ([]byte, *models.FileMetadata, error)
-	DeleteFile(userID primitive.ObjectID, fileID primitive.ObjectID, expectedVersion *int) (*models.FileMetadata, error)
+	DownloadFile(userID primitive.ObjectID, filePath string) ([]byte, *models.FileMetadata, error)
+	DeleteFile(userID primitive.ObjectID, filePath string, expectedVersion *int) (*models.FileMetadata, error)
 	RunGarbageCollection(userID primitive.ObjectID) error
 }
 
@@ -64,23 +66,17 @@ func (s *SyncService) GetChanges(userID primitive.ObjectID, since time.Time, lim
 		return nil, fmt.Errorf("sync service: get changes: %v", err)
 	}
 
-	changes := s.mapToChanges(result.Files)
-
-	var nextCursor *string
-	if result.HasMore && len(changes) > 0 {
-		lastID := changes[len(changes)-1].ID
-		nextCursor = &lastID
-	}
-
 	return &ChangesResult{
-		Changes:    changes,
-		Cursor:     nextCursor,
+		Changes:    s.mapToChanges(result.Files),
+		Cursor:     result.NextCursor,
 		HasMore:    result.HasMore,
 		ServerTime: time.Now(),
 	}, nil
 }
 
 func (s *SyncService) UploadFile(userID primitive.ObjectID, filePath string, content []byte, clientHash string, spaceLimit int64, expectedVersion *int) (*UploadResult, error) {
+	filePath = tools.NormalizeFilePath(filePath)
+
 	if int64(len(content)) > s.maxFileSize {
 		return nil, ErrFileTooLarge
 	}
@@ -105,6 +101,12 @@ func (s *SyncService) UploadFile(userID primitive.ObjectID, filePath string, con
 	}
 
 	metadata, err := s.fileMetadataRepo.Upsert(userID, filePath, computedHash, int64(len(content)), expectedVersion)
+	if versionErr, ok := err.(*repositories.VersionMismatchError); ok {
+		return nil, &VersionMismatchError{
+			Path:          versionErr.Path,
+			ServerVersion: versionErr.ServerVersion,
+		}
+	}
 	if errors.Is(err, repositories.ErrVersionMismatch) {
 		return nil, ErrVersionMismatch
 	}
@@ -151,8 +153,8 @@ func (s *SyncService) mapToChanges(files []models.FileMetadata) []models.FileCha
 func (s *SyncService) mapToChange(metadata models.FileMetadata) models.FileChange {
 	change := models.FileChange{
 		ID:        metadata.ID.Hex(),
-		FilePath:  metadata.FilePath,
-		FileSize:  metadata.FileSize,
+		Path:      metadata.Path,
+		Size:      metadata.Size,
 		UpdatedAt: metadata.UpdatedAt,
 		Version:   metadata.Version,
 		Deleted:   metadata.DeletedAt != nil,
@@ -166,8 +168,10 @@ func (s *SyncService) mapToChange(metadata models.FileMetadata) models.FileChang
 	return change
 }
 
-func (s *SyncService) DownloadFile(userID primitive.ObjectID, fileID primitive.ObjectID) ([]byte, *models.FileMetadata, error) {
-	metadata, err := s.fileMetadataRepo.GetByID(userID, fileID)
+func (s *SyncService) DownloadFile(userID primitive.ObjectID, filePath string) ([]byte, *models.FileMetadata, error) {
+	filePath = tools.NormalizeFilePath(filePath)
+
+	metadata, err := s.fileMetadataRepo.GetByPath(userID, filePath)
 	if err != nil {
 		return nil, nil, fmt.Errorf("sync service: download: get metadata: %v", err)
 	}
@@ -192,8 +196,16 @@ func (s *SyncService) DownloadFile(userID primitive.ObjectID, fileID primitive.O
 	return content, metadata, nil
 }
 
-func (s *SyncService) DeleteFile(userID primitive.ObjectID, fileID primitive.ObjectID, expectedVersion *int) (*models.FileMetadata, error) {
-	metadata, err := s.fileMetadataRepo.SoftDelete(userID, fileID, expectedVersion)
+func (s *SyncService) DeleteFile(userID primitive.ObjectID, filePath string, expectedVersion *int) (*models.FileMetadata, error) {
+	filePath = tools.NormalizeFilePath(filePath)
+
+	metadata, err := s.fileMetadataRepo.SoftDeleteByPath(userID, filePath, expectedVersion)
+	if versionErr, ok := err.(*repositories.VersionMismatchError); ok {
+		return nil, &VersionMismatchError{
+			Path:          versionErr.Path,
+			ServerVersion: versionErr.ServerVersion,
+		}
+	}
 	if err != nil {
 		return nil, fmt.Errorf("sync service: delete: %v", err)
 	}
