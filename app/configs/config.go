@@ -23,10 +23,19 @@ type Config struct {
 	AccessCheckerURL         *string
 	AccessCheckToken         *string
 	AccessTokenCacheLifeTime int
-	MaximumFileSize          int
+	MaxFileSize              int64
+	TombstoneTTL             int
 
 	GithubClientOwner    string
 	GithubClientRepoName string
+
+	S3Endpoint        string
+	S3AccessKey       string
+	S3SecretKey       string
+	S3Bucket          string
+	S3UseSSL          bool
+	S3UploadTimeout   int
+	S3DownloadTimeout int
 }
 
 func (c *Config) BackendHost() string {
@@ -92,17 +101,50 @@ func NewConfig() Config {
 		}
 	}
 
-	maximumFileSize := 1024 * 1024 * 10
-	if envMaximumFileSize := os.Getenv("MAXIMUM_FILE_SIZE"); envMaximumFileSize != "" {
-		val, err := strconv.Atoi(envMaximumFileSize)
-		if err != nil {
-			maximumFileSize = val
-		} else {
-			log.Warn().Msgf("MAXIMUM_FILE_SIZE is not a number, init with default value: %d", maximumFileSize)
+	maxFileSize := int64(50 * 1024 * 1024)
+	if envMaxFileSize := os.Getenv("MAX_FILE_SIZE"); envMaxFileSize != "" {
+		val, err := strconv.ParseInt(envMaxFileSize, 10, 64)
+		if err == nil {
+			maxFileSize = val
+		}
+	}
+
+	tombstoneTTL := 30
+	if envTombstoneTTL := os.Getenv("TOMBSTONE_TTL_DAYS"); envTombstoneTTL != "" {
+		val, err := strconv.Atoi(envTombstoneTTL)
+		if err == nil {
+			tombstoneTTL = val
 		}
 	}
 
 	backendPort := os.Getenv("BACKEND_PORT")
+
+	s3Endpoint := os.Getenv("S3_ENDPOINT")
+	s3AccessKey := os.Getenv("S3_ACCESS_KEY")
+	s3SecretKey := os.Getenv("S3_SECRET_KEY")
+	s3Bucket := os.Getenv("S3_BUCKET")
+
+	if s3Endpoint == "" || s3AccessKey == "" || s3SecretKey == "" || s3Bucket == "" {
+		log.Fatal().Msg("S3_ENDPOINT, S3_ACCESS_KEY, S3_SECRET_KEY and S3_BUCKET are required")
+	}
+
+	s3UseSSL := os.Getenv("S3_USE_SSL") == "true"
+
+	s3UploadTimeout := 30
+	if envS3UploadTimeout := os.Getenv("S3_UPLOAD_TIMEOUT"); envS3UploadTimeout != "" {
+		val, err := strconv.Atoi(envS3UploadTimeout)
+		if err == nil {
+			s3UploadTimeout = val
+		}
+	}
+
+	s3DownloadTimeout := 30
+	if envS3DownloadTimeout := os.Getenv("S3_DOWNLOAD_TIMEOUT"); envS3DownloadTimeout != "" {
+		val, err := strconv.Atoi(envS3DownloadTimeout)
+		if err == nil {
+			s3DownloadTimeout = val
+		}
+	}
 
 	config := Config{
 		AppAddress:               appAddress,
@@ -118,11 +160,20 @@ func NewConfig() Config {
 		AccessCheckerURL:         &envAccessCheckURL,
 		AccessCheckToken:         accessCheckToken,
 		AccessTokenCacheLifeTime: accessTokenCacheLifeTime,
-		MaximumFileSize:          maximumFileSize,
+		MaxFileSize:              maxFileSize,
+		TombstoneTTL:             tombstoneTTL,
 		MobileAppName:            "orgnote",
 
 		GithubClientOwner:    "artawower",
 		GithubClientRepoName: "orgnote-client",
+
+		S3Endpoint:        s3Endpoint,
+		S3AccessKey:       s3AccessKey,
+		S3SecretKey:       s3SecretKey,
+		S3Bucket:          s3Bucket,
+		S3UseSSL:          s3UseSSL,
+		S3UploadTimeout:   s3UploadTimeout,
+		S3DownloadTimeout: s3DownloadTimeout,
 	}
 	log.Info().Msgf("Config: %+v", spew.Sdump(config))
 

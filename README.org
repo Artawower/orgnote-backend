@@ -84,7 +84,7 @@ ACCESS_CHECK_TOKEN=token for working with external service, leave empty for deve
 *** Run development docker container
 /Docker & docker-compose/ are required
 #+BEGIN_SRC bash
-docker compose -f docker-compose.db.yaml -f docker-compose.dev.yaml up --build
+docker compose -f docker-compose.db.yaml -f docker-compose.s3.yaml -f docker-compose.dev.yaml up -d
 #+END_SRC
 
 

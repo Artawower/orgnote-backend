@@ -37,6 +37,11 @@ services:
       - ACCESS_CHECK_URL=${ACCESS_CHECK_URL}
       - ACCESS_CHECK_TOKEN=${ACCESS_CHECK_TOKEN}
       - DEBUG=${DEBUG}
+      - S3_ENDPOINT=${S3_ENDPOINT:-minio:9000}
+      - S3_ACCESS_KEY=${S3_ACCESS_KEY}
+      - S3_SECRET_KEY=${S3_SECRET_KEY}
+      - S3_BUCKET=${S3_BUCKET:-orgnote-files}
+      - S3_USE_SSL=${S3_USE_SSL:-false}
 
     networks:
       - orgnote_network

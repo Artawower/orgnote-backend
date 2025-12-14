@@ -19,7 +19,6 @@ services:
 
 volumes:
   mongodb_data_container:
-  # temp_volume:
 
 networks:
   orgnote_network:

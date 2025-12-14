@@ -12,7 +12,6 @@ type APIToken struct {
 	Token       string             `json:"token" bson:"token"`
 }
 
-// TODO: master add migrations
 type User struct {
 	ID                  primitive.ObjectID `json:"id" bson:"_id,omitempty"`
 	Provider            string             `json:"provider" bson:"provider"`
@@ -28,8 +27,6 @@ type User struct {
 	TokenExpirationDate time.Time          `json:"tokenExpiration" bson:"tokenExpiration"`
 	ProfileURL          string             `json:"profileUrl" bson:"profileUrl"`
 	APITokens           []APIToken         `json:"apiTokens" bson:"apiTokens"`
-	Notes               []Note             `json:"notes" bson:"notes"`
-	NoteGraph           NoteGraph          `json:"noteGraph" bson:"noteGraph"`
 	SpaceLimit          int64              `json:"spaceLimit" bson:"spaceLimit"`
 	UsedSpace           int64              `json:"usedSpace" bson:"usedSpace"`
 	Active              *string            `json:"active" bson:"active"`

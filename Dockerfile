@@ -1,4 +1,4 @@
-FROM golang:1.21.3-alpine
+FROM golang:1.23-alpine
 
 WORKDIR /workspace
 ENV GO111MODULE=on

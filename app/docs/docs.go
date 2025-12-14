@@ -23,44 +23,6 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/all-notes": {
-            "delete": {
-                "description": "Force delete all user notes. This operation is irreversible",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "notes"
-                ],
-                "summary": "Drop all user notes",
-                "responses": {
-                    "200": {
-                        "description": "OK"
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.HttpError-any"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.HttpError-any"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.HttpError-any"
-                        }
-                    }
-                }
-            }
-        },
         "/auth/account": {
             "delete": {
                 "description": "Delete user account",
@@ -390,9 +352,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/files/upload": {
-            "post": {
-                "description": "Upload files.",
+        "/sync/changes": {
+            "get": {
+                "description": "Returns file changes since the specified timestamp",
                 "consumes": [
                     "application/json"
                 ],
@@ -400,80 +362,81 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "files"
+                    "sync"
                 ],
-                "summary": "Upload files",
+                "summary": "Get file changes",
                 "parameters": [
                     {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "collectionFormat": "csv",
-                        "description": "files",
-                        "name": "files",
-                        "in": "formData",
+                        "type": "integer",
+                        "description": "Unix timestamp in milliseconds for incremental sync",
+                        "name": "since",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Maximum number of changes to return (default: 100, max: 500)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Pagination cursor",
+                        "name": "cursor",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.HttpResponse-SyncChangesResponse-any"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.HttpError-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.HttpError-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.HttpError-any"
+                        }
+                    }
+                }
+            }
+        },
+        "/sync/files": {
+            "get": {
+                "description": "Download file content by path",
+                "produces": [
+                    "application/octet-stream"
+                ],
+                "tags": [
+                    "sync"
+                ],
+                "summary": "Download a file",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "File path",
+                        "name": "path",
+                        "in": "query",
                         "required": true
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
-                        "schema": {}
-                    },
-                    "400": {
-                        "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/handlers.HttpError-any"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.HttpError-any"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.HttpError-any"
-                        }
-                    }
-                }
-            }
-        },
-        "/notes": {
-            "delete": {
-                "description": "Mark notes as deleted by provided list of ids",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "notes"
-                ],
-                "summary": "Delete notes",
-                "parameters": [
-                    {
-                        "description": "List of ids of deleted notes",
-                        "name": "ids",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.HttpResponse-any-any"
+                            "type": "file"
                         }
                     },
                     "400": {
@@ -482,89 +445,8 @@ const docTemplate = `{
                             "$ref": "#/definitions/handlers.HttpError-any"
                         }
                     },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.HttpError-any"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.HttpError-any"
-                        }
-                    }
-                }
-            }
-        },
-        "/notes/": {
-            "get": {
-                "description": "Get all notes with optional filter",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "notes"
-                ],
-                "summary": "Get notes",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "x-order": "1",
-                        "name": "limit",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "x-order": "2",
-                        "name": "offset",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "x-order": "3",
-                        "description": "User id of which notes to load",
-                        "name": "userId",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "x-order": "4",
-                        "name": "searchText",
-                        "in": "query"
-                    },
-                    {
-                        "type": "boolean",
-                        "x-order": "5",
-                        "description": "Load all my own notes (user will be used from provided token)",
-                        "name": "my",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "x-order": "6",
-                        "name": "from",
-                        "in": "query"
-                    },
-                    {
-                        "type": "boolean",
-                        "x-order": "7",
-                        "name": "includeDeleted",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.HttpResponse-array_models_PublicNote-models_Pagination"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
+                    "401": {
+                        "description": "Unauthorized",
                         "schema": {
                             "$ref": "#/definitions/handlers.HttpError-any"
                         }
@@ -583,187 +465,51 @@ const docTemplate = `{
                     }
                 }
             },
-            "post": {
-                "description": "Create note",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "notes"
-                ],
-                "summary": "Create note",
-                "parameters": [
-                    {
-                        "description": "Note model",
-                        "name": "note",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/handlers.CreatingNote"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {}
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.HttpError-any"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.HttpError-any"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.HttpError-any"
-                        }
-                    }
-                }
-            }
-        },
-        "/notes/bulk-upsert": {
             "put": {
-                "description": "Bulk update or insert notes",
+                "description": "Upload a file to sync storage with content-addressable deduplication",
                 "consumes": [
-                    "application/json"
+                    "multipart/form-data"
                 ],
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "notes"
+                    "sync"
                 ],
-                "summary": "Upsert notes",
-                "parameters": [
-                    {
-                        "description": "List of crated notes",
-                        "name": "notes",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/handlers.CreatingNote"
-                            }
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {}
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.HttpError-any"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.HttpError-any"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.HttpError-any"
-                        }
-                    }
-                }
-            }
-        },
-        "/notes/sync": {
-            "post": {
-                "description": "Synchronize notes with specific timestamp",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "notes"
-                ],
-                "summary": "Synchronize notes",
-                "parameters": [
-                    {
-                        "description": "Sync notes request",
-                        "name": "data",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/handlers.SyncNotesRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.HttpResponse-handlers_SyncNotesResponse-any"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.HttpError-any"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.HttpError-any"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.HttpError-any"
-                        }
-                    }
-                }
-            }
-        },
-        "/notes/{id}": {
-            "get": {
-                "description": "get note by id",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "notes"
-                ],
-                "summary": "Get note",
+                "summary": "Upload a file",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Note ID",
-                        "name": "id",
-                        "in": "path",
+                        "description": "Relative file path",
+                        "name": "filePath",
+                        "in": "formData",
                         "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "File content",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Expected version for optimistic locking",
+                        "name": "expectedVersion",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "SHA-256 hash for verification",
+                        "name": "X-Content-Hash",
+                        "in": "header"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/handlers.HttpResponse-models_PublicNote-any"
+                            "$ref": "#/definitions/handlers.HttpResponse-FileUploadResponse-any"
                         }
                     },
                     "400": {
@@ -772,10 +518,88 @@ const docTemplate = `{
                             "$ref": "#/definitions/handlers.HttpError-any"
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.HttpError-any"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/VersionConflictResponse"
+                        }
+                    },
+                    "413": {
+                        "description": "Request Entity Too Large",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.HttpError-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.HttpError-any"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Soft delete a file (creates tombstone for sync)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "sync"
+                ],
+                "summary": "Delete a file",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "File path",
+                        "name": "path",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Expected version for optimistic locking",
+                        "name": "version",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.HttpResponse-models_FileMetadata-any"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.HttpError-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.HttpError-any"
+                        }
+                    },
                     "404": {
                         "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/handlers.HttpError-any"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/VersionConflictResponse"
                         }
                     },
                     "500": {
@@ -873,104 +697,145 @@ const docTemplate = `{
                     }
                 }
             }
-        },
-        "/tags": {
-            "get": {
-                "description": "Return list of al registered tags",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "tags"
-                ],
-                "summary": "Get tags",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.HttpResponse-array_string-any"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.HttpError-any"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.HttpError-any"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.HttpError-any"
-                        }
-                    }
-                }
-            }
         }
     },
     "definitions": {
-        "handlers.CreatingNote": {
+        "FileChange": {
+            "description": "File change information for synchronization",
             "type": "object",
             "required": [
-                "content"
+                "deleted",
+                "id",
+                "path",
+                "updatedAt",
+                "version"
             ],
             "properties": {
-                "content": {
-                    "type": "string"
-                },
-                "createdAt": {
-                    "type": "string"
-                },
-                "encrypted": {
-                    "type": "boolean"
-                },
-                "encryptionType": {
+                "contentHash": {
                     "type": "string",
-                    "enum": [
-                        "gpgKeys",
-                        "gpgPassword",
-                        "disabled"
-                    ]
+                    "example": "a1b2c3d4e5f6..."
                 },
-                "filePath": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
+                "deleted": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "deletedAt": {
+                    "type": "string"
                 },
                 "id": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "507f1f77bcf86cd799439011"
                 },
-                "meta": {
-                    "$ref": "#/definitions/models.NoteMeta"
+                "path": {
+                    "type": "string",
+                    "example": "notes/todo.org"
                 },
-                "touchedAt": {
-                    "type": "string"
+                "size": {
+                    "type": "integer",
+                    "example": 1024
                 },
                 "updatedAt": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                },
+                "version": {
+                    "type": "integer",
+                    "example": 1
                 }
             }
         },
-        "handlers.DeletedNote": {
+        "FileUploadResponse": {
+            "description": "Response after successful file upload",
             "type": "object",
+            "required": [
+                "contentHash",
+                "id",
+                "path",
+                "size",
+                "updatedAt",
+                "uploaded",
+                "version"
+            ],
             "properties": {
-                "filePath": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
+                "contentHash": {
+                    "type": "string",
+                    "example": "a1b2c3d4e5f6..."
                 },
                 "id": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "507f1f77bcf86cd799439011"
+                },
+                "path": {
+                    "type": "string",
+                    "example": "notes/todo.org"
+                },
+                "size": {
+                    "type": "integer",
+                    "example": 1024
+                },
+                "updatedAt": {
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                },
+                "uploaded": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "version": {
+                    "type": "integer",
+                    "example": 1
+                }
+            }
+        },
+        "SyncChangesResponse": {
+            "description": "Response containing file changes since last sync",
+            "type": "object",
+            "required": [
+                "changes",
+                "hasMore",
+                "serverTime"
+            ],
+            "properties": {
+                "changes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/FileChange"
+                    }
+                },
+                "cursor": {
+                    "type": "string",
+                    "example": "507f1f77bcf86cd799439011"
+                },
+                "hasMore": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "serverTime": {
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                }
+            }
+        },
+        "VersionConflictResponse": {
+            "description": "Response when optimistic locking fails due to version mismatch",
+            "type": "object",
+            "required": [
+                "error",
+                "path",
+                "serverVersion"
+            ],
+            "properties": {
+                "error": {
+                    "type": "string",
+                    "example": "version mismatch"
+                },
+                "path": {
+                    "type": "string",
+                    "example": "notes/todo.org"
+                },
+                "serverVersion": {
+                    "type": "integer",
+                    "example": 5
                 }
             }
         },
@@ -983,10 +848,21 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.HttpResponse-any-any": {
+        "handlers.HttpResponse-FileUploadResponse-any": {
             "type": "object",
             "properties": {
-                "data": {},
+                "data": {
+                    "$ref": "#/definitions/FileUploadResponse"
+                },
+                "meta": {}
+            }
+        },
+        "handlers.HttpResponse-SyncChangesResponse-any": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/SyncChangesResponse"
+                },
                 "meta": {}
             }
         },
@@ -1002,46 +878,11 @@ const docTemplate = `{
                 "meta": {}
             }
         },
-        "handlers.HttpResponse-array_models_PublicNote-models_Pagination": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.PublicNote"
-                    }
-                },
-                "meta": {
-                    "$ref": "#/definitions/models.Pagination"
-                }
-            }
-        },
-        "handlers.HttpResponse-array_string-any": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "meta": {}
-            }
-        },
         "handlers.HttpResponse-handlers_OAuthRedirectData-any": {
             "type": "object",
             "properties": {
                 "data": {
                     "$ref": "#/definitions/handlers.OAuthRedirectData"
-                },
-                "meta": {}
-            }
-        },
-        "handlers.HttpResponse-handlers_SyncNotesResponse-any": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/handlers.SyncNotesResponse"
                 },
                 "meta": {}
             }
@@ -1055,11 +896,11 @@ const docTemplate = `{
                 "meta": {}
             }
         },
-        "handlers.HttpResponse-models_PublicNote-any": {
+        "handlers.HttpResponse-models_FileMetadata-any": {
             "type": "object",
             "properties": {
                 "data": {
-                    "$ref": "#/definitions/models.PublicNote"
+                    "$ref": "#/definitions/models.FileMetadata"
                 },
                 "meta": {}
             }
@@ -1092,43 +933,6 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.SyncNotesRequest": {
-            "type": "object",
-            "properties": {
-                "deletedNotesIds": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "notes": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/handlers.CreatingNote"
-                    }
-                },
-                "timestamp": {
-                    "type": "string"
-                }
-            }
-        },
-        "handlers.SyncNotesResponse": {
-            "type": "object",
-            "properties": {
-                "deletedNotes": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/handlers.DeletedNote"
-                    }
-                },
-                "notes": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.PublicNote"
-                    }
-                }
-            }
-        },
         "handlers.SystemInfo": {
             "type": "object",
             "properties": {
@@ -1154,12 +958,6 @@ const docTemplate = `{
                 }
             }
         },
-        "models.ConnectedNotes": {
-            "type": "object",
-            "additionalProperties": {
-                "type": "string"
-            }
-        },
         "models.EnvironmentInfo": {
             "type": "object",
             "properties": {
@@ -1168,75 +966,35 @@ const docTemplate = `{
                 }
             }
         },
-        "models.NoteHeading": {
+        "models.FileMetadata": {
             "type": "object",
             "properties": {
-                "level": {
+                "contentHash": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "deletedAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "path": {
+                    "type": "string"
+                },
+                "size": {
                     "type": "integer"
                 },
-                "text": {
-                    "type": "string"
-                }
-            }
-        },
-        "models.NoteLink": {
-            "type": "object",
-            "properties": {
-                "name": {
+                "updatedAt": {
                     "type": "string"
                 },
-                "url": {
-                    "type": "string"
-                }
-            }
-        },
-        "models.NoteMeta": {
-            "type": "object",
-            "properties": {
-                "category": {
-                    "$ref": "#/definitions/models.category"
-                },
-                "connectedNotes": {
-                    "$ref": "#/definitions/models.ConnectedNotes"
-                },
-                "description": {
+                "userId": {
                     "type": "string"
                 },
-                "externalLinks": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.NoteLink"
-                    }
-                },
-                "fileTags": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "headings": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.NoteHeading"
-                    }
-                },
-                "images": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "previewImg": {
-                    "type": "string"
-                },
-                "published": {
-                    "type": "boolean"
-                },
-                "startup": {
-                    "type": "string"
-                },
-                "title": {
-                    "type": "string"
+                "version": {
+                    "type": "integer"
                 }
             }
         },
@@ -1250,98 +1008,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "version": {
-                    "type": "string"
-                }
-            }
-        },
-        "models.Pagination": {
-            "type": "object",
-            "properties": {
-                "limit": {
-                    "type": "integer"
-                },
-                "offset": {
-                    "type": "integer"
-                },
-                "total": {
-                    "type": "integer"
-                }
-            }
-        },
-        "models.PublicNote": {
-            "type": "object",
-            "required": [
-                "content",
-                "meta"
-            ],
-            "properties": {
-                "author": {
-                    "$ref": "#/definitions/models.PublicUser"
-                },
-                "content": {
-                    "type": "string"
-                },
-                "createdAt": {
-                    "type": "string"
-                },
-                "encrypted": {
-                    "type": "boolean"
-                },
-                "encryptionType": {
-                    "description": "Encrypted note content",
-                    "type": "string",
-                    "enum": [
-                        "gpgKeys",
-                        "gpgPassword",
-                        "disabled"
-                    ]
-                },
-                "filePath": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "id": {
-                    "description": "It's externalID from original note",
-                    "type": "string"
-                },
-                "isMy": {
-                    "type": "boolean"
-                },
-                "meta": {
-                    "$ref": "#/definitions/models.NoteMeta"
-                },
-                "size": {
-                    "type": "integer"
-                },
-                "touchedAt": {
-                    "type": "string"
-                },
-                "updatedAt": {
-                    "type": "string"
-                }
-            }
-        },
-        "models.PublicUser": {
-            "type": "object",
-            "properties": {
-                "avatarUrl": {
-                    "type": "string"
-                },
-                "email": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "nickName": {
-                    "type": "string"
-                },
-                "profileUrl": {
                     "type": "string"
                 }
             }
@@ -1380,19 +1046,6 @@ const docTemplate = `{
                     "type": "integer"
                 }
             }
-        },
-        "models.category": {
-            "type": "string",
-            "enum": [
-                "article",
-                "book",
-                "schedule"
-            ],
-            "x-enum-varnames": [
-                "CategoryArticle",
-                "CategoryBook",
-                "CategorySchedule"
-            ]
         }
     }
 }`
