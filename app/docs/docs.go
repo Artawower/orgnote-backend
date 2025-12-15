@@ -697,6 +697,43 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/ws/events": {
+            "get": {
+                "description": "Generic WebSocket endpoint for real-time user events (sync, notifications, etc). Requires ` + "`" + `Upgrade: websocket` + "`" + ` header.",
+                "tags": [
+                    "events"
+                ],
+                "summary": "WebSocket Events Channel",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Auth token (alternative to Authorization header)",
+                        "name": "token",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "101": {
+                        "description": "Switching Protocols",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.HttpError-any"
+                        }
+                    },
+                    "426": {
+                        "description": "Upgrade Required",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.HttpError-any"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {

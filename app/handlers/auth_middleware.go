@@ -3,6 +3,7 @@ package handlers
 import (
 	"orgnote/app/models"
 	"orgnote/app/tools"
+	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/rs/zerolog/log"
@@ -54,6 +55,9 @@ func NewUserInjectMiddleware(config ...Config) func(*fiber.Ctx) error {
 		}
 
 		token := tools.ExtractBearerTokenFromCtx(c)
+		if token == "" && strings.HasPrefix(c.Path(), WebSocketPrefix) {
+			token = c.Query("token")
+		}
 
 		var user *models.User
 		var err error

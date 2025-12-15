@@ -17,17 +17,18 @@ import (
 
 type Syncer interface {
 	GetChanges(userID primitive.ObjectID, since time.Time, limit int, cursor *string) (*ChangesResult, error)
-	UploadFile(userID primitive.ObjectID, filePath string, content []byte, clientHash string, spaceLimit int64, expectedVersion *int) (*UploadResult, error)
+	UploadFile(userID primitive.ObjectID, filePath string, content []byte, clientHash string, spaceLimit int64, expectedVersion *int, clientSocketID string) (*UploadResult, error)
 	DownloadFile(userID primitive.ObjectID, filePath string) ([]byte, *models.FileMetadata, error)
-	DeleteFile(userID primitive.ObjectID, filePath string, expectedVersion *int) (*models.FileMetadata, error)
+	DeleteFile(userID primitive.ObjectID, filePath string, expectedVersion *int, clientSocketID string) (*models.FileMetadata, error)
 	RunGarbageCollection(userID primitive.ObjectID) error
 }
 
 type SyncService struct {
-	fileMetadataRepo *repositories.FileMetadataRepository
-	blobStorage      infrastructure.BlobStorage
-	maxFileSize      int64
-	tombstoneTTL     time.Duration
+	fileMetadataRepo    *repositories.FileMetadataRepository
+	notificationService *NotificationService
+	blobStorage         infrastructure.BlobStorage
+	maxFileSize         int64
+	tombstoneTTL        time.Duration
 }
 
 type SyncServiceConfig struct {
@@ -49,14 +50,16 @@ type UploadResult struct {
 
 func NewSyncService(
 	fileMetadataRepo *repositories.FileMetadataRepository,
+	notificationService *NotificationService,
 	blobStorage infrastructure.BlobStorage,
 	config SyncServiceConfig,
 ) *SyncService {
 	return &SyncService{
-		fileMetadataRepo: fileMetadataRepo,
-		blobStorage:      blobStorage,
-		maxFileSize:      config.MaxFileSize,
-		tombstoneTTL:     config.TombstoneTTL,
+		fileMetadataRepo:    fileMetadataRepo,
+		notificationService: notificationService,
+		blobStorage:         blobStorage,
+		maxFileSize:         config.MaxFileSize,
+		tombstoneTTL:        config.TombstoneTTL,
 	}
 }
 
@@ -74,7 +77,7 @@ func (s *SyncService) GetChanges(userID primitive.ObjectID, since time.Time, lim
 	}, nil
 }
 
-func (s *SyncService) UploadFile(userID primitive.ObjectID, filePath string, content []byte, clientHash string, spaceLimit int64, expectedVersion *int) (*UploadResult, error) {
+func (s *SyncService) UploadFile(userID primitive.ObjectID, filePath string, content []byte, clientHash string, spaceLimit int64, expectedVersion *int, clientSocketID string) (*UploadResult, error) {
 	filePath = tools.NormalizeFilePath(filePath)
 
 	if int64(len(content)) > s.maxFileSize {
@@ -113,6 +116,8 @@ func (s *SyncService) UploadFile(userID primitive.ObjectID, filePath string, con
 	if err != nil {
 		return nil, fmt.Errorf("sync service: upload: upsert metadata: %v", err)
 	}
+
+	s.notificationService.NotifySync(userID.Hex(), clientSocketID)
 
 	return &UploadResult{
 		Metadata: metadata,
@@ -196,7 +201,7 @@ func (s *SyncService) DownloadFile(userID primitive.ObjectID, filePath string) (
 	return content, metadata, nil
 }
 
-func (s *SyncService) DeleteFile(userID primitive.ObjectID, filePath string, expectedVersion *int) (*models.FileMetadata, error) {
+func (s *SyncService) DeleteFile(userID primitive.ObjectID, filePath string, expectedVersion *int, clientSocketID string) (*models.FileMetadata, error) {
 	filePath = tools.NormalizeFilePath(filePath)
 
 	metadata, err := s.fileMetadataRepo.SoftDeleteByPath(userID, filePath, expectedVersion)
@@ -209,6 +214,8 @@ func (s *SyncService) DeleteFile(userID primitive.ObjectID, filePath string, exp
 	if err != nil {
 		return nil, fmt.Errorf("sync service: delete: %v", err)
 	}
+
+	s.notificationService.NotifySync(userID.Hex(), clientSocketID)
 
 	return metadata, nil
 }

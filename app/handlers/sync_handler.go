@@ -233,7 +233,8 @@ func (h *SyncHandler) UploadFile(c *fiber.Ctx) error {
 		return h.badRequest(c, err.Error())
 	}
 
-	result, err := h.syncService.UploadFile(user.ID, req.FilePath, req.FileContent, req.ClientHash, user.SpaceLimit, req.ExpectedVersion)
+	clientSocketID := c.Get(SocketIDHeader)
+	result, err := h.syncService.UploadFile(user.ID, req.FilePath, req.FileContent, req.ClientHash, user.SpaceLimit, req.ExpectedVersion, clientSocketID)
 	if err != nil {
 		return h.handleError(c, err, "sync handler: upload")
 	}
@@ -316,7 +317,8 @@ func (h *SyncHandler) DeleteFile(c *fiber.Ctx) error {
 		expectedVersion = &req.Version
 	}
 
-	metadata, err := h.syncService.DeleteFile(user.ID, req.Path, expectedVersion)
+	clientSocketID := c.Get(SocketIDHeader)
+	metadata, err := h.syncService.DeleteFile(user.ID, req.Path, expectedVersion, clientSocketID)
 	if err != nil {
 		return h.handleError(c, err, "sync handler: delete")
 	}
