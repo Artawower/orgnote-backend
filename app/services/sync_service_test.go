@@ -44,6 +44,11 @@ func (m *mockBlobStorage) ListBlobs(userID string) ([]infrastructure.BlobInfo, e
 	return nil, nil
 }
 
+type mockEventSender struct{}
+
+func (m *mockEventSender) Emit(userID string, eventType string, payload interface{}, excludeSocketID string) {
+}
+
 type mockFileMetadataRepo struct {
 	files     map[string]*models.FileMetadata
 	totalSize int64
@@ -87,10 +92,11 @@ func TestUploadFile_Success(t *testing.T) {
 	repo := newMockFileMetadataRepo()
 
 	service := &SyncService{
-		fileMetadataRepo: nil,
-		blobStorage:      blobStorage,
-		maxFileSize:      1024 * 1024,
-		tombstoneTTL:     30 * 24 * time.Hour,
+		fileMetadataRepo:    nil,
+		notificationService: NewNotificationService(&mockEventSender{}),
+		blobStorage:         blobStorage,
+		maxFileSize:         1024 * 1024,
+		tombstoneTTL:        30 * 24 * time.Hour,
 	}
 
 	content := []byte("test content")
@@ -116,13 +122,14 @@ func TestUploadFile_Success(t *testing.T) {
 
 func TestUploadFile_FileTooLarge(t *testing.T) {
 	service := &SyncService{
-		maxFileSize: 10,
+		notificationService: NewNotificationService(&mockEventSender{}),
+		maxFileSize:         10,
 	}
 
 	content := []byte("this content is too large")
 	userID := primitive.NewObjectID()
 
-	_, err := service.UploadFile(userID, "test.txt", content, "", 0, nil)
+	_, err := service.UploadFile(userID, "test.txt", content, "", 0, nil, "")
 
 	if err != ErrFileTooLarge {
 		t.Errorf("expected ErrFileTooLarge, got %v", err)
@@ -131,13 +138,14 @@ func TestUploadFile_FileTooLarge(t *testing.T) {
 
 func TestUploadFile_HashMismatch(t *testing.T) {
 	service := &SyncService{
-		maxFileSize: 1024,
+		notificationService: NewNotificationService(&mockEventSender{}),
+		maxFileSize:         1024,
 	}
 
 	content := []byte("test")
 	userID := primitive.NewObjectID()
 
-	_, err := service.UploadFile(userID, "test.txt", content, "wrong-hash", 0, nil)
+	_, err := service.UploadFile(userID, "test.txt", content, "wrong-hash", 0, nil, "")
 
 	if err != ErrHashMismatch {
 		t.Errorf("expected ErrHashMismatch, got %v", err)

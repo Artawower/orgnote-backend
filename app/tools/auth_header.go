@@ -13,5 +13,6 @@ func ExtractBearerToken(authHeader string) string {
 }
 
 func ExtractBearerTokenFromCtx(ctx *fiber.Ctx) string {
-	return ExtractBearerToken(ctx.Get("Authorization"))
+	token := ExtractBearerToken(ctx.Get("Authorization"))
+	return token
 }

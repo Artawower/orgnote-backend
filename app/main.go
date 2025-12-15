@@ -112,9 +112,14 @@ func main() {
 	authMiddleware := handlers.NewAuthMiddleware()
 	accessMiddleware := handlers.NewAccessMiddleware(subscriptionAPI)
 
+	wsHandler := handlers.NewWebSocketHandler()
+	handlers.RegisterWebSocketHandler(app, authMiddleware, wsHandler)
+	notificationService := services.NewNotificationService(wsHandler)
+
 	userService := services.NewUserService(userRepository, subscriptionAPI)
 	syncService := services.NewSyncService(
 		fileMetadataRepository,
+		notificationService,
 		blobStorage,
 		services.SyncServiceConfig{
 			MaxFileSize:  config.MaxFileSize,
