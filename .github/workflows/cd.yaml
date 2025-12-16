@@ -25,6 +25,13 @@ jobs:
           user: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           command: |
+            # Ensure just is installed
+            if ! command -v just &> /dev/null; then
+              curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to ~/bin
+              export PATH="$HOME/bin:$PATH"
+            fi
+            export PATH="$HOME/bin:$PATH"
+
             mkdir -p ~/orgnote/prod
             cd ~/orgnote/prod
 
@@ -67,12 +74,6 @@ jobs:
             docker login --username=${{ secrets.DOCKERHUB_USERNAME }} --password=${{ secrets.DOCKERHUB_TOKEN }}
             docker pull orgnote/client:latest
 
-            # Traefik: start only if not running (shared between environments)
-            if ! docker ps --format '{{.Names}}' | grep -q '^orgnote-traefik$'; then
-              docker compose -f docker-compose.traefik.yaml --env-file .env.traefik up -d
-            fi
-
-            docker compose -f docker-compose.db.prod.yaml -f docker-compose.prod.yaml --env-file .env.prod up -d --build
-
-            docker system prune -f
+            just deploy-prod
+            just prune
           args: "-tt"
