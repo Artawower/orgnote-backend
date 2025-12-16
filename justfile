@@ -13,32 +13,26 @@ local-down:
 # Dev deployment (dev.org-note.com)
 dev:
     docker compose -f docker-compose.traefik.yaml --env-file .env.traefik up -d
-    docker compose -f docker-compose.db.dev.yaml --env-file .env.dev up -d
-    docker compose -f docker-compose.dev.yaml --env-file .env.dev up -d
+    docker compose -f docker-compose.db.dev.yaml -f docker-compose.dev.yaml --env-file .env.dev up -d
 
 dev-build:
     docker compose -f docker-compose.traefik.yaml --env-file .env.traefik up -d
-    docker compose -f docker-compose.db.dev.yaml --env-file .env.dev up -d
-    docker compose -f docker-compose.dev.yaml --env-file .env.dev up -d --build --force-recreate
+    docker compose -f docker-compose.db.dev.yaml -f docker-compose.dev.yaml --env-file .env.dev up -d --build --force-recreate
 
 dev-down:
-    docker compose -f docker-compose.dev.yaml down
-    docker compose -f docker-compose.db.dev.yaml down
+    docker compose -f docker-compose.db.dev.yaml -f docker-compose.dev.yaml down
 
 # Production deployment (org-note.com)
 prod:
     docker compose -f docker-compose.traefik.yaml --env-file .env.traefik up -d
-    docker compose -f docker-compose.db.prod.yaml --env-file .env.prod up -d
-    docker compose -f docker-compose.prod.yaml --env-file .env.prod up -d
+    docker compose -f docker-compose.db.prod.yaml -f docker-compose.prod.yaml --env-file .env.prod up -d
 
 prod-build:
     docker compose -f docker-compose.traefik.yaml --env-file .env.traefik up -d
-    docker compose -f docker-compose.db.prod.yaml --env-file .env.prod up -d
-    docker compose -f docker-compose.prod.yaml --env-file .env.prod up -d --build --force-recreate
+    docker compose -f docker-compose.db.prod.yaml -f docker-compose.prod.yaml --env-file .env.prod up -d --build --force-recreate
 
 prod-down:
-    docker compose -f docker-compose.prod.yaml down
-    docker compose -f docker-compose.db.prod.yaml down
+    docker compose -f docker-compose.db.prod.yaml -f docker-compose.prod.yaml down
 
 # Traefik management
 traefik:

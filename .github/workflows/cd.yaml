@@ -72,8 +72,7 @@ jobs:
               docker compose -f docker-compose.traefik.yaml --env-file .env.traefik up -d
             fi
 
-            docker compose -f docker-compose.db.prod.yaml --env-file .env.prod up -d
-            docker compose -f docker-compose.prod.yaml --env-file .env.prod up -d --build
+            docker compose -f docker-compose.db.prod.yaml -f docker-compose.prod.yaml --env-file .env.prod up -d --build
 
             docker system prune -f
           args: "-tt"

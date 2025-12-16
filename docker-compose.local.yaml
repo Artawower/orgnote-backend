@@ -1,5 +1,8 @@
 services:
   orgnote-backend-local:
+    depends_on:
+      - orgnote-mongo-local
+      - orgnote-minio-local
     build:
       context: .
       dockerfile: Dockerfile-dev
@@ -8,8 +11,7 @@ services:
       - 8000:8000
     expose:
       - 8000
-    depends_on:
-      - orgnote-mongo-local
+
     volumes:
       - ./:/app
       - ./media/local:/app/media

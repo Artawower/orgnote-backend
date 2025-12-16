@@ -2,14 +2,16 @@ services:
   orgnote-backend-prod:
     container_name: orgnote-backend-prod
     restart: always
+    depends_on:
+      - orgnote-mongo-prod
+      - orgnote-minio-prod
     build:
       context: .
       dockerfile: Dockerfile
     networks:
       - orgnote-prod-network
       - traefik-network
-    depends_on:
-      - orgnote-mongo-prod
+
     volumes:
       - ./media/prod:/workspace/media
     env_file:

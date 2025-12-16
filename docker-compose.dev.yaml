@@ -2,14 +2,16 @@ services:
   orgnote-backend-dev:
     container_name: orgnote-backend-dev
     restart: always
+    depends_on:
+      - orgnote-mongo-dev
+      - orgnote-minio-dev
     build:
       context: .
       dockerfile: Dockerfile
     networks:
       - orgnote-dev-network
       - traefik-network
-    depends_on:
-      - orgnote-mongo-dev
+
     volumes:
       - ./media/dev:/workspace/media
     env_file:
