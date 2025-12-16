@@ -50,7 +50,7 @@ services:
 volumes:
   orgnote-mongo-prod-data:
     external: true
-    name: mongodb_data_container
+    name: orgnote-backend_mongodb_data_container
   orgnote-minio-prod-data:
 
 networks:
