@@ -40,7 +40,7 @@ jobs:
           # TODO: master teplace .env with secrets
           command: |
             cd ~/orgnote/orgnote-backend
-            docker-compose -f docker-compose.db.yaml -f docker-compose.prod.yaml down
+            docker compose -f docker-compose.db.yaml -f docker-compose.prod.yaml down
             docker system prune -f
             docker rmi orgnote/client:latest || true
             eval $(ssh-agent -s)
@@ -67,5 +67,5 @@ jobs:
             docker login --username=${{ secrets.DOCKERHUB_USERNAME }} --password=${{ secrets.DOCKERHUB_TOKEN }}
             docker pull orgnote/client
 
-            docker-compose -f docker-compose.db.yaml -f docker-compose.prod.yaml up --build -d
-          args: "-tt -vvv"
+            docker compose -f docker-compose.db.yaml -f docker-compose.prod.yaml up --build -d
+          args: "-tt"
