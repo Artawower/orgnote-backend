@@ -39,52 +39,60 @@ This project is part of [[https://github.com/Artawower/orgnote][Org Note project
 
 *  Install
 ** Environment variables
-- ~MONGO_USERNAME~
-- ~MONGO_URL~
-- ~MONGO_PASSWORD~
-- ~MONGO_PORT~
-- ~APP_ADDRESS~ - Current application address
-- ~GITHUB_ID~ - github id for oauth
-- ~GITHUB_SECRET~ - github secret for oauth
-- ~BACKEND_DOMAIN~ - backend domain address
-- ~BACKEND_SCHEMA~ - backend schema (http/https)
-- ~BACKEND_PORT~ - backend port
-- ~CLIENT_ADDRESS~ - client address for oauth redirect
-- ~ACCESS_CHECK_URL~ - url address for checking access to the backend. For self hosted systems this values should not be provided
-- ~ACCESS_CHECK_TOKEN~ - Auth token for request to ~ACCESS_CHECK_URL~. Will be added into ~Authorization~ header
+| Variable                | Description                                       | Example                     |
+|-------------------------+---------------------------------------------------+-----------------------------|
+| ~APP_ADDRESS~           | Application bind address                          | =127.0.0.1:3000=            |
+| ~DEBUG~                 | Enable debug mode                                 | =true=                      |
+| ~BACKEND_DOMAIN~        | Backend domain                                    | =localhost=                 |
+| ~BACKEND_SCHEMA~        | Backend schema                                    | =http= / =https=            |
+| ~BACKEND_PORT~          | Backend port                                      | =3000=                      |
+| ~CLIENT_ADDRESS~        | Client address for OAuth redirect                 | =http://localhost:9000=     |
+| ~MONGO_URL~             | MongoDB host                                      | =localhost=                 |
+| ~MONGO_PORT~            | MongoDB port                                      | =27017=                     |
+| ~MONGO_USERNAME~        | MongoDB username                                  | =orgnote=                   |
+| ~MONGO_PASSWORD~        | MongoDB password                                  | =orgnote_secret=            |
+| ~GITHUB_ID~             | GitHub OAuth App ID                               |                             |
+| ~GITHUB_SECRET~         | GitHub OAuth App Secret                           |                             |
+| ~S3_ENDPOINT~           | S3-compatible storage endpoint                    | =localhost:9000=            |
+| ~S3_ACCESS_KEY~         | S3 access key                                     | =orgnote=                   |
+| ~S3_SECRET_KEY~         | S3 secret key                                     | =orgnote_secret=            |
+| ~S3_BUCKET~             | S3 bucket name                                    | =orgnote-files=             |
+| ~S3_USE_SSL~            | Use SSL for S3 connection                         | =false=                     |
+| ~MAXIMUM_FILE_SIZE~     | Maximum upload file size (bytes)                  | =52428800=                  |
+| ~ACCESS_CHECK_URL~      | Subscription check URL (empty for self-hosted)    |                             |
+| ~ACCESS_CHECK_TOKEN~    | Auth token for subscription check                 |                             |
+| ~ACME_EMAIL~            | Email for Let's Encrypt SSL certificates          | =your-email@example.com=    |
 
 ** Local development
-*** External API schema
+*** Prerequisites
+- Docker & Docker Compose
+- [[https://github.com/casey/just][just]] command runner
+- Go 1.21+
+
+*** Setup
+#+BEGIN_SRC bash
+cp .env.example .env
+#+END_SRC
+
+*** Run
+#+BEGIN_SRC bash
+just local
+#+END_SRC
+
+*** Available commands
+| Command            | Description                    |
+|--------------------+--------------------------------|
+| =just local=       | Start local environment        |
+| =just local-build= | Rebuild and start              |
+| =just local-down=  | Stop local environment         |
+| =just logs-local=  | Show backend logs              |
+| =just test=        | Run tests                      |
+| =just prune=       | Docker cleanup                 |
+
+** External API schema
 [[https://github.com/deepmap/oapi-codegen][Install open api codegen and execute script]]
 #+BEGIN_SRC bash
-chmod +x generate-subscription-api.sh && ./generate-subscription-api
-#+END_SRC
-- =/api/subscription-info= - information about subscription
-#+BEGIN_SRC json
-{
-  "email": "string",
-  "spaceLimit": "bytes",
-  "isActive": "boolean"
-}
-#+END_SRC
-*** Init .env file for storing environment variables
-#+BEGIN_SRC bash
-DEBUG=debug mode
-MONGO_USERNAME=mongo username
-MONGO_PASSWORD=mongo password
-GITHUB_ID=github id for oauth
-GITHUB_SECRET=github secret for oauth
-CLIENT_ADDRESS=url to redirect after oauth
-BACKEND_HOST=full backend host
-BACKEND_DOMAIN=backend domain
-BACKEND_SCHEMA=backend schema (http)
-ACCESS_CHECK_URL=http://65.108.90.95:8000 // check url for active subscription, leave empty for development
-ACCESS_CHECK_TOKEN=token for working with external service, leave empty for development
-#+END_SRC
-*** Run development docker container
-/Docker & docker-compose/ are required
-#+BEGIN_SRC bash
-docker compose -f docker-compose.db.yaml -f docker-compose.s3.yaml -f docker-compose.dev.yaml up -d
+chmod +x generate-subscription-api.sh && ./generate-subscription-api.sh
 #+END_SRC
 
 
