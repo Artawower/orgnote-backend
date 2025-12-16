@@ -1,4 +1,4 @@
-name: CD for orgnote backend
+name: CD for orgnote backend (prod)
 
 on:
   workflow_run:
@@ -6,66 +6,73 @@ on:
       - CI for orgnote backend
     types:
       - completed
-    repository_dispatch:
-      types: [trigger-deploy-repo-workflow]
-
-env:
-  MONGO_USERNAME: ${{ secrets.MONGO_USERNAME }}
-  MONGO_PASSWORD: ${{ secrets.MONGO_PASSWORD }}
-  API_URL: ${{ vars.API_URL }}
-  GITHUB_ID: ${{ secrets.OAUTH_GITHUB_ID }}
-  GITHUB_SECRET: ${{ secrets.OAUTH_GITHUB_SECRET }}
-  CLIENT_ADDRESS: ${{ vars.CLIENT_ADDRESS }}
-  BACKEND_HOST: ${{ vars.BACKEND_HOST }}
-  BACKEND_DOMAIN: ${{ vars.BACKEND_DOMAIN }}
-  BACKEND_SCHEMA: ${{ vars.BACKEND_SCHEMA }}
-  ACCESS_CHECK_URL: ${{ vars.ACCESS_CHECK_URL }}
-  ACCESS_CHECK_TOKEN: ${{ secrets.ACCESS_CHECK_TOKEN }}
+    branches:
+      - master
 
 jobs:
   deploy:
-    name: Deploy
+    name: Deploy Production
     runs-on: ubuntu-latest
     if: >
       ${{ github.event.workflow_run.conclusion == 'success' && 
       github.event.workflow_run.head_branch == 'master' }}
-    environment: deploy
+    environment: production
     steps:
-      - name: deploy
+      - name: Deploy to production
         uses: fifsky/ssh-action@master
         with:
           host: ${{ secrets.SSH_HOST }}
           user: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          # TODO: master teplace .env with secrets
           command: |
-            cd ~/orgnote/orgnote-backend
-            docker compose -f docker-compose.db.yaml -f docker-compose.prod.yaml down
-            docker system prune -f
-            docker rmi orgnote/client:latest || true
+            mkdir -p ~/orgnote/prod
+            cd ~/orgnote/prod
+
+            if [ ! -d "orgnote-backend" ]; then
+              eval $(ssh-agent -s)
+              ssh-add ~/.ssh/sb-back
+              git clone git@github.com:Artawower/orgnote-backend.git
+            fi
+
+            cd orgnote-backend
             eval $(ssh-agent -s)
             ssh-add ~/.ssh/sb-back
-            git checkout master
             git fetch --all
+            git checkout master
             git reset --hard origin/master
 
-            cat <<EOT > .env
-            DEBUG=true
-            API_URL=${{ env.API_URL }}
-            MONGO_USERNAME=${{ env.MONGO_USERNAME }}
-            MONGO_PASSWORD=${{ env.MONGO_PASSWORD }}
-            GITHUB_ID=${{ env.GITHUB_ID }}
-            GITHUB_SECRET=${{ env.GITHUB_SECRET }}
-            CLIENT_ADDRESS=${{ env.CLIENT_ADDRESS }}
-            BACKEND_HOST=${{ env.BACKEND_HOST }}
-            BACKEND_DOMAIN=${{ env.BACKEND_DOMAIN }}
-            BACKEND_SCHEMA=${{ env.BACKEND_SCHEMA }}
-            ACCESS_CHECK_URL=${{ env.ACCESS_CHECK_URL }}
-            ACCESS_CHECK_TOKEN=${{ env.ACCESS_CHECK_TOKEN }}
+            cat <<EOT > .env.traefik
+            ACME_EMAIL=${{ secrets.ACME_EMAIL }}
+            EOT
+
+            cat <<EOT > .env.prod
+            DEBUG=false
+            MONGO_USERNAME=${{ secrets.MONGO_USERNAME }}
+            MONGO_PASSWORD=${{ secrets.MONGO_PASSWORD }}
+            GITHUB_ID=${{ secrets.OAUTH_GITHUB_ID }}
+            GITHUB_SECRET=${{ secrets.OAUTH_GITHUB_SECRET }}
+            CLIENT_ADDRESS=${{ vars.CLIENT_ADDRESS }}
+            BACKEND_DOMAIN=${{ vars.BACKEND_DOMAIN }}
+            BACKEND_SCHEMA=${{ vars.BACKEND_SCHEMA }}
+            BACKEND_PORT=${{ vars.BACKEND_PORT }}
+            ACCESS_CHECK_URL=${{ vars.ACCESS_CHECK_URL }}
+            ACCESS_CHECK_TOKEN=${{ secrets.ACCESS_CHECK_TOKEN }}
+            S3_ACCESS_KEY=${{ secrets.S3_ACCESS_KEY_PROD }}
+            S3_SECRET_KEY=${{ secrets.S3_SECRET_KEY_PROD }}
+            S3_BUCKET=${{ vars.S3_BUCKET_PROD }}
+            S3_USE_SSL=false
+            MAXIMUM_FILE_SIZE=52428800
             EOT
 
             docker login --username=${{ secrets.DOCKERHUB_USERNAME }} --password=${{ secrets.DOCKERHUB_TOKEN }}
-            docker pull orgnote/client
+            docker pull orgnote/client:latest
 
-            docker compose -f docker-compose.db.yaml -f docker-compose.prod.yaml up --build -d
+            # Traefik: start only if not running (shared between environments)
+            if ! docker ps --format '{{.Names}}' | grep -q '^orgnote-traefik$'; then
+              docker compose -f docker-compose.traefik.yaml --env-file .env.traefik up -d
+            fi
+
+            docker compose -f docker-compose.db.prod.yaml -f docker-compose.prod.yaml --env-file .env.prod up -d --build
+
+            docker system prune -f
           args: "-tt"

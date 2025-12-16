@@ -1,86 +1,73 @@
-version: "3.8"
-
 services:
-  orgnote_backend:
+  orgnote-backend-prod:
+    container_name: orgnote-backend-prod
     restart: always
-    container_name: orgnote_backend
+    depends_on:
+      - orgnote-mongo-prod
+      - orgnote-minio-prod
     build:
       context: .
       dockerfile: Dockerfile
-    # ports:
-    #   - 3000:3000
     networks:
-      - orgnote_network
-    depends_on:
-      - orgnote_mongo
+      - orgnote-prod-network
+      - traefik-network
+
     volumes:
-      - ./media:/workspace/media
+      - ./media/prod:/workspace/media
     env_file:
-      - .env
-    healthcheck:
-      test: ["CMD-SHELL", "curl", "-f", "${MONGO_URL}:${MONGO_PORT}"]
-      timeout: 1s
-      interval: 2s
-      retries: 10
+      - .env.prod
     environment:
-      - MONGO_USERNAME=${MONGO_USERNAME}
-      - MONGO_URL=orgnote_mongo
-      - MONGO_PASSWORD=${MONGO_PASSWORD}
+      - MONGO_URL=orgnote-mongo-prod
       - MONGO_PORT=27017
       - APP_ADDRESS=0.0.0.0:3000
-      - GITHUB_ID=${GITHUB_ID}
-      - GITHUB_SECRET=${GITHUB_SECRET}
-      - BACKEND_DOMAIN=${BACKEND_DOMAIN}
-      - BACKEND_SCHEMA=${BACKEND_SCHEMA}
-      - BACKEND_PORT=${BACKEND_PORT}
-      - CLIENT_ADDRESS=${CLIENT_ADDRESS}
-      - ACCESS_CHECK_URL=${ACCESS_CHECK_URL}
-      - ACCESS_CHECK_TOKEN=${ACCESS_CHECK_TOKEN}
-      - DEBUG=${DEBUG}
+      - S3_ENDPOINT=orgnote-minio-prod:9000
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.backend-prod.rule=Host(`org-note.com`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.backend-prod.entrypoints=websecure"
+      - "traefik.http.routers.backend-prod.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.backend-prod.middlewares=backend-prod-strip"
+      - "traefik.http.middlewares.backend-prod-strip.stripprefix.prefixes=/api"
+      - "traefik.http.services.backend-prod.loadbalancer.server.port=3000"
+      - "traefik.docker.network=traefik-network"
 
-  orgnote_cors:
+  orgnote-cors-prod:
     image: bassetts/warp-cors
-    container_name: orgnote_cors
-    networks:
-      - orgnote_network
-    ports:
-      - 3030:3030
-
-  orgnote_nginx:
+    container_name: orgnote-cors-prod
     restart: always
-    container_name: orgnote_nginx
-    image: nginx:stable
-    ports:
-      - 80:80
-    expose:
-      - 80
-    volumes:
-      - ~/frontend-build:/opt/services/frontend:rw
-      - ./deploy/nginx/conf.d:/etc/nginx/conf.d:rw
-      - ./media:/opt/services/backend/media:rw
-      - ./static:/opt/services/backend/static:rw
-    depends_on:
-      - orgnote_backend
-      - orgnote_cors
-      - orgnote_client
-    links:
-      - orgnote_backend
-      - orgnote_cors
-      - orgnote_client
     networks:
-      - orgnote_network
-    command: ["/usr/sbin/nginx", "-g", "daemon off;"]
+      - orgnote-prod-network
+      - traefik-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.cors-prod.rule=Host(`org-note.com`) && PathPrefix(`/cors`)"
+      - "traefik.http.routers.cors-prod.entrypoints=websecure"
+      - "traefik.http.routers.cors-prod.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.cors-prod.middlewares=cors-prod-strip"
+      - "traefik.http.middlewares.cors-prod-strip.stripprefix.prefixes=/cors"
+      - "traefik.http.services.cors-prod.loadbalancer.server.port=3030"
+      - "traefik.docker.network=traefik-network"
 
-  orgnote_client:
+  orgnote-client-prod:
     image: orgnote/client:latest
-    container_name: orgnote_client
+    container_name: orgnote-client-prod
+    restart: always
     environment:
       - DISABLE_LOGGER=1
     networks:
-      - orgnote_network
-    # ports:
-    #   - "3060:3000"
+      - orgnote-prod-network
+      - traefik-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.client-prod.rule=Host(`org-note.com`)"
+      - "traefik.http.routers.client-prod.entrypoints=websecure"
+      - "traefik.http.routers.client-prod.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.client-prod.priority=1"
+      - "traefik.http.services.client-prod.loadbalancer.server.port=3000"
+      - "traefik.docker.network=traefik-network"
 
 networks:
-  orgnote_network:
-    driver: bridge
+  orgnote-prod-network:
+    external: true
+  traefik-network:
+    external: true
