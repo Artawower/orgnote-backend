@@ -16,7 +16,7 @@ jobs:
     if: >
       ${{ github.event.workflow_run.conclusion == 'success' && 
       github.event.workflow_run.head_branch == 'master' }}
-    environment: production
+    environment: deploy
     steps:
       - name: Deploy to production
         uses: fifsky/ssh-action@master
