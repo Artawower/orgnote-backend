@@ -60,10 +60,8 @@ prune:
     docker system prune -f
 
 ps:
-    docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+    docker ps
 
 # Check all services status
 status:
-    @echo "=== Traefik ===" && docker ps --filter name=orgnote-traefik --format "{{.Names}}: {{.Status}}" || true
-    @echo "=== Prod ===" && docker ps --filter name=-prod --format "{{.Names}}: {{.Status}}" || true
-    @echo "=== Dev ===" && docker ps --filter name=-dev --format "{{.Names}}: {{.Status}}" || true
+    @echo "=== All OrgNote containers ===" && docker ps --filter name=orgnote
