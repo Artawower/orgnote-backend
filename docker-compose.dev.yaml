@@ -1,57 +1,74 @@
-version: "3.8"
 services:
-  orgnote_backend:
+  orgnote-backend-dev:
+    container_name: orgnote-backend-dev
+    restart: always
     build:
       context: .
-      dockerfile: Dockerfile-dev
-    container_name: orgnote_backend
-    ports:
-      - 8000:8000
-    expose:
-      - 8000
-    depends_on:
-      - orgnote_mongo
-    links:
-      - orgnote_mongo
-    volumes:
-      - ./:/app
-      - ./media:/app/media
-    healthcheck:
-      test: ["CMD-SHELL", "curl", "-f", "${MONGO_URL}:${MONGO_PORT}"]
-      timeout: 1s
-      interval: 2s
-      retries: 10
-    environment:
-      - APP_ADDRESS=0.0.0.0:8000
-      - CLIENT_ADDRESS=${CLIENT_ADDRESS}
-      - GOROOT=/usr/local/go
-      - MONGO_URL=orgnote_mongo
-      - MONGO_PORT=27017
-      - MONGO_USERNAME=${MONGO_USERNAME}
-      - MONGO_PASSWORD=${MONGO_PASSWORD}
-      - GITHUB_ID=${GITHUB_ID}
-      - GITHUB_SECRET=${GITHUB_SECRET}
-      - BACKEND_DOMAIN=${BACKEND_DOMAIN}
-      - BACKEND_SCHEMA=${BACKEND_SCHEMA}
-      - BACKEND_PORT=${BACKEND_PORT}
-      - ACCESS_CHECK_URL=${ACCESS_CHECK_URL}
-      - ACCESS_CHECK_TOKEN=${ACCESS_CHECK_TOKEN}
-      - DEBUG=${DEBUG}
-      - S3_ENDPOINT=${S3_ENDPOINT:-minio:9000}
-      - S3_ACCESS_KEY=${S3_ACCESS_KEY}
-      - S3_SECRET_KEY=${S3_SECRET_KEY}
-      - S3_BUCKET=${S3_BUCKET:-orgnote-files}
-      - S3_USE_SSL=${S3_USE_SSL:-false}
-
+      dockerfile: Dockerfile
     networks:
-      - orgnote_network
+      - orgnote-dev-network
+      - traefik-network
+    depends_on:
+      - orgnote-mongo-dev
+    volumes:
+      - ./media/dev:/workspace/media
+    env_file:
+      - .env.dev
+    environment:
+      - MONGO_URL=orgnote-mongo-dev
+      - MONGO_PORT=27017
+      - APP_ADDRESS=0.0.0.0:3000
+      - S3_ENDPOINT=orgnote-minio-dev:9000
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.backend-dev.rule=Host(`dev.org-note.com`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.backend-dev.entrypoints=websecure"
+      - "traefik.http.routers.backend-dev.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.backend-dev.middlewares=backend-dev-strip"
+      - "traefik.http.middlewares.backend-dev-strip.stripprefix.prefixes=/api"
+      - "traefik.http.services.backend-dev.loadbalancer.server.port=3000"
+      - "traefik.docker.network=traefik-network"
 
-  # orgnote_client:
-  #   image: orgnote/client:latest
-  #   container_name: orgnote_client
-  #   environment:
-  #     - DISABLE_LOGGER=1
-  #     - API_URL=http://localhost:8000/v1
-  #     - AUTH_URL=http://localhost:8000
-  #   ports:
-  #     - "3000:3000"
+  orgnote-cors-dev:
+    image: bassetts/warp-cors
+    container_name: orgnote-cors-dev
+    restart: always
+    networks:
+      - orgnote-dev-network
+      - traefik-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.cors-dev.rule=Host(`dev.org-note.com`) && PathPrefix(`/cors`)"
+      - "traefik.http.routers.cors-dev.entrypoints=websecure"
+      - "traefik.http.routers.cors-dev.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.cors-dev.middlewares=cors-dev-strip"
+      - "traefik.http.middlewares.cors-dev-strip.stripprefix.prefixes=/cors"
+      - "traefik.http.services.cors-dev.loadbalancer.server.port=3030"
+      - "traefik.docker.network=traefik-network"
+
+  # TODO: [PLAN] Add orgnote/client:dev image build in orgnote-client CI/CD
+  # - Add push_client_image_dev job for dev branch
+  # - Add trigger_backend_dev to dispatch orgnote-backend dev deployment
+  orgnote-client-dev:
+    image: orgnote/client:latest
+    container_name: orgnote-client-dev
+    restart: always
+    environment:
+      - DISABLE_LOGGER=1
+    networks:
+      - orgnote-dev-network
+      - traefik-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.client-dev.rule=Host(`dev.org-note.com`)"
+      - "traefik.http.routers.client-dev.entrypoints=websecure"
+      - "traefik.http.routers.client-dev.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.client-dev.priority=1"
+      - "traefik.http.services.client-dev.loadbalancer.server.port=3000"
+      - "traefik.docker.network=traefik-network"
+
+networks:
+  orgnote-dev-network:
+    external: true
+  traefik-network:
+    external: true

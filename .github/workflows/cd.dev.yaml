@@ -1,4 +1,4 @@
-name: CD for orgnote backend (prod)
+name: CD for orgnote backend (dev)
 
 on:
   workflow_run:
@@ -7,26 +7,26 @@ on:
     types:
       - completed
     branches:
-      - master
+      - dev
 
 jobs:
   deploy:
-    name: Deploy Production
+    name: Deploy Dev
     runs-on: ubuntu-latest
     if: >
       ${{ github.event.workflow_run.conclusion == 'success' && 
-      github.event.workflow_run.head_branch == 'master' }}
-    environment: production
+      github.event.workflow_run.head_branch == 'dev' }}
+    environment: dev
     steps:
-      - name: Deploy to production
+      - name: Deploy to dev
         uses: fifsky/ssh-action@master
         with:
           host: ${{ secrets.SSH_HOST }}
           user: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           command: |
-            mkdir -p ~/orgnote/prod
-            cd ~/orgnote/prod
+            mkdir -p ~/orgnote/dev
+            cd ~/orgnote/dev
 
             if [ ! -d "orgnote-backend" ]; then
               eval $(ssh-agent -s)
@@ -38,42 +38,42 @@ jobs:
             eval $(ssh-agent -s)
             ssh-add ~/.ssh/sb-back
             git fetch --all
-            git checkout master
-            git reset --hard origin/master
+            git checkout dev
+            git reset --hard origin/dev
 
             cat <<EOT > .env.traefik
             ACME_EMAIL=${{ secrets.ACME_EMAIL }}
             EOT
 
-            cat <<EOT > .env.prod
-            DEBUG=false
-            MONGO_USERNAME=${{ secrets.MONGO_USERNAME }}
-            MONGO_PASSWORD=${{ secrets.MONGO_PASSWORD }}
-            GITHUB_ID=${{ secrets.OAUTH_GITHUB_ID }}
-            GITHUB_SECRET=${{ secrets.OAUTH_GITHUB_SECRET }}
-            CLIENT_ADDRESS=${{ vars.CLIENT_ADDRESS }}
-            BACKEND_DOMAIN=${{ vars.BACKEND_DOMAIN }}
+            cat <<EOT > .env.dev
+            DEBUG=true
+            MONGO_USERNAME=${{ secrets.MONGO_USERNAME_DEV }}
+            MONGO_PASSWORD=${{ secrets.MONGO_PASSWORD_DEV }}
+            GITHUB_ID=${{ secrets.OAUTH_GITHUB_ID_DEV }}
+            GITHUB_SECRET=${{ secrets.OAUTH_GITHUB_SECRET_DEV }}
+            CLIENT_ADDRESS=${{ vars.CLIENT_ADDRESS_DEV }}
+            BACKEND_DOMAIN=${{ vars.BACKEND_DOMAIN_DEV }}
             BACKEND_SCHEMA=${{ vars.BACKEND_SCHEMA }}
             BACKEND_PORT=${{ vars.BACKEND_PORT }}
             ACCESS_CHECK_URL=${{ vars.ACCESS_CHECK_URL }}
             ACCESS_CHECK_TOKEN=${{ secrets.ACCESS_CHECK_TOKEN }}
-            S3_ACCESS_KEY=${{ secrets.S3_ACCESS_KEY_PROD }}
-            S3_SECRET_KEY=${{ secrets.S3_SECRET_KEY_PROD }}
-            S3_BUCKET=${{ vars.S3_BUCKET_PROD }}
+            S3_ACCESS_KEY=${{ secrets.S3_ACCESS_KEY_DEV }}
+            S3_SECRET_KEY=${{ secrets.S3_SECRET_KEY_DEV }}
+            S3_BUCKET=${{ vars.S3_BUCKET_DEV }}
             S3_USE_SSL=false
             MAXIMUM_FILE_SIZE=52428800
             EOT
 
             docker login --username=${{ secrets.DOCKERHUB_USERNAME }} --password=${{ secrets.DOCKERHUB_TOKEN }}
-            docker pull orgnote/client:latest
+            docker pull orgnote/client:dev 2>/dev/null || true
 
             # Traefik: start only if not running (shared between environments)
             if ! docker ps --format '{{.Names}}' | grep -q '^orgnote-traefik$'; then
               docker-compose -f docker-compose.traefik.yaml --env-file .env.traefik up -d
             fi
 
-            docker-compose -f docker-compose.db.prod.yaml --env-file .env.prod up -d
-            docker-compose -f docker-compose.prod.yaml --env-file .env.prod up -d --build
+            docker-compose -f docker-compose.db.dev.yaml --env-file .env.dev up -d
+            docker-compose -f docker-compose.dev.yaml --env-file .env.dev up -d --build
 
             docker system prune -f
           args: "-tt"
