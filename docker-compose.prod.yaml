@@ -68,6 +68,6 @@ services:
 
 networks:
   orgnote-prod-network:
-    external: true
+    name: orgnote-prod-network
   traefik-network:
-    external: true
+    name: traefik-network
