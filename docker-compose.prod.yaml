@@ -70,4 +70,5 @@ networks:
   orgnote-prod-network:
     name: orgnote-prod-network
   traefik-network:
+    external: true
     name: traefik-network
