@@ -62,9 +62,7 @@ jobs:
             GITHUB_ID=${{ secrets.OAUTH_GITHUB_ID }}
             GITHUB_SECRET=${{ secrets.OAUTH_GITHUB_SECRET }}
             CLIENT_ADDRESS=${{ vars.CLIENT_ADDRESS }}
-            BACKEND_DOMAIN=${{ vars.BACKEND_DOMAIN }}
-            BACKEND_SCHEMA=${{ vars.BACKEND_SCHEMA }}
-            BACKEND_PORT=${{ vars.BACKEND_PORT }}
+            BACKEND_URL=${{ vars.BACKEND_URL }}
             ACCESS_CHECK_URL=${{ vars.ACCESS_CHECK_URL }}
             ACCESS_CHECK_TOKEN=${{ secrets.ACCESS_CHECK_TOKEN }}
             S3_ACCESS_KEY=${{ secrets.S3_ACCESS_KEY }}
