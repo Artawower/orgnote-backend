@@ -63,7 +63,7 @@ services:
       - "traefik.http.routers.client-dev.entrypoints=websecure"
       - "traefik.http.routers.client-dev.tls.certresolver=letsencrypt"
       - "traefik.http.routers.client-dev.priority=1"
-      - "traefik.http.services.client-dev.loadbalancer.server.port=3000"
+      - "traefik.http.services.client-dev.loadbalancer.server.port=3001"
       - "traefik.docker.network=traefik-network"
 
 networks:
