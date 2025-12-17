@@ -1,20 +1,19 @@
 package handlers
 
 import (
+	"net/url"
 	"orgnote/app/configs"
-	_ "orgnote/app/docs"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/swagger"
-		"orgnote/app/docs"
-
+	"orgnote/app/docs"
 )
 
 func RegisterSwagger(app fiber.Router, config configs.Config) {
-	docs.SwaggerInfo.Host = config.BackendDomain
-	docs.SwaggerInfo.Schemes = []string{"http", "https"}
-	docs.SwaggerInfo.BasePath = "/v1"
+	parsedURL, _ := url.Parse(config.BackendURL)
+	docs.SwaggerInfo.Host = parsedURL.Host
+	docs.SwaggerInfo.Schemes = []string{parsedURL.Scheme}
+	docs.SwaggerInfo.BasePath = parsedURL.Path
 
-
-	app.Get("/swagger/*", swagger.HandlerDefault) // default
+	app.Get("/swagger/*", swagger.HandlerDefault)
 }

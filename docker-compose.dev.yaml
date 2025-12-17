@@ -26,6 +26,7 @@ services:
       - "traefik.http.routers.backend-dev.rule=Host(`dev.org-note.com`) && PathPrefix(`/api`)"
       - "traefik.http.routers.backend-dev.entrypoints=websecure"
       - "traefik.http.routers.backend-dev.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.backend-dev.priority=100"
       - "traefik.http.routers.backend-dev.middlewares=backend-dev-strip"
       - "traefik.http.middlewares.backend-dev-strip.stripprefix.prefixes=/api"
       - "traefik.http.services.backend-dev.loadbalancer.server.port=3000"

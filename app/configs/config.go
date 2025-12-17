@@ -15,9 +15,7 @@ type Config struct {
 	MediaPath                string
 	GithubID                 string
 	GithubSecret             string
-	BackendSchema            string
-	BackendPort              string
-	BackendDomain            string
+	BackendURL               string
 	ClientAddress            string
 	MobileAppName            string
 	AccessCheckerURL         *string
@@ -39,12 +37,7 @@ type Config struct {
 }
 
 func (c *Config) BackendHost() string {
-	host := c.BackendSchema + "://" + c.BackendDomain
-	if c.BackendPort != "" {
-		host += ":" + c.BackendPort
-	}
-	// TODO: master add version to environment and config
-	return host + "/v1"
+	return c.BackendURL
 }
 
 // TODO: master split into several functions
@@ -77,10 +70,9 @@ func NewConfig() Config {
 		clientAddress = envClientAddress
 	}
 
-	backendDomain := os.Getenv("BACKEND_DOMAIN")
-	backendSchema := os.Getenv("BACKEND_SCHEMA")
-	if backendDomain == "" || backendSchema == "" {
-		log.Fatal().Msg("BACKEND_DOMAIN or BACKEND_SCHEMA is not set")
+	backendURL := os.Getenv("BACKEND_URL")
+	if backendURL == "" {
+		log.Fatal().Msg("BACKEND_URL is not set")
 	}
 
 	envAccessCheckURL := os.Getenv("ACCESS_CHECK_URL")
@@ -117,7 +109,7 @@ func NewConfig() Config {
 		}
 	}
 
-	backendPort := os.Getenv("BACKEND_PORT")
+
 
 	s3Endpoint := os.Getenv("S3_ENDPOINT")
 	s3AccessKey := os.Getenv("S3_ACCESS_KEY")
@@ -154,9 +146,7 @@ func NewConfig() Config {
 		GithubID:                 envGithubID,
 		GithubSecret:             envGithubSecret,
 		ClientAddress:            clientAddress,
-		BackendSchema:            backendSchema,
-		BackendDomain:            backendDomain,
-		BackendPort:              backendPort,
+		BackendURL:               backendURL,
 		AccessCheckerURL:         &envAccessCheckURL,
 		AccessCheckToken:         accessCheckToken,
 		AccessTokenCacheLifeTime: accessTokenCacheLifeTime,
