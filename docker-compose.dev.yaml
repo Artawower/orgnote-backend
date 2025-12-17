@@ -53,7 +53,9 @@ services:
     container_name: orgnote-client-dev
     restart: always
     environment:
-      - DISABLE_LOGGER=1
+      - DISABLE_LOGGER=0
+      - DEBUG=true
+      - DEBUGGING=true
     networks:
       - orgnote-dev-network
       - traefik-network
