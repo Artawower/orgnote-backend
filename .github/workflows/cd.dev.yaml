@@ -8,14 +8,17 @@ on:
       - completed
     branches:
       - dev
+  repository_dispatch:
+    types: [trigger-deploy-dev]
 
 jobs:
   deploy:
     name: Deploy Dev
     runs-on: ubuntu-latest
     if: >
-      ${{ github.event.workflow_run.conclusion == 'success' && 
-      github.event.workflow_run.head_branch == 'dev' }}
+      ${{ (github.event_name == 'repository_dispatch') ||
+      (github.event.workflow_run.conclusion == 'success' && 
+      github.event.workflow_run.head_branch == 'dev') }}
     environment: dev
     steps:
       - name: Deploy to dev

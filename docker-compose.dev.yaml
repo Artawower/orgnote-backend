@@ -48,11 +48,8 @@ services:
       - "traefik.http.services.cors-dev.loadbalancer.server.port=3030"
       - "traefik.docker.network=traefik-network"
 
-  # TODO: [PLAN] Add orgnote/client:dev image build in orgnote-client CI/CD
-  # - Add push_client_image_dev job for dev branch
-  # - Add trigger_backend_dev to dispatch orgnote-backend dev deployment
   orgnote-client-dev:
-    image: orgnote/client:latest
+    image: orgnote/client:dev
     container_name: orgnote-client-dev
     restart: always
     environment:
