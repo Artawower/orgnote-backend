@@ -29,11 +29,10 @@ deploy-prod:
     docker compose -f docker-compose.db.prod.yaml -f docker-compose.prod.yaml --env-file .env.prod up -d --build
 
 prod-down:
-    docker compose -f docker-compose.prod.yaml down
-    docker compose -f docker-compose.db.prod.yaml down
+    docker compose -f docker-compose.db.prod.yaml -f docker-compose.prod.yaml down
 
 prod-logs:
-    docker compose -f docker-compose.prod.yaml logs -f
+    docker compose -f docker-compose.db.prod.yaml -f docker-compose.prod.yaml logs -f
 
 prod-logs-backend:
     docker logs orgnote-backend-prod -f
@@ -45,11 +44,10 @@ deploy-dev:
     docker compose -f docker-compose.db.dev.yaml -f docker-compose.dev.yaml --env-file .env.dev up -d --build
 
 dev-down:
-    docker compose -f docker-compose.dev.yaml down
-    docker compose -f docker-compose.db.dev.yaml down
+    docker compose -f docker-compose.db.dev.yaml -f docker-compose.dev.yaml down
 
 dev-logs:
-    docker compose -f docker-compose.dev.yaml logs -f
+    docker compose -f docker-compose.db.dev.yaml -f docker-compose.dev.yaml logs -f
 
 dev-logs-backend:
     docker logs orgnote-backend-dev -f
