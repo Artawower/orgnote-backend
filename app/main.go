@@ -20,6 +20,8 @@ import (
 	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"golang.org/x/oauth2"
+	oauth2github "golang.org/x/oauth2/github"
 )
 
 // @title Org Note API
@@ -117,6 +119,16 @@ func main() {
 	notificationService := services.NewNotificationService(wsHandler)
 
 	userService := services.NewUserService(userRepository, subscriptionAPI)
+
+	githubProvider := services.NewGitHubProvider(&oauth2.Config{
+		ClientID:     config.GithubID,
+		ClientSecret: config.GithubSecret,
+		RedirectURL:  config.BackendHost() + "/auth/github/callback",
+		Scopes:       []string{"user:email"},
+		Endpoint:     oauth2github.Endpoint,
+	})
+	authService := services.NewAuthService(userService, githubProvider)
+
 	syncService := services.NewSyncService(
 		fileMetadataRepository,
 		notificationService,
@@ -133,7 +145,7 @@ func main() {
 	}, config)
 
 	handlers.RegisterSwagger(api, config)
-	handlers.RegisterAuthHandler(api, userService, config, authMiddleware)
+	handlers.RegisterAuthHandler(api, authService, userService, config, authMiddleware)
 	handlers.RegisterSyncHandler(api, syncService, authMiddleware, accessMiddleware)
 	handlers.RegisterSystemInfoHandler(api, orgNoteMetaService)
 

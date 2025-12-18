@@ -1,8 +1,6 @@
 package handlers
 
 import (
-	"bytes"
-	"encoding/gob"
 	"encoding/json"
 	"net/url"
 	"orgnote/app/configs"
@@ -12,39 +10,19 @@ import (
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/markbates/goth"
-	"github.com/markbates/goth/providers/github"
 	"github.com/rs/zerolog/log"
-	"github.com/shareed2k/goth_fiber"
+)
+
+const (
+	authLoginPath = "/auth/login"
 )
 
 type OAuthRedirectData struct {
 	RedirectURL string `json:"redirectUrl"`
 }
 
-func mapToUser(user goth.User) *models.User {
-	return &models.User{
-		Provider:            user.Provider,
-		Email:               user.Email,
-		Name:                user.Name,
-		NickName:            user.NickName,
-		AvatarURL:           user.AvatarURL,
-		ExternalID:          user.UserID,
-		FirstName:           user.FirstName,
-		LastName:            user.LastName,
-		Token:               user.AccessToken,
-		RefreshToken:        &user.RefreshToken,
-		TokenExpirationDate: user.ExpiresAt,
-		ProfileURL:          user.RawData["html_url"].(string),
-		APITokens:           []models.APIToken{},
-		// TODO: master get this values from environment
-		SpaceLimit: 0,
-		UsedSpace:  0,
-		Active:     nil,
-	}
-}
-
 type AuthHandler struct {
+	authService    *services.AuthService
 	userService    *services.UserService
 	config         configs.Config
 	authMiddleware fiber.Handler
@@ -69,17 +47,17 @@ type State struct {
 // @Failure      500  {object}  handlers.HttpError[any]
 // @Router       /auth/{provider}/login  [get]
 func (a *AuthHandler) Login(c *fiber.Ctx) error {
-	goth_fiber.SetState(c)
-	url, err := goth_fiber.GetAuthURL(c)
+	provider := c.Params("provider")
+	state := c.Query("state")
+
+	authURL, err := a.authService.GetAuthURL(provider, state)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).SendString(err.Error())
 	}
-	// return c.Redirect(url, fiber.StatusTemporaryRedirect)
-	log.Info().Msgf("Redirecting to %s", url)
-	data := NewHttpResponse[OAuthRedirectData, any](OAuthRedirectData{
-		RedirectURL: url,
-	}, nil)
-	return c.JSON(data)
+
+	return c.JSON(NewHttpResponse[OAuthRedirectData, any](OAuthRedirectData{
+		RedirectURL: authURL,
+	}, nil))
 }
 
 // LoginCallback godoc
@@ -95,65 +73,77 @@ func (a *AuthHandler) Login(c *fiber.Ctx) error {
 // @Failure      500  {object}  handlers.HttpError[any]
 // @Router       /auth/{provider}/callback  [get]
 func (a *AuthHandler) LoginCallback(c *fiber.Ctx) error {
-	user, err := goth_fiber.CompleteUserAuth(c)
-	if err != nil {
-		log.Error().Err(err).Msgf("auth handlers: github auth handler: complete user auth")
-		return c.Status(fiber.StatusInternalServerError).SendString("Internal server error")
-	}
-	var userBytes bytes.Buffer
-	enc := gob.NewEncoder(&userBytes)
-	err = enc.Encode(user)
-	if err != nil {
-		log.Error().Err(err).Msgf("auth handlers: github auth handler: encode user: %v", err)
-		return c.Status(fiber.StatusInternalServerError).SendString("Internal server error")
-	}
-	u, err := a.userService.Login(*mapToUser(user))
-	if err != nil {
-		log.Error().Err(err).Msgf("auth handlers: github auth handler: login user %v", err)
-		return c.Status(fiber.StatusInternalServerError).SendString("Internal server error")
-	}
-	// TODO: master client url for redirect. Read from env
-	state := goth_fiber.GetState(c)
-	redirectURL := a.getLoginCallbackURL(state)
-	parsedURL, err := url.Parse(redirectURL)
-	if err != nil {
-		log.Error().Err(err).Msgf("auth handlers: github auth handler: parse redirect url %v", err)
+	provider := c.Params("provider")
+	code := c.Query("code")
+	state := c.Query("state")
+
+	if code == "" {
+		return c.Status(fiber.StatusBadRequest).SendString("code is required")
 	}
 
-	q := parsedURL.Query()
-	q.Set("token", u.Token)
-	q.Set("id", u.ID.Hex())
-	q.Set("username", u.NickName)
-	q.Set("avatarUrl", u.AvatarURL)
-	q.Set("email", u.Email)
-	q.Set("profileUrl", u.ProfileURL)
-	q.Set("provider", u.Provider)
-	q.Set("spaceLimit", strconv.FormatInt(u.SpaceLimit, 10))
-	if u.Active != nil {
-		q.Set("active", *u.Active)
+	user, err := a.authService.Login(c.Context(), provider, code)
+	if err != nil {
+		log.Error().Err(err).Str("provider", provider).Msg("auth handlers: login failed")
+		return c.Status(fiber.StatusInternalServerError).SendString("Authentication failed")
 	}
-	q.Set("usedSpace", strconv.FormatInt(u.UsedSpace, 10))
-	q.Set("state", state)
-	parsedURL.RawQuery = q.Encode()
 
-	return c.Redirect(redirectURL + "?" + parsedURL.RawQuery)
+	redirectURL := a.buildClientRedirectURL(state, user)
+	return c.Redirect(redirectURL, fiber.StatusTemporaryRedirect)
 }
 
-func (a *AuthHandler) getLoginCallbackURL(state string) string {
-	parsedState := State{}
-	URL := a.config.ClientAddress
+func (a *AuthHandler) buildClientRedirectURL(state string, u *models.User) string {
+	baseURL := a.getLoginCallbackURL(state)
 
-	err := json.Unmarshal([]byte(state), &parsedState)
-	if err != nil {
-		log.Error().Err(err).Msgf("auth handlers: github auth handler: unmarshal state")
-		return URL + "/#/auth/login"
+	query := url.Values{}
+	query.Set("token", u.Token)
+	query.Set("id", u.ID.Hex())
+	query.Set("username", u.NickName)
+	query.Set("avatarUrl", u.AvatarURL)
+	query.Set("email", u.Email)
+	query.Set("profileUrl", u.ProfileURL)
+	query.Set("provider", u.Provider)
+	query.Set("spaceLimit", strconv.FormatInt(u.SpaceLimit, 10))
+	query.Set("usedSpace", strconv.FormatInt(u.UsedSpace, 10))
+	query.Set("state", state)
+	if u.Active != nil {
+		query.Set("active", *u.Active)
+	}
+
+	baseURL.RawQuery = query.Encode()
+	return baseURL.String()
+}
+
+func (a *AuthHandler) getLoginCallbackURL(state string) *url.URL {
+	parsedState := State{}
+
+	if err := json.Unmarshal([]byte(state), &parsedState); err != nil {
+		log.Error().Err(err).Msg("auth handlers: unmarshal state")
+		return buildURL(a.config.ClientAddress, authLoginPath)
 	}
 
 	if parsedState.Environment == "mobile" {
-		URL = a.config.MobileAppName + ":/"
-		return URL + "/auth/login"
+		return &url.URL{
+			Scheme: a.config.MobileAppName,
+			Host:   "auth",
+			Path:   "/login",
+		}
 	}
-	return URL + "/#/auth/login"
+
+	if parsedState.Environment == "electron" {
+		parsed, _ := url.Parse(a.config.ElectronCallbackURL)
+		return parsed
+	}
+
+	return buildURL(a.config.ClientAddress, authLoginPath)
+}
+
+func buildURL(base string, path string) *url.URL {
+	parsed, err := url.Parse(base)
+	if err != nil {
+		return &url.URL{Path: path}
+	}
+	parsed.Path = path
+	return parsed
 }
 
 // Logout godoc
@@ -166,12 +156,7 @@ func (a *AuthHandler) getLoginCallbackURL(state string) string {
 // @Failure      500  {object}  handlers.HttpError[any]
 // @Router       /auth/logout  [get]
 func (a *AuthHandler) Logout(c *fiber.Ctx) error {
-	if err := goth_fiber.Logout(c); err != nil {
-		log.Error().Err(err).Msgf("auth handlers: github auth handler: logout")
-		return c.Status(500).SendString("Internal server error")
-	}
-	// TODO: master delete user token here
-	// c.SendString("logout")
+	// TODO: invalidate user token here if needed
 	return c.Status(200).JSON(struct{}{})
 }
 
@@ -323,16 +308,9 @@ func (a *AuthHandler) Subscribe(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(NewHttpResponse[any, any](nil, nil))
 }
 
-// TODO: master refactor this code.
-func RegisterAuthHandler(app fiber.Router, userService *services.UserService, config configs.Config, authMiddleware fiber.Handler) {
-	redirectURL := config.BackendHost() + "/auth/github/callback"
-	log.Info().Msgf("Redirect url: %s", redirectURL)
-
-	goth.UseProviders(
-		github.New(config.GithubID, config.GithubSecret, redirectURL),
-	)
-
+func RegisterAuthHandler(app fiber.Router, authService *services.AuthService, userService *services.UserService, config configs.Config, authMiddleware fiber.Handler) {
 	authHandler := &AuthHandler{
+		authService:    authService,
 		userService:    userService,
 		config:         config,
 		authMiddleware: authMiddleware,

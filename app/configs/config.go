@@ -18,6 +18,7 @@ type Config struct {
 	BackendURL               string
 	ClientAddress            string
 	MobileAppName            string
+	ElectronCallbackURL      string
 	AccessCheckerURL         *string
 	AccessCheckToken         *string
 	AccessTokenCacheLifeTime int
@@ -138,6 +139,11 @@ func NewConfig() Config {
 		}
 	}
 
+	electronCallbackURL := "http://127.0.0.1:17432/auth/login"
+	if envElectronCallbackURL := os.Getenv("ELECTRON_CALLBACK_URL"); envElectronCallbackURL != "" {
+		electronCallbackURL = envElectronCallbackURL
+	}
+
 	config := Config{
 		AppAddress:               appAddress,
 		MongoURI:                 mongoURI,
@@ -153,6 +159,7 @@ func NewConfig() Config {
 		MaxFileSize:              maxFileSize,
 		TombstoneTTL:             tombstoneTTL,
 		MobileAppName:            "orgnote",
+		ElectronCallbackURL:      electronCallbackURL,
 
 		GithubClientOwner:    "artawower",
 		GithubClientRepoName: "orgnote-client",

@@ -28,4 +28,5 @@ services:
 
 networks:
   orgnote-local-network:
-    external: true
+    name: orgnote-local-network
+    driver: bridge
