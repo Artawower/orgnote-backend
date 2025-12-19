@@ -21,11 +21,11 @@ func NewUserService(userRepository *repositories.UserRepository, subscriptionAPI
 	return &UserService{userRepository, subscriptionAPI}
 }
 
-func (u *UserService) Login(user models.User) (*models.User, error) {
-	log.Info().Msgf("Login user: %v", user)
+func (u *UserService) FindOrCreate(user models.User) (*models.User, error) {
+	log.Info().Str("provider", user.Provider).Str("externalId", user.ExternalID).Msg("Find or create user")
 	createdUser, err := u.userRepository.CreateOrGet(user)
 	if err != nil {
-		return nil, fmt.Errorf("user service: login: %v", err)
+		return nil, fmt.Errorf("user service: find or create: %v", err)
 	}
 	return createdUser, nil
 }

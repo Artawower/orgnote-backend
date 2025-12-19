@@ -66,11 +66,13 @@ services:
       - "traefik.http.routers.client-dev.entrypoints=websecure"
       - "traefik.http.routers.client-dev.tls.certresolver=letsencrypt"
       - "traefik.http.routers.client-dev.priority=1"
-      - "traefik.http.services.client-dev.loadbalancer.server.port=3001"
+      - "traefik.http.services.client-dev.loadbalancer.server.port=3000"
       - "traefik.docker.network=traefik-network"
 
 networks:
   orgnote-dev-network:
-    external: true
+    name: orgnote-dev-network
+    driver: bridge
   traefik-network:
     external: true
+    name: traefik-network
