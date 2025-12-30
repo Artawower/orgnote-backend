@@ -89,12 +89,14 @@ func (o *OrgNoteMetaService) RunScheduler() {
 	}
 
 	o.queue = cron.New()
-	o.queue.AddFunc("@every 30m", func() {
+	if _, err := o.queue.AddFunc("@every 30m", func() {
 		err := o.LoadClientMeta()
 		if err != nil {
 			log.Error().Msgf("orgnote meta: run scheduler: %s", err)
 		}
-	})
+	}); err != nil {
+		log.Error().Msgf("orgnote meta: add scheduler func: %s", err)
+	}
 
 	o.queue.Start()
 }

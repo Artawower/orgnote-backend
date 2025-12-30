@@ -156,5 +156,7 @@ func main() {
 	}
 
 	log.Info().Msg("Application start debug mode: " + config.AppAddress)
-	app.Listen(config.AppAddress)
+	if err := app.Listen(config.AppAddress); err != nil {
+		log.Fatal().Msgf("main: listen: %s", err)
+	}
 }

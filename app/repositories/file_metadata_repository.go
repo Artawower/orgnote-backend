@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -54,7 +55,9 @@ func (r *FileMetadataRepository) ensureIndexes() {
 		},
 	}
 
-	r.collection.Indexes().CreateMany(ctx, indexes)
+	if _, err := r.collection.Indexes().CreateMany(ctx, indexes); err != nil {
+		log.Error().Msgf("file metadata repository: create indexes: %s", err)
+	}
 }
 
 type VersionMismatchError struct {

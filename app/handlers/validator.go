@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/rs/zerolog/log"
 )
 
 var reservedNamesPattern = regexp.MustCompile(`(?i)^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(\.|$)`)
@@ -22,7 +23,9 @@ type Validator struct {
 
 func NewValidator() *Validator {
 	v := validator.New()
-	v.RegisterValidation("filepath", validateFilePath)
+	if err := v.RegisterValidation("filepath", validateFilePath); err != nil {
+		log.Error().Msgf("validator: register filepath validation: %s", err)
+	}
 	return &Validator{
 		validator: v,
 	}

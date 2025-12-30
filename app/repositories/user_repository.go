@@ -26,7 +26,7 @@ func NewUserRepository(db *mongo.Database) *UserRepository {
 }
 
 func (u *UserRepository) CreateOrGet(user models.User) (*models.User, error) {
-	foundUser, err := u.GetUser(&user)
+	foundUser, _ := u.GetUser(&user)
 
 	if foundUser != nil {
 		updatedUser, err := u.UpdateAuthInfo(user)

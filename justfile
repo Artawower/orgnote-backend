@@ -6,6 +6,14 @@ default:
 
 # === LOCAL DEVELOPMENT ===
 
+# Run linter
+lint:
+    golangci-lint run
+
+# Run linter with auto-fix
+lint-fix:
+    golangci-lint run --fix
+
 # Run tests
 test:
     go test ./...
