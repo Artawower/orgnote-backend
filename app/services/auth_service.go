@@ -30,7 +30,11 @@ func (a *AuthService) GetAuthURL(provider string, state string) (string, error) 
 	if err != nil {
 		return "", err
 	}
-	return p.Config().AuthCodeURL(state, oauth2.AccessTypeOffline), nil
+
+	return p.Config().AuthCodeURL(state,
+		oauth2.AccessTypeOffline,
+		oauth2.SetAuthURLParam("prompt", "select_account"),
+	), nil
 }
 
 func (a *AuthService) Login(ctx context.Context, provider string, code string) (*models.User, error) {
