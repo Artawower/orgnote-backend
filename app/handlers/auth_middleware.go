@@ -26,12 +26,18 @@ func configDefault(config ...Config) Config {
 	return cfg
 }
 
-// TODO: master add config for common arrangements
+func getUserFromContext(c *fiber.Ctx) (*models.User, bool) {
+	user, ok := c.Locals("user").(*models.User)
+	if !ok || user == nil {
+		return nil, false
+	}
+	return user, true
+}
+
 func NewAuthMiddleware() func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
-		rawUser := c.Locals("user")
-		if rawUser == (*models.User)(nil) {
-			return c.Status(fiber.StatusUnauthorized).JSON(NewHttpError[any](ErrInvalidToken, nil))
+		if _, ok := getUserFromContext(c); !ok {
+			return c.Status(fiber.StatusUnauthorized).JSON(NewHttpError[any](ErrAuthRequired, nil))
 		}
 		return c.Next()
 	}

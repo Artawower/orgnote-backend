@@ -22,10 +22,9 @@ type OAuthRedirectData struct {
 }
 
 type AuthHandler struct {
-	authService    *services.AuthService
-	userService    *services.UserService
-	config         configs.Config
-	authMiddleware fiber.Handler
+	authService *services.AuthService
+	userService *services.UserService
+	config      configs.Config
 }
 
 type State struct {
@@ -156,8 +155,7 @@ func buildURL(base string, path string) *url.URL {
 // @Failure      500  {object}  handlers.HttpError[any]
 // @Router       /auth/logout  [get]
 func (a *AuthHandler) Logout(c *fiber.Ctx) error {
-	// TODO: invalidate user token here if needed
-	return c.Status(200).JSON(struct{}{})
+	return c.Status(fiber.StatusOK).JSON(struct{}{})
 }
 
 // CreateApiToken godoc
@@ -170,13 +168,16 @@ func (a *AuthHandler) Logout(c *fiber.Ctx) error {
 // @Failure      500  {object}  handlers.HttpError[any]
 // @Router       /auth/token  [post]
 func (a *AuthHandler) CreateToken(c *fiber.Ctx) error {
-	user := c.Locals("user").(*models.User)
+	user, ok := getUserFromContext(c)
+	if !ok {
+		return c.Status(fiber.StatusUnauthorized).JSON(NewHttpError[any](ErrAuthRequired, nil))
+	}
 	token, err := a.userService.CreateToken(user)
 	if err != nil {
 		log.Error().Err(err).Msgf("auth handlers: github auth handler: create token")
-		return c.Status(500).SendString("Internal server error")
+		return c.Status(fiber.StatusInternalServerError).SendString("Internal server error")
 	}
-	return c.Status(200).JSON(NewHttpResponse[*models.APIToken, any](token, nil))
+	return c.Status(fiber.StatusOK).JSON(NewHttpResponse[*models.APIToken, any](token, nil))
 }
 
 type ParamsDeleteToken struct {
@@ -194,7 +195,10 @@ type ParamsDeleteToken struct {
 // @Failure      500  {object}  handlers.HttpError[any]
 // @Router       /auth/token/{tokenId}  [delete]
 func (a *AuthHandler) DeleteToken(c *fiber.Ctx) error {
-	user := c.Locals("user").(*models.User)
+	user, ok := getUserFromContext(c)
+	if !ok {
+		return c.Status(fiber.StatusUnauthorized).JSON(NewHttpError[any](ErrAuthRequired, nil))
+	}
 	b := new(ParamsDeleteToken)
 	if err := c.ParamsParser(b); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(NewHttpError[any]("Token doesn't provided", nil))
@@ -205,9 +209,9 @@ func (a *AuthHandler) DeleteToken(c *fiber.Ctx) error {
 	err := a.userService.DeleteToken(user, b.TokenID)
 	if err != nil {
 		log.Error().Err(err).Msgf("auth handlers: github auth handler: delete token")
-		return c.Status(500).SendString("Internal server error")
+		return c.Status(fiber.StatusInternalServerError).SendString("Internal server error")
 	}
-	return c.Status(200).JSON(NewHttpResponse[any, any](nil, nil))
+	return c.Status(fiber.StatusOK).JSON(NewHttpResponse[any, any](nil, nil))
 }
 
 // VerifyUser godoc
@@ -223,12 +227,12 @@ func (a *AuthHandler) DeleteToken(c *fiber.Ctx) error {
 func (a *AuthHandler) VerifyUser(c *fiber.Ctx) error {
 	token := tools.ExtractBearerTokenFromCtx(c)
 	if token == "" {
-		return c.Status(fiber.StatusUnauthorized).JSON(NewHttpError[any](ErrTokenNotProvided, nil))
+		return c.Status(fiber.StatusUnauthorized).JSON(NewHttpError[any](ErrAuthRequired, nil))
 	}
 	user, err := a.userService.FindUser(token)
 	if err != nil {
 		log.Info().Err(err).Msgf("auth handlers: github auth handler: find user")
-		return c.Status(fiber.StatusBadRequest).SendString(ErrInvalidToken)
+		return c.Status(fiber.StatusUnauthorized).JSON(NewHttpError[any](ErrAuthRequired, nil))
 	}
 	return c.Status(fiber.StatusOK).JSON(NewHttpResponse[*models.UserPersonalInfo, any](user, nil))
 }
@@ -244,11 +248,10 @@ func (a *AuthHandler) VerifyUser(c *fiber.Ctx) error {
 // @Failure      400  {object}  handlers.HttpError[any]
 // @Router       /auth/api-tokens  [get]
 func (a *AuthHandler) GetAPITokens(c *fiber.Ctx) error {
-	ctxUser := c.Locals("user")
-	if ctxUser == (*models.User)(nil) {
-		return c.Status(fiber.StatusBadRequest).SendString("Could not find api tokens for current user")
+	user, ok := getUserFromContext(c)
+	if !ok {
+		return c.Status(fiber.StatusUnauthorized).JSON(NewHttpError[any](ErrAuthRequired, nil))
 	}
-	user := c.Locals("user").(*models.User)
 	tokens, err := a.userService.GetAPITokens(user.ID.Hex())
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).SendString("Could not find api tokens for current user")
@@ -266,7 +269,10 @@ func (a *AuthHandler) GetAPITokens(c *fiber.Ctx) error {
 // @Failure      500  {object}  handlers.HttpError[any]
 // @Router       /auth/account  [delete]
 func (a *AuthHandler) DeleteUserAccount(c *fiber.Ctx) error {
-	user := c.Locals("user").(*models.User)
+	user, ok := getUserFromContext(c)
+	if !ok {
+		return c.Status(fiber.StatusUnauthorized).JSON(NewHttpError[any](ErrAuthRequired, nil))
+	}
 
 	err := a.userService.DeleteUser(user)
 	if err != nil {
@@ -292,7 +298,10 @@ type SubscribeBody struct {
 // @Failure      500  {object}  handlers.HttpError[any]
 // @Router       /auth/subscribe  [post]
 func (a *AuthHandler) Subscribe(c *fiber.Ctx) error {
-	user := c.Locals("user").(*models.User)
+	user, ok := getUserFromContext(c)
+	if !ok {
+		return c.Status(fiber.StatusUnauthorized).JSON(NewHttpError[any](ErrAuthRequired, nil))
+	}
 
 	body := new(SubscribeBody)
 
@@ -308,21 +317,27 @@ func (a *AuthHandler) Subscribe(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(NewHttpResponse[any, any](nil, nil))
 }
 
-func RegisterAuthHandler(app fiber.Router, authService *services.AuthService, userService *services.UserService, config configs.Config, authMiddleware fiber.Handler) {
+func RegisterAuthHandler(
+	app fiber.Router,
+	authService *services.AuthService,
+	userService *services.UserService,
+	config configs.Config,
+	authMiddleware fiber.Handler,
+	activeMiddleware fiber.Handler,
+) {
 	authHandler := &AuthHandler{
-		authService:    authService,
-		userService:    userService,
-		config:         config,
-		authMiddleware: authMiddleware,
+		authService: authService,
+		userService: userService,
+		config:      config,
 	}
 
 	app.Get("/auth/:provider/login", authHandler.Login)
 	app.Get("/auth/:provider/callback", authHandler.LoginCallback)
 	app.Get("/auth/logout", authHandler.Logout)
-	app.Post("/auth/token", authMiddleware, authHandler.CreateToken)
-	app.Delete("/auth/token/:tokenId", authMiddleware, authHandler.DeleteToken)
+	app.Post("/auth/token", authMiddleware, activeMiddleware, authHandler.CreateToken)
+	app.Delete("/auth/token/:tokenId", authMiddleware, activeMiddleware, authHandler.DeleteToken)
 	app.Get("/auth/verify", authHandler.VerifyUser)
-	app.Get("/auth/api-tokens", authHandler.GetAPITokens)
+	app.Get("/auth/api-tokens", authMiddleware, activeMiddleware, authHandler.GetAPITokens)
 	app.Post("/auth/subscribe", authMiddleware, authHandler.Subscribe)
 	app.Delete("/auth/account", authMiddleware, authHandler.DeleteUserAccount)
 }

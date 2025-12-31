@@ -113,6 +113,10 @@ func main() {
 
 	authMiddleware := handlers.NewAuthMiddleware()
 	accessMiddleware := handlers.NewAccessMiddleware(subscriptionAPI)
+	activeMiddleware := handlers.NewActiveMiddleware(handlers.ActiveMiddlewareConfig{
+		AccessCheckerURL:   config.AccessCheckerURL,
+		AccessCheckerToken: config.AccessCheckToken,
+	})
 
 	wsHandler := handlers.NewWebSocketHandler()
 	handlers.RegisterWebSocketHandler(app, authMiddleware, wsHandler)
@@ -145,7 +149,7 @@ func main() {
 	}, config)
 
 	handlers.RegisterSwagger(api, config)
-	handlers.RegisterAuthHandler(api, authService, userService, config, authMiddleware)
+	handlers.RegisterAuthHandler(api, authService, userService, config, authMiddleware, activeMiddleware)
 	handlers.RegisterSyncHandler(api, syncService, authMiddleware, accessMiddleware)
 	handlers.RegisterSystemInfoHandler(api, orgNoteMetaService)
 
