@@ -33,6 +33,14 @@ local:
 local-down:
     docker compose -f docker-compose.db.local.yaml -f docker-compose.local.yaml --env-file .env down
 
+# iOS local development (uses .env.ios with separate GitHub OAuth App)
+local-ios:
+    docker compose -f docker-compose.db.local.yaml -f docker-compose.local.yaml -f docker-compose.local.ios.yaml up -d orgnote-mongo-local orgnote-minio-local orgnote-minio-init-local
+    docker compose -f docker-compose.db.local.yaml -f docker-compose.local.yaml -f docker-compose.local.ios.yaml up --build orgnote-backend-local
+
+local-ios-down:
+    docker compose -f docker-compose.db.local.yaml -f docker-compose.local.yaml -f docker-compose.local.ios.yaml down
+
 # === TRAEFIK (shared) ===
 
 traefik:
