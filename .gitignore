@@ -20,6 +20,7 @@ _testmain.go
 .env.prod
 .env.dev
 .env.traefik
+.env.ios
 !.env.example
 
 media/*
