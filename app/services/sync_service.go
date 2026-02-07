@@ -94,7 +94,11 @@ func (s *SyncService) UploadFile(userID primitive.ObjectID, filePath string, con
 		return nil, fmt.Errorf("sync service: upload: get total size: %v", err)
 	}
 
-	if spaceLimit > 0 && currentUsage+int64(len(content)) > spaceLimit {
+	if spaceLimit <= 0 {
+		return nil, ErrNoStorageQuota
+	}
+
+	if currentUsage+int64(len(content)) > spaceLimit {
 		return nil, ErrStorageQuotaExceeded
 	}
 

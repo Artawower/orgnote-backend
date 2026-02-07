@@ -3,6 +3,7 @@ package services
 import "errors"
 
 var (
+	ErrNoStorageQuota       = errors.New("no storage quota: subscription required")
 	ErrStorageQuotaExceeded = errors.New("storage limit exceeded")
 	ErrFileNotFound         = errors.New("file not found")
 	ErrFileDeleted          = errors.New("file deleted")

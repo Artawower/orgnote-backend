@@ -149,6 +149,8 @@ func (h *SyncHandler) handleError(c *fiber.Ctx, err error, context string) error
 	}
 
 	switch {
+	case errors.Is(err, services.ErrNoStorageQuota):
+		return c.Status(http.StatusForbidden).JSON(NewHttpError[any]("no storage quota: active subscription required", nil))
 	case errors.Is(err, services.ErrStorageQuotaExceeded):
 		return c.Status(http.StatusRequestEntityTooLarge).JSON(NewHttpError[any]("storage limit exceeded", nil))
 	case errors.Is(err, services.ErrFileTooLarge):
@@ -233,8 +235,10 @@ func (h *SyncHandler) UploadFile(c *fiber.Ctx) error {
 		return h.badRequest(c, err.Error())
 	}
 
+	spaceLimit, _ := c.Locals(SpaceLimitKey).(int64)
+
 	clientSocketID := c.Get(SocketIDHeader)
-	result, err := h.syncService.UploadFile(user.ID, req.FilePath, req.FileContent, req.ClientHash, user.SpaceLimit, req.ExpectedVersion, clientSocketID)
+	result, err := h.syncService.UploadFile(user.ID, req.FilePath, req.FileContent, req.ClientHash, spaceLimit, req.ExpectedVersion, clientSocketID)
 	if err != nil {
 		return h.handleError(c, err, "sync handler: upload")
 	}
