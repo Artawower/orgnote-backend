@@ -7,7 +7,7 @@ import (
 )
 
 type Subscription interface {
-	Check(provider string, eternalID string, occupiedSpace int64, err chan<- error)
+	Check(provider string, externalID string) error
 }
 
 func NewAccessMiddleware(subscription Subscription) func(*fiber.Ctx) error {
@@ -18,11 +18,7 @@ func NewAccessMiddleware(subscription Subscription) func(*fiber.Ctx) error {
 			return c.Status(fiber.StatusBadRequest).JSON(NewHttpError[any](ErrAuthRequired, nil))
 		}
 
-		err := make(chan error)
-
-		go subscription.Check(user.Provider, user.ExternalID, user.UsedSpace, err)
-
-		if err := <-err; err != nil {
+		if err := subscription.Check(user.Provider, user.ExternalID); err != nil {
 			return c.Status(fiber.StatusForbidden).JSON(NewHttpError[any](ErrAccessDenied, err.Error()))
 		}
 

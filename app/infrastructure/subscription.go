@@ -38,17 +38,10 @@ func (e *SubscriptionRequestError) Error() string {
 	return "access check request error, got status code " + strconv.FormatInt(int64(e.code), 10)
 }
 
-func (a *SubscriptionAPI) checkAvailability(info SubscriptionInfo, usedSpace int64) error {
+func (a *SubscriptionAPI) checkIsActive(info SubscriptionInfo) error {
 	if !info.IsActive {
 		return fmt.Errorf("user %s is not active", info.Email)
 	}
-
-	usedSpaceMb := tools.ConvertBytes2Megabyte(usedSpace)
-	spaceLimit := tools.ConvertBytes2Megabyte(int64(info.SpaceLimit))
-	if (spaceLimit - usedSpaceMb) < 0 {
-		return fmt.Errorf("user %s has no space left, %v/%v are used", info.Email, usedSpaceMb, spaceLimit)
-	}
-
 	return nil
 }
 
@@ -93,26 +86,30 @@ func (a *SubscriptionAPI) getInfo(provider string, externalID string) (*Subscrip
 		return nil, err
 	}
 
-	a.cache.Set(externalID, *accessInfo, cache.WithExpiration(time.Duration(a.cacheLifeTime)*time.Minute))
+	a.cache.Set(key, *accessInfo, cache.WithExpiration(time.Duration(a.cacheLifeTime)*time.Minute))
 
 	return accessInfo, err
 }
 
-func (a *SubscriptionAPI) Check(provider string, externalID string, usedSpace int64, errCh chan<- error) {
-	// TODO: add cache here
+func (a *SubscriptionAPI) Check(provider string, externalID string) error {
 	if tools.IsEmpty(a.checkURL) || tools.IsEmpty(a.checkToken) {
-		errCh <- nil
-		return
+		return nil
 	}
 
 	accessInfo, err := a.getInfo(provider, externalID)
-
 	if err != nil {
-		errCh <- err
-		return
+		return err
 	}
 
-	errCh <- a.checkAvailability(*accessInfo, usedSpace)
+	return a.checkIsActive(*accessInfo)
+}
+
+func (a *SubscriptionAPI) GetInfo(provider string, externalID string) (*SubscriptionInfo, error) {
+	if tools.IsEmpty(a.checkURL) || tools.IsEmpty(a.checkToken) {
+		return nil, nil
+	}
+
+	return a.getInfo(provider, externalID)
 }
 
 func (a *SubscriptionAPI) addAuthHeader(ctx context.Context, req *http.Request) error {
