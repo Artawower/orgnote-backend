@@ -13,12 +13,13 @@ import (
 )
 
 type UserService struct {
-	userRepository  *repositories.UserRepository
-	subscriptionAPI *infrastructure.SubscriptionAPI
+	userRepository       *repositories.UserRepository
+	fileMetadataRepo     *repositories.FileMetadataRepository
+	subscriptionAPI      *infrastructure.SubscriptionAPI
 }
 
-func NewUserService(userRepository *repositories.UserRepository, subscriptionAPI *infrastructure.SubscriptionAPI) *UserService {
-	return &UserService{userRepository, subscriptionAPI}
+func NewUserService(userRepository *repositories.UserRepository, fileMetadataRepo *repositories.FileMetadataRepository, subscriptionAPI *infrastructure.SubscriptionAPI) *UserService {
+	return &UserService{userRepository, fileMetadataRepo, subscriptionAPI}
 }
 
 func (u *UserService) FindOrCreate(user models.User) (*models.User, error) {
@@ -43,7 +44,13 @@ func (u *UserService) FindUser(token string) (*models.UserPersonalInfo, error) {
 	if err != nil {
 		return nil, fmt.Errorf("user service: find user: %v", err)
 	}
-	return mapToUserPersonalInfo(user), nil
+
+	usedSpace, err := u.fileMetadataRepo.GetTotalSize(user.ID)
+	if err != nil {
+		return nil, fmt.Errorf("user service: find user: get used space: %v", err)
+	}
+
+	return mapToUserPersonalInfo(user, usedSpace), nil
 }
 
 func (u *UserService) CreateToken(user *models.User) (*models.APIToken, error) {
@@ -105,7 +112,7 @@ func (u *UserService) Subscribe(user *models.User, token string, emailAddress *s
 	return nil
 }
 
-func mapToUserPersonalInfo(user *models.User) *models.UserPersonalInfo {
+func mapToUserPersonalInfo(user *models.User, usedSpace int64) *models.UserPersonalInfo {
 	return &models.UserPersonalInfo{
 		ID:         user.ID.Hex(),
 		Name:       user.Name,
@@ -114,7 +121,7 @@ func mapToUserPersonalInfo(user *models.User) *models.UserPersonalInfo {
 		Email:      user.Email,
 		ProfileURL: user.ProfileURL,
 		SpaceLimit: user.SpaceLimit,
-		UsedSpace:  user.UsedSpace,
+		UsedSpace:  usedSpace,
 		Active:     user.Active,
 	}
 }

@@ -124,7 +124,7 @@ func main() {
 	handlers.RegisterWebSocketHandler(app, authMiddleware, wsHandler)
 	notificationService := services.NewNotificationService(wsHandler)
 
-	userService := services.NewUserService(userRepository, subscriptionAPI)
+	userService := services.NewUserService(userRepository, fileMetadataRepository, subscriptionAPI)
 
 	githubProvider := services.NewGitHubProvider(&oauth2.Config{
 		ClientID:     config.GithubID,
