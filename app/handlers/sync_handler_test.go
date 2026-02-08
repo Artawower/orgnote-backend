@@ -17,6 +17,12 @@ func TestValidateFilePath_Valid(t *testing.T) {
 		"readme.md",
 		"notes/my.note.org",
 		"заметки/файл.org",
+		"programming/rust/Rust. Borrowing..org",
+		"programming/rust/Rust. Type alias..org",
+		"notes/file..org",
+		"notes/some..thing.org",
+		"notes/file...txt",
+		"notes/Mr.. Smith.org",
 	}
 
 	for _, path := range tests {
@@ -36,9 +42,10 @@ func TestValidateFilePath_Invalid(t *testing.T) {
 		desc string
 	}{
 		{"", "empty path"},
-
-		{"notes/../secret/file.org", "parent reference"},
-		{"notes/..hidden/file.org", "double dots"},
+		{"notes/../secret/file.org", "path traversal with parent reference"},
+		{"../secret/file.org", "path traversal at start"},
+		{"notes/folder/..", "path traversal as last segment"},
+		{"..", "bare path traversal"},
 		{"notes/CON.txt", "windows reserved CON"},
 		{"PRN/file.org", "windows reserved PRN"},
 		{"folder/NUL", "windows reserved NUL"},

@@ -55,13 +55,13 @@ func (v *Validator) Validate(data interface{}) []ErrorResponse {
 func validateFilePath(fl validator.FieldLevel) bool {
 	path := fl.Field().String()
 
-	if path == "" || strings.Contains(path, "..") {
+	if path == "" {
 		return false
 	}
 
 	normalizedPath := strings.TrimPrefix(path, "/")
 	for _, part := range strings.Split(normalizedPath, "/") {
-		if part == "" || reservedNamesPattern.MatchString(part) {
+		if part == "" || part == ".." || reservedNamesPattern.MatchString(part) {
 			return false
 		}
 	}

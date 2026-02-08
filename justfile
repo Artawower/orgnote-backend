@@ -90,3 +90,25 @@ ps:
 # Check all services status
 status:
     @echo "=== All OrgNote containers ===" && docker ps --filter name=orgnote
+
+# Storage stats per user (local)
+storage-stats:
+    docker exec orgnote-mongo-local mongosh -u dev -p dev --authenticationDatabase admin --quiet orgnote --eval ' \
+      const stats = db.file_metadata.aggregate([ \
+        { $match: { deletedAt: null } }, \
+        { $group: { _id: "$userId", size: { $sum: "$fileSize" }, files: { $sum: 1 } } }, \
+        { $lookup: { from: "users", localField: "_id", foreignField: "_id", as: "user" } }, \
+        { $unwind: { path: "$user", preserveNullAndEmptyArrays: true } }, \
+        { $project: { nick: "$user.nickName", size: 1, files: 1, limit: "$user.spaceLimit" } }, \
+        { $sort: { size: -1 } } \
+      ]).toArray(); \
+      const total = stats.reduce((a, u) => a + u.size, 0); \
+      const mb = b => (b / 1024 / 1024).toFixed(2); \
+      print("=== Storage Stats ==="); \
+      print("Total: " + mb(total) + " MB, Users: " + stats.length); \
+      print("---"); \
+      stats.forEach(u => { \
+        const pct = u.limit > 0 ? ((u.size / u.limit) * 100).toFixed(1) + "%" : "no limit"; \
+        print(u.nick + ": " + mb(u.size) + " / " + mb(u.limit || 0) + " MB (" + pct + "), files: " + u.files); \
+      }); \
+    '
