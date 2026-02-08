@@ -8,7 +8,7 @@ RUN go mod download && go mod verify
 
 COPY app app
 COPY migrations migrations
-RUN go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@latest 
+RUN go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@v1.16.3
 COPY generate-subscription-api.sh generate-subscription-api.sh
 RUN sh generate-subscription-api.sh
 RUN go build -o orgnote app/main.go
