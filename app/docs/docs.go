@@ -998,6 +998,9 @@ const docTemplate = `{
         "models.EnvironmentInfo": {
             "type": "object",
             "properties": {
+                "minClientVersion": {
+                    "type": "string"
+                },
                 "selfHosted": {
                     "type": "boolean"
                 }

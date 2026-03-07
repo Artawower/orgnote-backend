@@ -183,6 +183,8 @@ definitions:
     type: object
   models.EnvironmentInfo:
     properties:
+      minClientVersion:
+        type: string
       selfHosted:
         type: boolean
     type: object

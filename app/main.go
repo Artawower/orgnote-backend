@@ -152,7 +152,8 @@ func main() {
 
 	handlers.RegisterSwagger(api, config)
 	handlers.RegisterAuthHandler(api, authService, userService, config, authMiddleware, activeMiddleware)
-	handlers.RegisterSyncHandler(api, syncService, authMiddleware, accessMiddleware)
+	versionMiddleware := handlers.NewVersionMiddleware(config.MinClientVersion)
+	handlers.RegisterSyncHandler(api, syncService, authMiddleware, accessMiddleware, versionMiddleware)
 	handlers.RegisterSystemInfoHandler(api, orgNoteMetaService)
 
 	app.Static("media", config.MediaPath)

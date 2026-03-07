@@ -28,6 +28,8 @@ type Config struct {
 	GithubClientOwner    string
 	GithubClientRepoName string
 
+	MinClientVersion *string
+
 	S3Endpoint        string
 	S3AccessKey       string
 	S3SecretKey       string
@@ -110,7 +112,10 @@ func NewConfig() Config {
 		}
 	}
 
-
+	var minClientVersion *string
+	if v := os.Getenv("MIN_CLIENT_VERSION"); v != "" {
+		minClientVersion = &v
+	}
 
 	s3Endpoint := os.Getenv("S3_ENDPOINT")
 	s3AccessKey := os.Getenv("S3_ACCESS_KEY")
@@ -163,6 +168,8 @@ func NewConfig() Config {
 
 		GithubClientOwner:    "artawower",
 		GithubClientRepoName: "orgnote-client",
+
+		MinClientVersion: minClientVersion,
 
 		S3Endpoint:        s3Endpoint,
 		S3AccessKey:       s3AccessKey,

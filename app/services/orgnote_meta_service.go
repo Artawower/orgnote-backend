@@ -102,7 +102,13 @@ func (o *OrgNoteMetaService) RunScheduler() {
 }
 
 func (o *OrgNoteMetaService) GetEnvironmentInfo() models.EnvironmentInfo {
+	minClientVersion := ""
+	if o.config.MinClientVersion != nil {
+		minClientVersion = *o.config.MinClientVersion
+	}
+
 	return models.EnvironmentInfo{
-		SelfHosted: tools.IsEmpty(o.config.AccessCheckerURL) || tools.IsEmpty(o.config.AccessCheckToken),
+		SelfHosted:       tools.IsEmpty(o.config.AccessCheckerURL) || tools.IsEmpty(o.config.AccessCheckToken),
+		MinClientVersion: minClientVersion,
 	}
 }

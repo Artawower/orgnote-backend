@@ -339,14 +339,15 @@ func RegisterSyncHandler(
 	syncService *services.SyncService,
 	authMiddleware func(*fiber.Ctx) error,
 	accessMiddleware func(*fiber.Ctx) error,
+	versionMiddleware func(*fiber.Ctx) error,
 ) {
 	handler := &SyncHandler{
 		syncService: syncService,
 		validate:    NewValidator(),
 	}
 
-	app.Get("/sync/changes", authMiddleware, accessMiddleware, handler.GetChanges)
-	app.Put("/sync/files", authMiddleware, accessMiddleware, handler.UploadFile)
-	app.Get("/sync/files", authMiddleware, accessMiddleware, handler.DownloadFile)
-	app.Delete("/sync/files", authMiddleware, accessMiddleware, handler.DeleteFile)
+	app.Get("/sync/changes", authMiddleware, accessMiddleware, versionMiddleware, handler.GetChanges)
+	app.Put("/sync/files", authMiddleware, accessMiddleware, versionMiddleware, handler.UploadFile)
+	app.Get("/sync/files", authMiddleware, accessMiddleware, versionMiddleware, handler.DownloadFile)
+	app.Delete("/sync/files", authMiddleware, accessMiddleware, versionMiddleware, handler.DeleteFile)
 }

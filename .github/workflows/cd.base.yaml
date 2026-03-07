@@ -80,6 +80,7 @@ jobs:
             S3_BUCKET=${{ vars.S3_BUCKET }}
             S3_USE_SSL=false
             MAX_FILE_SIZE=52428800
+            MIN_CLIENT_VERSION=0.41.64
             EOT
 
             echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login --username=${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
