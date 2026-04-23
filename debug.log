@@ -1,0 +1,20 @@
+debug 2026/04/26 16:42:23 Starting streaming revisions with tag: 1
+debug 2026/04/26 16:42:23 closing streaming command
+debug 2026/04/26 16:42:23 killing process due to context cancellation
+debug 2026/04/26 16:42:23 waiting for command to finish
+debug 2026/04/26 16:42:34 Starting streaming revisions with tag: 2
+debug 2026/04/26 16:42:34 closing streaming command
+debug 2026/04/26 16:42:34 killing process due to context cancellation
+debug 2026/04/26 16:42:34 waiting for command to finish
+debug 2026/04/26 16:42:34 Starting streaming revisions with tag: 3
+debug 2026/04/26 16:42:34 closing streaming command
+debug 2026/04/26 16:42:34 killing process due to context cancellation
+debug 2026/04/26 16:42:34 waiting for command to finish
+debug 2026/04/26 16:42:43 Starting streaming revisions with tag: 4
+debug 2026/04/26 16:42:43 closing streaming command
+debug 2026/04/26 16:42:43 killing process due to context cancellation
+debug 2026/04/26 16:42:43 waiting for command to finish
+debug 2026/04/26 16:42:43 Starting streaming revisions with tag: 5
+debug 2026/04/26 16:42:43 closing streaming command
+debug 2026/04/26 16:42:43 killing process due to context cancellation
+debug 2026/04/26 16:42:43 waiting for command to finish

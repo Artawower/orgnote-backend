@@ -8,6 +8,7 @@ import (
 
 type OrgNoteMetaService interface {
 	GetChangesFrom(version string) *models.OrgNoteClientUpdateInfo
+	GetLatestChange() *models.OrgNoteClientUpdateInfo
 	GetEnvironmentInfo() models.EnvironmentInfo
 }
 
@@ -36,6 +37,24 @@ func (s *SystemInfoHandler) ClientVersion(c *fiber.Ctx) error {
 	updateInfo := s.metaService.GetChangesFrom(version)
 	if updateInfo == nil {
 		return c.Status(fiber.StatusNoContent).JSON(fiber.Map{})
+	}
+	return c.JSON(updateInfo)
+}
+
+// LatestClientUpdateInfo godoc
+// @Summary      GetLatestClientUpdate
+// @Description
+// @Tags         system info
+// @Accept       json
+// @Produce      json
+// @Success      200  {object}  models.OrgNoteClientUpdateInfo
+// @Failure      404  {object}  handlers.HttpError[any]
+// @Failure      500  {object}  handlers.HttpError[any]
+// @Router       /system-info/client-update/latest [get]
+func (s *SystemInfoHandler) LatestClientUpdate(c *fiber.Ctx) error {
+	updateInfo := s.metaService.GetLatestChange()
+	if updateInfo == nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{})
 	}
 	return c.JSON(updateInfo)
 }
@@ -72,5 +91,6 @@ func (s *SystemInfoHandler) SystemInfo(c *fiber.Ctx) error {
 func RegisterSystemInfoHandler(app fiber.Router, metaService OrgNoteMetaService) {
 	handler := NewSystemInfoHandler(metaService)
 	app.Get("/system-info/:version", handler.SystemInfo)
+	app.Get("/system-info/client-update/latest", handler.LatestClientUpdate)
 	app.Get("/system-info/client-update/:version", handler.ClientVersion)
 }

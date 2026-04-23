@@ -603,6 +603,40 @@
                 }
             }
         },
+        "/system-info/client-update/latest": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "system info"
+                ],
+                "summary": "GetLatestClientUpdate",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.OrgNoteClientUpdateInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.HttpError-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.HttpError-any"
+                        }
+                    }
+                }
+            }
+        },
         "/system-info/client-update/{version}": {
             "get": {
                 "consumes": [

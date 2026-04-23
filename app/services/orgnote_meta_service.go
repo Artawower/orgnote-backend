@@ -51,14 +51,8 @@ func (o *OrgNoteMetaService) LoadReleasesChanges() error {
 	return fmt.Errorf("orgnote meta: load releases changes: method unimplemented yet")
 }
 
-func (o *OrgNoteMetaService) GetChangesFrom(version string) *models.OrgNoteClientUpdateInfo {
+func (o *OrgNoteMetaService) buildLatestChange() *models.OrgNoteClientUpdateInfo {
 	if o.cachedClientInfo == nil || o.cachedClientInfo.TagName == nil {
-		return nil
-	}
-
-	needUpdate := semver.Compare(tools.NormalizeVersion(version), tools.NormalizeVersion(*o.cachedClientInfo.TagName)) == -1
-
-	if !needUpdate {
 		return nil
 	}
 
@@ -67,6 +61,24 @@ func (o *OrgNoteMetaService) GetChangesFrom(version string) *models.OrgNoteClien
 		Url:       o.cachedClientInfo.GetHTMLURL(),
 		ChangeLog: o.formatChangeLog(o.cachedClientInfo.Body),
 	}
+}
+
+func (o *OrgNoteMetaService) GetChangesFrom(version string) *models.OrgNoteClientUpdateInfo {
+	latestChange := o.buildLatestChange()
+	if latestChange == nil {
+		return nil
+	}
+
+	needUpdate := semver.Compare(tools.NormalizeVersion(version), tools.NormalizeVersion(latestChange.Version)) == -1
+	if !needUpdate {
+		return nil
+	}
+
+	return latestChange
+}
+
+func (o *OrgNoteMetaService) GetLatestChange() *models.OrgNoteClientUpdateInfo {
+	return o.buildLatestChange()
 }
 
 func (o *OrgNoteMetaService) formatChangeLog(changeLog *string) string {

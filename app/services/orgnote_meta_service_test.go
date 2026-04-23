@@ -5,7 +5,41 @@ import (
 	"testing"
 
 	"github.com/gkampitakis/go-snaps/snaps"
+	"github.com/google/go-github/github"
 )
+
+func TestGetLatestChangesReturnsCachedRelease(t *testing.T) {
+	disableScheduler := true
+	repoConfig := OrgNoteMetaConfig{
+		DisableScheduler: &disableScheduler,
+	}
+
+	config := configs.Config{}
+	orgNoteMetaService := NewOrgNoteMetaService(repoConfig, config)
+	tag := "0.42.0"
+	body := "release: 0.42.0\n- feat: latest changes"
+	htmlURL := "https://example.com/release/0.42.0"
+	orgNoteMetaService.cachedClientInfo = &github.RepositoryRelease{
+		TagName: &tag,
+		Body:    &body,
+		HTMLURL: &htmlURL,
+	}
+
+	changes := orgNoteMetaService.GetLatestChange()
+
+	if changes == nil {
+		t.Fatal("expected latest changes")
+	}
+	if changes.Version != tag {
+		t.Fatalf("expected version %s, got %s", tag, changes.Version)
+	}
+	if changes.Url != htmlURL {
+		t.Fatalf("expected url %s, got %s", htmlURL, changes.Url)
+	}
+	if changes.ChangeLog != "0.42.0\nlatest changes" {
+		t.Fatalf("expected changelog to be formatted, got %q", changes.ChangeLog)
+	}
+}
 
 func TestChangelogShouldBeFormatted(t *testing.T) {
 	link := `- 648596d release: 0.17.0
