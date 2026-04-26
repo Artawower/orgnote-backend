@@ -2,7 +2,7 @@
 
 # Default recipe
 default:
-    @just --list
+    @just --choose
 
 # === LOCAL DEVELOPMENT ===
 
@@ -32,6 +32,10 @@ local:
 
 local-down:
     docker compose -f docker-compose.db.local.yaml -f docker-compose.local.yaml --env-file .env down
+
+# Drop local database and all S3 files (removes volumes)
+local-reset:
+    docker compose -f docker-compose.db.local.yaml -f docker-compose.local.yaml --env-file .env down -v
 
 # iOS local development (uses .env.ios with separate GitHub OAuth App)
 local-ios:
