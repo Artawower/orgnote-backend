@@ -29,6 +29,7 @@ type Subscription struct {
 
 // SubscriptionActivation defines model for SubscriptionActivation.
 type SubscriptionActivation struct {
+	ActivationDomain *string              `json:"activationDomain,omitempty"`
 	Email            *openapi_types.Email `json:"email,omitempty"`
 	ExternalEmail    *openapi_types.Email `json:"externalEmail,omitempty"`
 	ExternalId       string               `json:"externalId"`
@@ -38,10 +39,11 @@ type SubscriptionActivation struct {
 
 // SubscriptionInfo defines model for SubscriptionInfo.
 type SubscriptionInfo struct {
-	Email      *openapi_types.Email `json:"email"`
-	IsActive   *bool                `json:"isActive,omitempty"`
-	Key        *string              `json:"key"`
-	SpaceLimit *int                 `json:"spaceLimit,omitempty"`
+	ActivationDomain *string              `json:"activationDomain"`
+	Email            *openapi_types.Email `json:"email"`
+	IsActive         *bool                `json:"isActive,omitempty"`
+	Key              *string              `json:"key"`
+	SpaceLimit       *int                 `json:"spaceLimit,omitempty"`
 }
 
 // SubscriptionActivationCreateJSONRequestBody defines body for SubscriptionActivationCreate for application/json ContentType.

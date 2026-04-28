@@ -2,24 +2,51 @@ package services
 
 import (
 	"fmt"
+	"net/url"
 	"orgnote/app/infrastructure"
 	subscription "orgnote/app/infrastructure/generated"
 	"orgnote/app/models"
 	"orgnote/app/repositories"
+	"strings"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/oapi-codegen/runtime/types"
 	"github.com/rs/zerolog/log"
 )
 
 type UserService struct {
-	userRepository       *repositories.UserRepository
-	fileMetadataRepo     *repositories.FileMetadataRepository
-	subscriptionAPI      *infrastructure.SubscriptionAPI
+	userRepository   *repositories.UserRepository
+	fileMetadataRepo *repositories.FileMetadataRepository
+	subscriptionAPI  *infrastructure.SubscriptionAPI
+	activationDomain *string
 }
 
-func NewUserService(userRepository *repositories.UserRepository, fileMetadataRepo *repositories.FileMetadataRepository, subscriptionAPI *infrastructure.SubscriptionAPI) *UserService {
-	return &UserService{userRepository, fileMetadataRepo, subscriptionAPI}
+func NewUserService(userRepository *repositories.UserRepository, fileMetadataRepo *repositories.FileMetadataRepository, subscriptionAPI *infrastructure.SubscriptionAPI, clientAddress string) *UserService {
+	return &UserService{
+		userRepository:   userRepository,
+		fileMetadataRepo: fileMetadataRepo,
+		subscriptionAPI:  subscriptionAPI,
+		activationDomain: activationDomainFromClientAddress(clientAddress),
+	}
+}
+
+func activationDomainFromClientAddress(clientAddress string) *string {
+	trimmedAddress := strings.TrimSpace(clientAddress)
+	if trimmedAddress == "" {
+		return nil
+	}
+
+	parseTarget := trimmedAddress
+	if !strings.Contains(parseTarget, "://") {
+		parseTarget = "//" + parseTarget
+	}
+
+	parsedURL, err := url.Parse(parseTarget)
+	if err != nil || parsedURL.Host == "" {
+		return &trimmedAddress
+	}
+
+	activationDomain := parsedURL.Host
+	return &activationDomain
 }
 
 func (u *UserService) FindOrCreate(user models.User) (*models.User, error) {
@@ -87,13 +114,13 @@ func (u *UserService) Subscribe(user *models.User, token string, emailAddress *s
 		email = (*types.Email)(&user.Email)
 	}
 	data, err := u.subscriptionAPI.ActivateSubscription(subscription.SubscriptionActivation{
+		ActivationDomain: u.activationDomain,
 		Key:              token,
 		Email:            email,
 		ExternalId:       user.ExternalID,
 		ExternalEmail:    externalEmail,
 		ExternalProvider: &user.Provider,
 	})
-	spew.Dump(data)
 	if err != nil {
 		return fmt.Errorf("user service: subscribe: activate subscription %v", err)
 	}
