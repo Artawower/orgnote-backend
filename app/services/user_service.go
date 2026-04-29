@@ -55,7 +55,42 @@ func (u *UserService) FindOrCreate(user models.User) (*models.User, error) {
 	if err != nil {
 		return nil, fmt.Errorf("user service: find or create: %v", err)
 	}
+
+	if err := u.reconcileUserSubscription(createdUser); err != nil {
+		log.Warn().Err(err).Msg("failed to reconcile user subscription on login")
+	}
+
 	return createdUser, nil
+}
+
+const reconciledActiveFallback = "reconciled"
+
+func (u *UserService) reconcileUserSubscription(user *models.User) error {
+	remoteInfo, err := u.subscriptionAPI.GetInfo(user.Provider, user.ExternalID)
+	if err != nil {
+		return err
+	}
+	if remoteInfo == nil {
+		return nil
+	}
+	if !remoteInfo.IsActive {
+		return nil
+	}
+
+	active := remoteInfo.Key
+	if active == "" {
+		active = reconciledActiveFallback
+	}
+	spaceLimit := int64(remoteInfo.SpaceLimit)
+
+	if err := u.userRepository.UpdateActiveAndSpaceLimit(user.ID.Hex(), &active, &spaceLimit); err != nil {
+		return err
+	}
+
+	user.Active = &active
+	user.SpaceLimit = spaceLimit
+
+	return nil
 }
 
 func (u *UserService) GetAPITokens(userID string) ([]models.APIToken, error) {
@@ -70,6 +105,10 @@ func (u *UserService) FindUser(token string) (*models.UserPersonalInfo, error) {
 	user, err := u.userRepository.FindUserByToken(token)
 	if err != nil {
 		return nil, fmt.Errorf("user service: find user: %v", err)
+	}
+
+	if err := u.reconcileUserSubscription(user); err != nil {
+		log.Warn().Err(err).Msg("failed to reconcile user subscription on verify")
 	}
 
 	usedSpace, err := u.fileMetadataRepo.GetTotalSize(user.ID)

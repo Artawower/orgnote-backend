@@ -28,6 +28,7 @@ type SubscriptionInfo struct {
 	Email      string  `json:"email"`
 	IsActive   bool    `json:"isActive"`
 	SpaceLimit float64 `json:"spaceLimit"`
+	Key        string  `json:"key"`
 }
 
 type SubscriptionRequestError struct {

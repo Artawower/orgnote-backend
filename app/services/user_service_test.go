@@ -48,6 +48,12 @@ func TestActivationDomainFromClientAddress(t *testing.T) {
 	}
 }
 
+func TestReconciledActiveFallback(t *testing.T) {
+	if reconciledActiveFallback != "reconciled" {
+		t.Fatalf("expected reconciledActiveFallback to be 'reconciled', got %q", reconciledActiveFallback)
+	}
+}
+
 func stringPointer(value string) *string {
 	return &value
 }

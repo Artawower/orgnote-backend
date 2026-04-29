@@ -299,6 +299,36 @@ func (u *UserRepository) SetActivationKey(userID string, activationKey string) e
 	return nil
 }
 
+func (u *UserRepository) UpdateActiveAndSpaceLimit(userID string, active *string, spaceLimit *int64) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	objID, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		return fmt.Errorf("user repository: update active and space limit: convert id: %v", err)
+	}
+
+	filter := bson.M{"_id": objID}
+	updatedModel := bson.M{}
+	if active != nil {
+		updatedModel["active"] = *active
+	}
+	if spaceLimit != nil {
+		updatedModel["spaceLimit"] = *spaceLimit
+	}
+	if len(updatedModel) == 0 {
+		return nil
+	}
+
+	update := bson.M{"$set": updatedModel}
+	_, err = u.collection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return fmt.Errorf("user repository: update active and space limit: failed to update: %v", err)
+	}
+
+	return nil
+}
+
 func (u *UserRepository) DeleteUser(userID string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
