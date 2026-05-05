@@ -45,7 +45,7 @@ func (r *FileMetadataRepository) ensureIndexes() {
 			Options: options.Index().SetUnique(true),
 		},
 		{
-			Keys: bson.D{{Key: "userId", Value: 1}, {Key: "updatedAt", Value: 1}},
+			Keys: bson.D{{Key: "userId", Value: 1}, {Key: "updatedAt", Value: 1}, {Key: "_id", Value: 1}},
 		},
 		{
 			Keys: bson.D{{Key: "userId", Value: 1}, {Key: "contentHash", Value: 1}},
@@ -399,8 +399,13 @@ func (r *FileMetadataRepository) GetChanges(userID primitive.ObjectID, since tim
 
 	var nextCursor *string
 	if hasMore && len(files) > 0 {
-		cursor := buildCursor(files[len(files)-1])
-		nextCursor = &cursor
+		builtCursor := buildCursor(files[len(files)-1])
+		if cursor != nil && builtCursor == *cursor {
+			hasMore = false
+		}
+		if hasMore {
+			nextCursor = &builtCursor
+		}
 	}
 
 	return &GetChangesResult{
