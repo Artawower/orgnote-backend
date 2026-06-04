@@ -114,7 +114,7 @@ func main() {
 	authMiddleware := handlers.NewAuthMiddleware()
 	accessMiddleware := handlers.NewAccessMiddleware(subscriptionAPI, func(userID string, spaceLimit int64) error {
 		return userRepository.UpdateSpaceLimitInfo(userID, nil, &spaceLimit)
-	})
+	}, config.SelfHostedSpaceLimit)
 	activeMiddleware := handlers.NewActiveMiddleware(handlers.ActiveMiddlewareConfig{
 		AccessCheckerURL:   config.AccessCheckerURL,
 		AccessCheckerToken: config.AccessCheckToken,

@@ -61,6 +61,7 @@ This project is part of [[https://github.com/Artawower/orgnote][Org Note project
 | ~MAXIMUM_FILE_SIZE~     | Maximum upload file size (bytes)                  | =52428800=                  |
 | ~ACCESS_CHECK_URL~      | Subscription check URL (empty for self-hosted)    |                             |
 | ~ACCESS_CHECK_TOKEN~    | Auth token for subscription check                 |                             |
+| ~SELF_HOSTED_SPACE_LIMIT_BYTES~ | Default sync quota when subscription check is disabled | =104857600=                 |
 | ~ACME_EMAIL~            | Email for Let's Encrypt SSL certificates          | =your-email@example.com=    |
 
 ** Local development

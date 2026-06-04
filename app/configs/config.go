@@ -8,6 +8,8 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+const DefaultSelfHostedSpaceLimitBytes int64 = 100 * 1024 * 1024
+
 type Config struct {
 	AppAddress               string
 	MongoURI                 string
@@ -23,6 +25,7 @@ type Config struct {
 	AccessCheckToken         *string
 	AccessTokenCacheLifeTime int
 	MaxFileSize              int64
+	SelfHostedSpaceLimit     int64
 	TombstoneTTL             int
 
 	GithubClientOwner    string
@@ -41,6 +44,21 @@ type Config struct {
 
 func (c *Config) BackendHost() string {
 	return c.BackendURL
+}
+
+func getEnvInt64(name string, defaultValue int64) int64 {
+	envValue := os.Getenv(name)
+	if envValue == "" {
+		return defaultValue
+	}
+
+	value, err := strconv.ParseInt(envValue, 10, 64)
+	if err != nil || value <= 0 {
+		log.Warn().Str("env", name).Int64("default", defaultValue).Msg("invalid integer environment value")
+		return defaultValue
+	}
+
+	return value
 }
 
 // TODO: master split into several functions
@@ -104,6 +122,8 @@ func NewConfig() Config {
 		}
 	}
 
+	selfHostedSpaceLimit := getEnvInt64("SELF_HOSTED_SPACE_LIMIT_BYTES", DefaultSelfHostedSpaceLimitBytes)
+
 	tombstoneTTL := 30
 	if envTombstoneTTL := os.Getenv("TOMBSTONE_TTL_DAYS"); envTombstoneTTL != "" {
 		val, err := strconv.Atoi(envTombstoneTTL)
@@ -162,6 +182,7 @@ func NewConfig() Config {
 		AccessCheckToken:         accessCheckToken,
 		AccessTokenCacheLifeTime: accessTokenCacheLifeTime,
 		MaxFileSize:              maxFileSize,
+		SelfHostedSpaceLimit:     selfHostedSpaceLimit,
 		TombstoneTTL:             tombstoneTTL,
 		MobileAppName:            "orgnote",
 		ElectronCallbackURL:      electronCallbackURL,
