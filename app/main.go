@@ -137,6 +137,7 @@ func main() {
 
 	syncService := services.NewSyncService(
 		fileMetadataRepository,
+		userRepository,
 		notificationService,
 		blobStorage,
 		services.SyncServiceConfig{

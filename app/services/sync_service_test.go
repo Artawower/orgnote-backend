@@ -1,8 +1,10 @@
 package services
 
 import (
+	"errors"
 	"orgnote/app/infrastructure"
 	"orgnote/app/models"
+	"orgnote/app/repositories"
 	"testing"
 	"time"
 
@@ -10,7 +12,8 @@ import (
 )
 
 type mockBlobStorage struct {
-	blobs map[string][]byte
+	blobs     map[string][]byte
+	uploadErr error
 }
 
 func newMockBlobStorage() *mockBlobStorage {
@@ -18,6 +21,9 @@ func newMockBlobStorage() *mockBlobStorage {
 }
 
 func (m *mockBlobStorage) Upload(userID string, contentHash string, content []byte) error {
+	if m.uploadErr != nil {
+		return m.uploadErr
+	}
 	m.blobs[userID+"/"+contentHash] = content
 	return nil
 }
@@ -46,7 +52,7 @@ func (m *mockBlobStorage) ListBlobs(userID string) ([]infrastructure.BlobInfo, e
 
 type mockEventSender struct{}
 
-func (m *mockEventSender) Emit(userID string, eventType string, payload interface{}, excludeSocketID string) {
+func (m *mockEventSender) Emit(userID string, eventType string, payload any, excludeSocketID string) {
 }
 
 type mockFileMetadataRepo struct {
@@ -56,6 +62,10 @@ type mockFileMetadataRepo struct {
 
 func newMockFileMetadataRepo() *mockFileMetadataRepo {
 	return &mockFileMetadataRepo{files: make(map[string]*models.FileMetadata)}
+}
+
+func (m *mockFileMetadataRepo) GetChanges(userID primitive.ObjectID, since time.Time, limit int, cursor *string) (*repositories.GetChangesResult, error) {
+	return &repositories.GetChangesResult{}, nil
 }
 
 func (m *mockFileMetadataRepo) Upsert(userID primitive.ObjectID, filePath string, contentHash string, fileSize int64, expectedVersion *int) (*models.FileMetadata, error) {
@@ -69,9 +79,32 @@ func (m *mockFileMetadataRepo) Upsert(userID primitive.ObjectID, filePath string
 		UpdatedAt:   time.Now(),
 		Version:     1,
 	}
+	previous := m.files[filePath]
 	m.files[filePath] = metadata
-	m.totalSize += fileSize
+	m.totalSize += fileSize - activeMetadataSize(previous)
 	return metadata, nil
+}
+
+func (m *mockFileMetadataRepo) GetByPath(userID primitive.ObjectID, filePath string) (*models.FileMetadata, error) {
+	return m.files[filePath], nil
+}
+
+func (m *mockFileMetadataRepo) SoftDeleteByPath(userID primitive.ObjectID, filePath string, expectedVersion *int) (*models.FileMetadata, error) {
+	metadata := m.files[filePath]
+	if metadata == nil {
+		return nil, nil
+	}
+	now := time.Now()
+	metadata.DeletedAt = &now
+	return metadata, nil
+}
+
+func (m *mockFileMetadataRepo) GetReferencedHashes(userID primitive.ObjectID) ([]string, error) {
+	return nil, nil
+}
+
+func (m *mockFileMetadataRepo) CleanOldTombstones(userID primitive.ObjectID, maxAge time.Duration) (int64, error) {
+	return 0, nil
 }
 
 func (m *mockFileMetadataRepo) GetTotalSize(userID primitive.ObjectID) (int64, error) {
@@ -85,6 +118,44 @@ func (m *mockFileMetadataRepo) HashExists(userID primitive.ObjectID, contentHash
 		}
 	}
 	return false, nil
+}
+
+type mockStorageUsageRepo struct {
+	usedSpace int64
+}
+
+func (m *mockStorageUsageRepo) EnsureStorageUsage(userID primitive.ObjectID) error {
+	return nil
+}
+
+func (m *mockStorageUsageRepo) ReserveStorage(userID primitive.ObjectID, bytes int64, spaceLimit int64) (bool, error) {
+	if bytes <= 0 {
+		return true, nil
+	}
+	if m.usedSpace+bytes > spaceLimit {
+		return false, nil
+	}
+	m.usedSpace += bytes
+	return true, nil
+}
+
+func (m *mockStorageUsageRepo) ReleaseStorage(userID primitive.ObjectID, bytes int64) error {
+	if bytes <= 0 {
+		return nil
+	}
+	m.usedSpace -= bytes
+	return nil
+}
+
+func newTestSyncService(repo *mockFileMetadataRepo, usage *mockStorageUsageRepo, blobStorage *mockBlobStorage) *SyncService {
+	return &SyncService{
+		fileMetadataRepo:    repo,
+		storageUsageRepo:    usage,
+		notificationService: NewNotificationService(&mockEventSender{}),
+		blobStorage:         blobStorage,
+		maxFileSize:         1024 * 1024,
+		tombstoneTTL:        30 * 24 * time.Hour,
+	}
 }
 
 func TestUploadFile_Success(t *testing.T) {
@@ -118,6 +189,100 @@ func TestUploadFile_Success(t *testing.T) {
 
 	_ = repo
 	_ = service
+}
+
+func TestUploadFile_ReservesStorage(t *testing.T) {
+	repo := newMockFileMetadataRepo()
+	usage := &mockStorageUsageRepo{}
+	blobStorage := newMockBlobStorage()
+	service := newTestSyncService(repo, usage, blobStorage)
+	userID := primitive.NewObjectID()
+
+	_, err := service.UploadFile(userID, "test.txt", []byte("test"), "", 10, nil, "")
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if usage.usedSpace != 4 {
+		t.Fatalf("expected used space 4, got %d", usage.usedSpace)
+	}
+}
+
+func TestUploadFile_ReturnsQuotaExceededWhenReservationFails(t *testing.T) {
+	repo := newMockFileMetadataRepo()
+	usage := &mockStorageUsageRepo{usedSpace: 8}
+	blobStorage := newMockBlobStorage()
+	service := newTestSyncService(repo, usage, blobStorage)
+	userID := primitive.NewObjectID()
+
+	_, err := service.UploadFile(userID, "test.txt", []byte("test"), "", 10, nil, "")
+
+	if !errors.Is(err, ErrStorageQuotaExceeded) {
+		t.Fatalf("expected storage quota error, got %v", err)
+	}
+	if len(blobStorage.blobs) != 0 {
+		t.Fatal("expected blob upload to be skipped")
+	}
+}
+
+func TestUploadFile_ReleasesReservationWhenUploadFails(t *testing.T) {
+	repo := newMockFileMetadataRepo()
+	usage := &mockStorageUsageRepo{}
+	blobStorage := newMockBlobStorage()
+	blobStorage.uploadErr = errors.New("upload failed")
+	service := newTestSyncService(repo, usage, blobStorage)
+	userID := primitive.NewObjectID()
+
+	_, err := service.UploadFile(userID, "test.txt", []byte("test"), "", 10, nil, "")
+
+	if err == nil {
+		t.Fatal("expected upload error")
+	}
+	if usage.usedSpace != 0 {
+		t.Fatalf("expected used space rollback to 0, got %d", usage.usedSpace)
+	}
+}
+
+func TestUploadFile_ReleasesStorageWhenReplacingWithSmallerFile(t *testing.T) {
+	repo := newMockFileMetadataRepo()
+	usage := &mockStorageUsageRepo{usedSpace: 8}
+	blobStorage := newMockBlobStorage()
+	service := newTestSyncService(repo, usage, blobStorage)
+	userID := primitive.NewObjectID()
+	_, err := repo.Upsert(userID, "/test.txt", "old", 8, nil)
+	if err != nil {
+		t.Fatalf("failed to seed metadata: %v", err)
+	}
+
+	_, err = service.UploadFile(userID, "test.txt", []byte("test"), "", 10, nil, "")
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if usage.usedSpace != 4 {
+		t.Fatalf("expected used space 4, got %d", usage.usedSpace)
+	}
+}
+
+func TestDeleteFile_ReleasesStorage(t *testing.T) {
+	repo := newMockFileMetadataRepo()
+	usage := &mockStorageUsageRepo{usedSpace: 4}
+	blobStorage := newMockBlobStorage()
+	service := newTestSyncService(repo, usage, blobStorage)
+	userID := primitive.NewObjectID()
+	_, err := repo.Upsert(userID, "/test.txt", "hash", 4, nil)
+	if err != nil {
+		t.Fatalf("failed to seed metadata: %v", err)
+	}
+
+	_, err = service.DeleteFile(userID, "test.txt", nil, "")
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if usage.usedSpace != 0 {
+		t.Fatalf("expected used space 0, got %d", usage.usedSpace)
+	}
 }
 
 func TestUploadFile_FileTooLarge(t *testing.T) {
