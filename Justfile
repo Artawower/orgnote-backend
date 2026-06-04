@@ -26,6 +26,10 @@ test-v:
 test-coverage:
     go test -coverprofile=coverage.out ./... && go tool cover -html=coverage.out -o coverage.html
 
+# Check generated subscription API client against schema
+check-subscription-api:
+    ./check-subscription-api.sh
+
 local:
     docker compose -f docker-compose.db.local.yaml -f docker-compose.local.yaml --env-file .env up -d orgnote-mongo-local orgnote-minio-local orgnote-minio-init-local
     docker compose -f docker-compose.db.local.yaml -f docker-compose.local.yaml --env-file .env up --build orgnote-backend-local

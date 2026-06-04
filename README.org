@@ -94,6 +94,7 @@ just local
 [[https://github.com/deepmap/oapi-codegen][Install open api codegen and execute script]]
 #+BEGIN_SRC bash
 SUBSCRIPTION_SCHEMA_URL=http://localhost:8000/api/schema/ ./generate-subscription-api.sh
+SUBSCRIPTION_SCHEMA_URL=http://localhost:8000/api/schema/ just check-subscription-api
 #+END_SRC
 
 
