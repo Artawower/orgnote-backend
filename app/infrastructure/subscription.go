@@ -174,7 +174,7 @@ func NewSubscription(
 	cacheLifeTime int,
 ) (*SubscriptionAPI, error) {
 	// TODO: master use as dependency
-	client, err := subscription.NewClientWithResponses(*checkURL)
+	client, err := subscription.NewClientWithResponses(*checkURL, subscription.WithHTTPClient(&httpClient))
 
 	if err != nil {
 		return nil, fmt.Errorf("subscription: new subscription: init client: %v", err)
