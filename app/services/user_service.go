@@ -149,18 +149,34 @@ func (u *UserService) Subscribe(user *models.User, token string, emailAddress *s
 		return fmt.Errorf("user service: subscribe: activate subscription %v", err)
 	}
 
+	spaceLimit, err := subscriptionActivationSpaceLimit(data)
+	if err != nil {
+		return fmt.Errorf("user service: subscribe: %v", err)
+	}
+
 	err = u.userRepository.SetActivationKey(user.ID.Hex(), token)
 	if err != nil {
 		return fmt.Errorf("user service: subscribe: set active status: %v", err)
 	}
-
-	spaceLimit := int64(*data.SpaceLimit)
 
 	err = u.userRepository.UpdateSpaceLimitInfo(user.ID.Hex(), nil, &spaceLimit)
 	if err != nil {
 		return fmt.Errorf("user service: subscribe: update space limit info: %v", err)
 	}
 	return nil
+}
+
+func subscriptionActivationSpaceLimit(data *subscription.SubscriptionInfo) (int64, error) {
+	if data == nil {
+		return 0, fmt.Errorf("activation response is empty")
+	}
+	if data.SpaceLimit == nil {
+		return 0, fmt.Errorf("activation response missing space limit")
+	}
+	if *data.SpaceLimit <= 0 {
+		return 0, fmt.Errorf("activation response has invalid space limit")
+	}
+	return int64(*data.SpaceLimit), nil
 }
 
 func newSubscriptionActivation(user *models.User, token string, emailAddress *string, activationDomain *string) subscription.SubscriptionActivation {

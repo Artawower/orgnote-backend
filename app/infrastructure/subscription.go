@@ -13,7 +13,6 @@ import (
 
 	cache "github.com/Code-Hex/go-generics-cache"
 	"github.com/rs/zerolog/log"
-	"github.com/thoas/go-funk"
 )
 
 type SubscriptionAPI struct {
@@ -132,12 +131,21 @@ func (a *SubscriptionAPI) ActivateSubscription(data subscription.SubscriptionAct
 		return nil, fmt.Errorf("subscription: subscribe: %v", err)
 	}
 
-	if rspns.HTTPResponse.StatusCode == http.StatusNotFound {
+	if rspns == nil || rspns.HTTPResponse == nil {
+		return nil, fmt.Errorf("subscription: subscribe: empty response")
+	}
+
+	statusCode := rspns.HTTPResponse.StatusCode
+	if statusCode == http.StatusNotFound {
 		return nil, ErrorInvalidToken
 	}
 
-	if !funk.Contains([]int{http.StatusOK, http.StatusCreated}, rspns.HTTPResponse.StatusCode) {
-		return nil, fmt.Errorf("subscription: subscribe: got status code %v", rspns.HTTPResponse.StatusCode)
+	if statusCode != http.StatusOK {
+		return nil, fmt.Errorf("subscription: subscribe: got status code %v", statusCode)
+	}
+
+	if rspns.JSON200 == nil {
+		return nil, fmt.Errorf("subscription: subscribe: missing response body")
 	}
 
 	return rspns.JSON200, nil
