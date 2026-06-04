@@ -23,8 +23,25 @@ type Syncer interface {
 	RunGarbageCollection(userID primitive.ObjectID) error
 }
 
+type FileMetadataStore interface {
+	GetChanges(userID primitive.ObjectID, since time.Time, limit int, cursor *string) (*repositories.GetChangesResult, error)
+	GetByPath(userID primitive.ObjectID, filePath string) (*models.FileMetadata, error)
+	HashExists(userID primitive.ObjectID, contentHash string) (bool, error)
+	Upsert(userID primitive.ObjectID, filePath string, contentHash string, size int64, expectedVersion *int) (*models.FileMetadata, error)
+	SoftDeleteByPath(userID primitive.ObjectID, filePath string, expectedVersion *int) (*models.FileMetadata, error)
+	GetReferencedHashes(userID primitive.ObjectID) ([]string, error)
+	CleanOldTombstones(userID primitive.ObjectID, maxAge time.Duration) (int64, error)
+}
+
+type StorageUsageStore interface {
+	EnsureStorageUsage(userID primitive.ObjectID) error
+	ReserveStorage(userID primitive.ObjectID, bytes int64, spaceLimit int64) (bool, error)
+	ReleaseStorage(userID primitive.ObjectID, bytes int64) error
+}
+
 type SyncService struct {
-	fileMetadataRepo    *repositories.FileMetadataRepository
+	fileMetadataRepo    FileMetadataStore
+	storageUsageRepo    StorageUsageStore
 	notificationService *NotificationService
 	blobStorage         infrastructure.BlobStorage
 	maxFileSize         int64
@@ -49,13 +66,15 @@ type UploadResult struct {
 }
 
 func NewSyncService(
-	fileMetadataRepo *repositories.FileMetadataRepository,
+	fileMetadataRepo FileMetadataStore,
+	storageUsageRepo StorageUsageStore,
 	notificationService *NotificationService,
 	blobStorage infrastructure.BlobStorage,
 	config SyncServiceConfig,
 ) *SyncService {
 	return &SyncService{
 		fileMetadataRepo:    fileMetadataRepo,
+		storageUsageRepo:    storageUsageRepo,
 		notificationService: notificationService,
 		blobStorage:         blobStorage,
 		maxFileSize:         config.MaxFileSize,
@@ -89,17 +108,26 @@ func (s *SyncService) UploadFile(userID primitive.ObjectID, filePath string, con
 		return nil, ErrHashMismatch
 	}
 
-	currentUsage, err := s.fileMetadataRepo.GetTotalSize(userID)
-	if err != nil {
-		return nil, fmt.Errorf("sync service: upload: get total size: %v", err)
-	}
-
 	if spaceLimit <= 0 {
 		return nil, ErrNoStorageQuota
 	}
 
-	if currentUsage+int64(len(content)) > spaceLimit {
-		return nil, ErrStorageQuotaExceeded
+	existingMetadata, err := s.fileMetadataRepo.GetByPath(userID, filePath)
+	if err != nil {
+		return nil, fmt.Errorf("sync service: upload: get metadata: %v", err)
+	}
+
+	storageDelta := uploadStorageDelta(existingMetadata, int64(len(content)))
+	if err := s.ensureStorageCounter(userID); err != nil {
+		return nil, err
+	}
+
+	reservedStorage, err := s.reserveStorage(userID, storageDelta, spaceLimit)
+	if err != nil {
+		return nil, err
+	}
+	if reservedStorage > 0 {
+		defer s.releaseReservedStorage(userID, &reservedStorage)
 	}
 
 	uploaded, err := s.uploadBlobIfNeeded(userID.Hex(), computedHash, content)
@@ -121,12 +149,61 @@ func (s *SyncService) UploadFile(userID primitive.ObjectID, filePath string, con
 		return nil, fmt.Errorf("sync service: upload: upsert metadata: %v", err)
 	}
 
+	if storageDelta < 0 {
+		if err := s.storageUsageRepo.ReleaseStorage(userID, -storageDelta); err != nil {
+			return nil, fmt.Errorf("sync service: upload: release replaced storage: %v", err)
+		}
+	}
+	reservedStorage = 0
+
 	s.notificationService.NotifySync(userID.Hex(), clientSocketID)
 
 	return &UploadResult{
 		Metadata: metadata,
 		Uploaded: uploaded,
 	}, nil
+}
+
+func (s *SyncService) ensureStorageCounter(userID primitive.ObjectID) error {
+	if err := s.storageUsageRepo.EnsureStorageUsage(userID); err != nil {
+		return fmt.Errorf("sync service: upload: ensure storage usage: %v", err)
+	}
+	return nil
+}
+
+func (s *SyncService) reserveStorage(userID primitive.ObjectID, storageDelta int64, spaceLimit int64) (int64, error) {
+	if storageDelta <= 0 {
+		return 0, nil
+	}
+
+	reserved, err := s.storageUsageRepo.ReserveStorage(userID, storageDelta, spaceLimit)
+	if err != nil {
+		return 0, fmt.Errorf("sync service: upload: reserve storage: %v", err)
+	}
+	if !reserved {
+		return 0, ErrStorageQuotaExceeded
+	}
+	return storageDelta, nil
+}
+
+func (s *SyncService) releaseReservedStorage(userID primitive.ObjectID, reservedStorage *int64) {
+	if *reservedStorage <= 0 {
+		return
+	}
+	if err := s.storageUsageRepo.ReleaseStorage(userID, *reservedStorage); err != nil {
+		log.Error().Err(err).Str("userId", userID.Hex()).Int64("bytes", *reservedStorage).Msg("sync service: upload: release reserved storage")
+	}
+}
+
+func uploadStorageDelta(metadata *models.FileMetadata, newSize int64) int64 {
+	return newSize - activeMetadataSize(metadata)
+}
+
+func activeMetadataSize(metadata *models.FileMetadata) int64 {
+	if metadata == nil || metadata.DeletedAt != nil {
+		return 0
+	}
+	return metadata.Size
 }
 
 func (s *SyncService) uploadBlobIfNeeded(userID string, contentHash string, content []byte) (bool, error) {
@@ -217,6 +294,11 @@ func (s *SyncService) DeleteFile(userID primitive.ObjectID, filePath string, exp
 	}
 	if err != nil {
 		return nil, fmt.Errorf("sync service: delete: %v", err)
+	}
+	if metadata != nil {
+		if err := s.storageUsageRepo.ReleaseStorage(userID, metadata.Size); err != nil {
+			return nil, fmt.Errorf("sync service: delete: release storage: %v", err)
+		}
 	}
 
 	s.notificationService.NotifySync(userID.Hex(), clientSocketID)

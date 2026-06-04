@@ -11,6 +11,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type UserRepository struct {
@@ -273,6 +274,110 @@ func (u *UserRepository) UpdateSpaceLimitInfo(usedID string, usedSpace *int64, s
 		return fmt.Errorf("note repository: update used space: failed to update: %v", err)
 	}
 
+	return nil
+}
+
+func (u *UserRepository) EnsureStorageUsage(userID primitive.ObjectID) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	hasCounter, err := u.hasStorageUsage(ctx, userID)
+	if err != nil || hasCounter {
+		return err
+	}
+
+	usedSpace, err := u.computeStorageUsage(ctx, userID)
+	if err != nil {
+		return fmt.Errorf("user repository: ensure storage usage: compute: %v", err)
+	}
+
+	filter := bson.M{"_id": userID, "usedSpace": bson.M{"$exists": false}}
+	update := bson.M{"$set": bson.M{"usedSpace": usedSpace}}
+	_, err = u.collection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return fmt.Errorf("user repository: ensure storage usage: update: %v", err)
+	}
+	return nil
+}
+
+func (u *UserRepository) hasStorageUsage(ctx context.Context, userID primitive.ObjectID) (bool, error) {
+	var result struct {
+		UsedSpace *int64 `bson:"usedSpace"`
+	}
+	err := u.collection.FindOne(
+		ctx,
+		bson.M{"_id": userID},
+		options.FindOne().SetProjection(bson.M{"usedSpace": 1}),
+	).Decode(&result)
+	if err != nil {
+		return false, fmt.Errorf("user repository: ensure storage usage: find user: %v", err)
+	}
+	return result.UsedSpace != nil, nil
+}
+
+func (u *UserRepository) computeStorageUsage(ctx context.Context, userID primitive.ObjectID) (int64, error) {
+	pipeline := mongo.Pipeline{
+		{{Key: "$match", Value: bson.M{"userId": userID, "deletedAt": nil}}},
+		{{Key: "$group", Value: bson.M{
+			"_id":       nil,
+			"totalSize": bson.M{"$sum": "$fileSize"},
+		}}},
+	}
+
+	cur, err := u.db.Collection("file_metadata").Aggregate(ctx, pipeline)
+	if err != nil {
+		return 0, err
+	}
+	defer cur.Close(ctx)
+
+	var result struct {
+		TotalSize int64 `bson:"totalSize"`
+	}
+	if cur.Next(ctx) {
+		if err := cur.Decode(&result); err != nil {
+			return 0, err
+		}
+	}
+	return result.TotalSize, cur.Err()
+}
+
+func (u *UserRepository) ReserveStorage(userID primitive.ObjectID, bytes int64, spaceLimit int64) (bool, error) {
+	if bytes <= 0 {
+		return true, nil
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	filter := bson.M{
+		"_id": userID,
+		"$expr": bson.M{"$lte": bson.A{
+			bson.M{"$add": bson.A{bson.M{"$ifNull": bson.A{"$usedSpace", 0}}, bytes}},
+			spaceLimit,
+		}},
+	}
+	update := bson.M{"$inc": bson.M{"usedSpace": bytes}}
+	result, err := u.collection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return false, fmt.Errorf("user repository: reserve storage: %v", err)
+	}
+	return result.MatchedCount > 0, nil
+}
+
+func (u *UserRepository) ReleaseStorage(userID primitive.ObjectID, bytes int64) error {
+	if bytes <= 0 {
+		return nil
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	filter := bson.M{"_id": userID}
+	update := bson.M{"$inc": bson.M{"usedSpace": -bytes}}
+	_, err := u.collection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return fmt.Errorf("user repository: release storage: %v", err)
+	}
 	return nil
 }
 
