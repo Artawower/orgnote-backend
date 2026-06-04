@@ -2,9 +2,11 @@ package infrastructure
 
 import (
 	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	subscription "orgnote/app/infrastructure/generated"
+	"strings"
 	"testing"
 
 	cache "github.com/Code-Hex/go-generics-cache"
@@ -23,6 +25,39 @@ func newTestSubscriptionAPI(t *testing.T, handler http.HandlerFunc) *Subscriptio
 	}
 
 	return api
+}
+
+type roundTripFunc func(req *http.Request) (*http.Response, error)
+
+func (f roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
+	return f(req)
+}
+
+func TestNewSubscription_UsesInjectedHTTPClient(t *testing.T) {
+	requestWasSentThroughInjectedClient := false
+	checkURL := "http://subscription.test"
+	checkToken := "token"
+	httpClient := http.Client{Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+		requestWasSentThroughInjectedClient = true
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Header:     http.Header{"Content-Type": []string{"application/json"}},
+			Body:       io.NopCloser(strings.NewReader(`{"spaceLimit":1024}`)),
+		}, nil
+	})}
+	api, err := NewSubscription(httpClient, &checkURL, &checkToken, cache.New[string, SubscriptionInfo], 1)
+	if err != nil {
+		t.Fatalf("failed to create subscription api: %v", err)
+	}
+
+	_, err = api.ActivateSubscription(subscription.SubscriptionActivation{Key: "key", ExternalId: "42"})
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !requestWasSentThroughInjectedClient {
+		t.Fatal("expected request to use injected http client")
+	}
 }
 
 func TestActivateSubscription_ReturnsResponseBody(t *testing.T) {
