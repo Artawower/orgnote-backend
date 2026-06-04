@@ -1,6 +1,11 @@
 package services
 
-import "testing"
+import (
+	"orgnote/app/models"
+	"testing"
+
+	"github.com/oapi-codegen/runtime/types"
+)
 
 func TestActivationDomainFromClientAddress(t *testing.T) {
 	tests := []struct {
@@ -54,8 +59,58 @@ func TestReconciledActiveFallback(t *testing.T) {
 	}
 }
 
+func TestNewSubscriptionActivation_PreservesActivationAndAccountEmail(t *testing.T) {
+	activationEmail := "activation@example.com"
+	activationDomain := "app.example.com"
+	user := &models.User{
+		Provider:   "github",
+		ExternalID: "42",
+		Email:      "account@example.com",
+	}
+
+	data := newSubscriptionActivation(user, "key", &activationEmail, &activationDomain)
+
+	assertTypedEmailPointerEqual(t, data.Email, "activation@example.com")
+	assertTypedEmailPointerEqual(t, data.ExternalEmail, "account@example.com")
+	assertStringPointersEqual(t, data.ExternalProvider, stringPointer("github"))
+	assertStringPointersEqual(t, data.ActivationDomain, stringPointer("app.example.com"))
+	if data.ExternalId != "42" {
+		t.Fatalf("expected external id 42, got %q", data.ExternalId)
+	}
+	if data.Key != "key" {
+		t.Fatalf("expected key, got %q", data.Key)
+	}
+}
+
+func TestNewSubscriptionActivation_AllowsMissingOptionalEmails(t *testing.T) {
+	user := &models.User{Provider: "github", ExternalID: "42"}
+
+	data := newSubscriptionActivation(user, "key", nil, nil)
+
+	if data.Email != nil {
+		t.Fatalf("expected activation email to be nil, got %v", data.Email)
+	}
+	if data.ExternalEmail != nil {
+		t.Fatalf("expected external email to be nil, got %v", data.ExternalEmail)
+	}
+	if data.ActivationDomain != nil {
+		t.Fatalf("expected activation domain to be nil, got %v", data.ActivationDomain)
+	}
+}
+
 func stringPointer(value string) *string {
 	return &value
+}
+
+func assertTypedEmailPointerEqual(t *testing.T, actual *types.Email, expected string) {
+	t.Helper()
+
+	if actual == nil {
+		t.Fatalf("expected %q, got nil", expected)
+	}
+	if string(*actual) != expected {
+		t.Fatalf("expected %q, got %q", expected, string(*actual))
+	}
 }
 
 func assertStringPointersEqual(t *testing.T, actual *string, expected *string) {
