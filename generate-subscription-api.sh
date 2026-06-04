@@ -1,7 +1,11 @@
 #!/bin/bash
 
-mkdir -p app/infrastructure/generated
-oapi-codegen -package subscription -generate client,types http://65.108.90.95:8000/api/schema/ > app/infrastructure/generated/subscription.go
-# oapi-codegen -package subscription -generate client,types http://localhost:8080/api/schema/ > app/infrastructure/generated/subscription.go
+set -euo pipefail
 
-echo "Subscumber API layer was successfully generated."
+schema_url="${SUBSCRIPTION_SCHEMA_URL:-http://localhost:8000/api/schema/}"
+output_path="app/infrastructure/generated/subscription.go"
+
+mkdir -p "$(dirname "$output_path")"
+oapi-codegen -package subscription -generate client,types "$schema_url" > "$output_path"
+
+echo "Subscrumber API layer was successfully generated from $schema_url."
