@@ -1,6 +1,7 @@
 package services
 
 import (
+	subscription "orgnote/app/infrastructure/generated"
 	"orgnote/app/models"
 	"testing"
 
@@ -95,6 +96,45 @@ func TestNewSubscriptionActivation_AllowsMissingOptionalEmails(t *testing.T) {
 	}
 	if data.ActivationDomain != nil {
 		t.Fatalf("expected activation domain to be nil, got %v", data.ActivationDomain)
+	}
+}
+
+func TestSubscriptionActivationSpaceLimit_ReturnsValidLimit(t *testing.T) {
+	limit := 1024
+
+	spaceLimit, err := subscriptionActivationSpaceLimit(&subscription.SubscriptionInfo{SpaceLimit: &limit})
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if spaceLimit != 1024 {
+		t.Fatalf("expected space limit 1024, got %d", spaceLimit)
+	}
+}
+
+func TestSubscriptionActivationSpaceLimit_ReturnsErrorWhenResponseIsEmpty(t *testing.T) {
+	_, err := subscriptionActivationSpaceLimit(nil)
+
+	if err == nil {
+		t.Fatal("expected error for empty activation response")
+	}
+}
+
+func TestSubscriptionActivationSpaceLimit_ReturnsErrorWhenLimitMissing(t *testing.T) {
+	_, err := subscriptionActivationSpaceLimit(&subscription.SubscriptionInfo{})
+
+	if err == nil {
+		t.Fatal("expected error for missing space limit")
+	}
+}
+
+func TestSubscriptionActivationSpaceLimit_ReturnsErrorWhenLimitInvalid(t *testing.T) {
+	limit := 0
+
+	_, err := subscriptionActivationSpaceLimit(&subscription.SubscriptionInfo{SpaceLimit: &limit})
+
+	if err == nil {
+		t.Fatal("expected error for invalid space limit")
 	}
 }
 
