@@ -19,7 +19,7 @@ type SubscriptionChecker interface {
 
 type SpaceLimitUpdater func(userID string, spaceLimit int64) error
 
-func NewAccessMiddleware(subscription SubscriptionChecker, updateSpaceLimit SpaceLimitUpdater) func(*fiber.Ctx) error {
+func NewAccessMiddleware(subscription SubscriptionChecker, updateSpaceLimit SpaceLimitUpdater, selfHostedSpaceLimit int64) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		user := c.Locals("user").(*models.User)
 
@@ -32,7 +32,12 @@ func NewAccessMiddleware(subscription SubscriptionChecker, updateSpaceLimit Spac
 			return c.Status(fiber.StatusForbidden).JSON(NewHttpError[any](ErrAccessDenied, err.Error()))
 		}
 
-		if info == nil || !info.IsActive {
+		if info == nil {
+			c.Locals(SpaceLimitKey, selfHostedSpaceLimit)
+			return c.Next()
+		}
+
+		if !info.IsActive {
 			c.Locals(SpaceLimitKey, int64(0))
 			return c.Next()
 		}
