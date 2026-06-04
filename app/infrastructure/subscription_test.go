@@ -77,3 +77,26 @@ func TestActivateSubscription_ReturnsInvalidTokenError(t *testing.T) {
 		t.Fatalf("expected invalid token error, got %v", err)
 	}
 }
+
+func TestActivateSubscription_InvalidatesCachedSubscriptionInfo(t *testing.T) {
+	api := newTestSubscriptionAPI(t, func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"spaceLimit":1024}`))
+	})
+	provider := "github"
+	api.cache.Set(subscriptionCacheKey(provider, "42"), SubscriptionInfo{Email: "old@example.com"})
+
+	_, err := api.ActivateSubscription(subscription.SubscriptionActivation{
+		Key:              "key",
+		ExternalId:       "42",
+		ExternalProvider: &provider,
+	})
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if _, ok := api.cache.Get(subscriptionCacheKey(provider, "42")); ok {
+		t.Fatal("expected cached subscription info to be invalidated")
+	}
+}

@@ -73,8 +73,12 @@ func (a *SubscriptionAPI) getRemoteInfo(provider string, externalID string) (*Su
 
 }
 
+func subscriptionCacheKey(provider string, externalID string) string {
+	return provider + externalID
+}
+
 func (a *SubscriptionAPI) getInfo(provider string, externalID string) (*SubscriptionInfo, error) {
-	key := provider + externalID
+	key := subscriptionCacheKey(provider, externalID)
 	cachedInfo, ok := a.cache.Get(key)
 
 	if ok {
@@ -148,7 +152,16 @@ func (a *SubscriptionAPI) ActivateSubscription(data subscription.SubscriptionAct
 		return nil, fmt.Errorf("subscription: subscribe: missing response body")
 	}
 
+	a.invalidateActivationCache(data)
+
 	return rspns.JSON200, nil
+}
+
+func (a *SubscriptionAPI) invalidateActivationCache(data subscription.SubscriptionActivation) {
+	if data.ExternalProvider == nil || data.ExternalId == "" {
+		return
+	}
+	a.cache.Delete(subscriptionCacheKey(*data.ExternalProvider, data.ExternalId))
 }
 
 type cacheFactory[K comparable, V any] func(...cache.Option[K, V]) *cache.Cache[K, V]
