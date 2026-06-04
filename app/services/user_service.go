@@ -144,22 +144,7 @@ func (u *UserService) DeleteUser(user *models.User) error {
 }
 
 func (u *UserService) Subscribe(user *models.User, token string, emailAddress *string) error {
-	var email *types.Email
-	if emailAddress != nil {
-		email = (*types.Email)(emailAddress)
-	}
-	var externalEmail *types.Email
-	if user.Email != "" {
-		email = (*types.Email)(&user.Email)
-	}
-	data, err := u.subscriptionAPI.ActivateSubscription(subscription.SubscriptionActivation{
-		ActivationDomain: u.activationDomain,
-		Key:              token,
-		Email:            email,
-		ExternalId:       user.ExternalID,
-		ExternalEmail:    externalEmail,
-		ExternalProvider: &user.Provider,
-	})
+	data, err := u.subscriptionAPI.ActivateSubscription(newSubscriptionActivation(user, token, emailAddress, u.activationDomain))
 	if err != nil {
 		return fmt.Errorf("user service: subscribe: activate subscription %v", err)
 	}
@@ -176,6 +161,31 @@ func (u *UserService) Subscribe(user *models.User, token string, emailAddress *s
 		return fmt.Errorf("user service: subscribe: update space limit info: %v", err)
 	}
 	return nil
+}
+
+func newSubscriptionActivation(user *models.User, token string, emailAddress *string, activationDomain *string) subscription.SubscriptionActivation {
+	return subscription.SubscriptionActivation{
+		ActivationDomain: activationDomain,
+		Key:              token,
+		Email:            subscriptionEmail(emailAddress),
+		ExternalId:       user.ExternalID,
+		ExternalEmail:    externalSubscriptionEmail(user.Email),
+		ExternalProvider: &user.Provider,
+	}
+}
+
+func subscriptionEmail(emailAddress *string) *types.Email {
+	if emailAddress == nil {
+		return nil
+	}
+	return (*types.Email)(emailAddress)
+}
+
+func externalSubscriptionEmail(userEmail string) *types.Email {
+	if userEmail == "" {
+		return nil
+	}
+	return (*types.Email)(&userEmail)
 }
 
 func mapToUserPersonalInfo(user *models.User, usedSpace int64) *models.UserPersonalInfo {
