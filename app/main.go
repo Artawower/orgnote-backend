@@ -16,6 +16,7 @@ import (
 
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/recover"
+	"github.com/robfig/cron/v3"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -88,6 +89,20 @@ func main() {
 
 	userRepository := repositories.NewUserRepository(database)
 	fileMetadataRepository := repositories.NewFileMetadataRepository(database)
+	storageUsageCron := cron.New()
+	defer storageUsageCron.Stop()
+	if _, err := storageUsageCron.AddFunc("@hourly", func() {
+		result, err := userRepository.ReconcileStorageUsage()
+		if err != nil {
+			log.Error().Err(err).Msg("storage usage reconciliation failed")
+			return
+		}
+		log.Info().Int64("matchedUsers", result.MatchedUsers).Int64("updatedUsers", result.UpdatedUsers).Msg("storage usage reconciliation completed")
+	}); err != nil {
+		log.Fatal().Err(err).Msg("failed to schedule storage usage reconciliation")
+		return
+	}
+	storageUsageCron.Start()
 
 	blobStorage, err := infrastructure.NewS3Storage(infrastructure.S3Config{
 		Endpoint:        config.S3Endpoint,
