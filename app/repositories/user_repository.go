@@ -481,12 +481,20 @@ func (u *UserRepository) ReleaseStorage(userID primitive.ObjectID, bytes int64) 
 	defer cancel()
 
 	filter := bson.M{"_id": userID}
-	update := bson.M{"$inc": bson.M{"usedSpace": -bytes}}
-	_, err := u.collection.UpdateOne(ctx, filter, update)
+	_, err := u.collection.UpdateOne(ctx, filter, releaseStorageUpdatePipeline(bytes))
 	if err != nil {
 		return fmt.Errorf("user repository: release storage: %v", err)
 	}
 	return nil
+}
+
+func releaseStorageUpdatePipeline(bytes int64) mongo.Pipeline {
+	return mongo.Pipeline{
+		{{Key: "$set", Value: bson.M{"usedSpace": bson.M{"$max": bson.A{
+			int64(0),
+			bson.M{"$subtract": bson.A{bson.M{"$ifNull": bson.A{"$usedSpace", int64(0)}}, bytes}},
+		}}}}},
+	}
 }
 
 func (u *UserRepository) SetActivationKey(userID string, activationKey string) error {
