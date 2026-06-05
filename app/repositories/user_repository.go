@@ -14,6 +14,11 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+type StorageUsageReconcileResult struct {
+	MatchedUsers int64
+	UpdatedUsers int64
+}
+
 type UserRepository struct {
 	db         *mongo.Database
 	collection *mongo.Collection
@@ -362,6 +367,109 @@ func (u *UserRepository) ReserveStorage(userID primitive.ObjectID, bytes int64, 
 		return false, fmt.Errorf("user repository: reserve storage: %v", err)
 	}
 	return result.MatchedCount > 0, nil
+}
+
+func (u *UserRepository) ReconcileStorageUsage() (*StorageUsageReconcileResult, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	usageByUser, err := u.computeAllStorageUsage(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("user repository: reconcile storage usage: compute: %v", err)
+	}
+
+	userIDs, err := u.getAllUserIDs(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("user repository: reconcile storage usage: users: %v", err)
+	}
+
+	return u.updateStorageUsageCounters(ctx, userIDs, usageByUser)
+}
+
+func (u *UserRepository) computeAllStorageUsage(ctx context.Context) (map[primitive.ObjectID]int64, error) {
+	pipeline := mongo.Pipeline{
+		{{Key: "$match", Value: bson.M{"deletedAt": nil}}},
+		{{Key: "$group", Value: bson.M{"_id": "$userId", "totalSize": bson.M{"$sum": "$fileSize"}}}},
+	}
+	cur, err := u.db.Collection("file_metadata").Aggregate(ctx, pipeline)
+	if err != nil {
+		return nil, err
+	}
+	defer cur.Close(ctx)
+	return decodeStorageUsageCounters(ctx, cur)
+}
+
+func decodeStorageUsageCounters(ctx context.Context, cur *mongo.Cursor) (map[primitive.ObjectID]int64, error) {
+	usageByUser := map[primitive.ObjectID]int64{}
+	for cur.Next(ctx) {
+		var usage storageUsageCounter
+		if err := cur.Decode(&usage); err != nil {
+			return nil, err
+		}
+		usageByUser[usage.UserID] = usage.TotalSize
+	}
+	return usageByUser, cur.Err()
+}
+
+type storageUsageCounter struct {
+	UserID    primitive.ObjectID `bson:"_id"`
+	TotalSize int64              `bson:"totalSize"`
+}
+
+func (u *UserRepository) getAllUserIDs(ctx context.Context) ([]primitive.ObjectID, error) {
+	cur, err := u.collection.Find(ctx, bson.M{}, options.Find().SetProjection(bson.M{"_id": 1}))
+	if err != nil {
+		return nil, err
+	}
+	defer cur.Close(ctx)
+	return decodeUserIDs(ctx, cur)
+}
+
+func decodeUserIDs(ctx context.Context, cur *mongo.Cursor) ([]primitive.ObjectID, error) {
+	userIDs := []primitive.ObjectID{}
+	for cur.Next(ctx) {
+		var user struct {
+			ID primitive.ObjectID `bson:"_id"`
+		}
+		if err := cur.Decode(&user); err != nil {
+			return nil, err
+		}
+		userIDs = append(userIDs, user.ID)
+	}
+	return userIDs, cur.Err()
+}
+
+func (u *UserRepository) updateStorageUsageCounters(
+	ctx context.Context,
+	userIDs []primitive.ObjectID,
+	usageByUser map[primitive.ObjectID]int64,
+) (*StorageUsageReconcileResult, error) {
+	if len(userIDs) == 0 {
+		return &StorageUsageReconcileResult{}, nil
+	}
+	models := storageUsageWriteModels(userIDs, usageByUser)
+	result, err := u.collection.BulkWrite(ctx, models, options.BulkWrite().SetOrdered(false))
+	if err != nil {
+		return nil, err
+	}
+	return &StorageUsageReconcileResult{MatchedUsers: result.MatchedCount, UpdatedUsers: result.ModifiedCount}, nil
+}
+
+func storageUsageWriteModels(
+	userIDs []primitive.ObjectID,
+	usageByUser map[primitive.ObjectID]int64,
+) []mongo.WriteModel {
+	models := make([]mongo.WriteModel, 0, len(userIDs))
+	for _, userID := range userIDs {
+		models = append(models, storageUsageWriteModel(userID, usageByUser[userID]))
+	}
+	return models
+}
+
+func storageUsageWriteModel(userID primitive.ObjectID, usedSpace int64) mongo.WriteModel {
+	return mongo.NewUpdateOneModel().
+		SetFilter(bson.M{"_id": userID}).
+		SetUpdate(bson.M{"$set": bson.M{"usedSpace": usedSpace}})
 }
 
 func (u *UserRepository) ReleaseStorage(userID primitive.ObjectID, bytes int64) error {
