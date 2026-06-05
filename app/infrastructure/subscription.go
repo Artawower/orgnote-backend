@@ -74,7 +74,7 @@ func (a *SubscriptionAPI) getRemoteInfo(provider string, externalID string) (*Su
 }
 
 func subscriptionCacheKey(provider string, externalID string) string {
-	return provider + externalID
+	return provider + ":" + externalID
 }
 
 func (a *SubscriptionAPI) getInfo(provider string, externalID string) (*SubscriptionInfo, error) {
