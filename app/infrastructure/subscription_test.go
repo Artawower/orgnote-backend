@@ -33,6 +33,15 @@ func (f roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
 	return f(req)
 }
 
+func TestSubscriptionCacheKey_SeparatesProviderAndExternalID(t *testing.T) {
+	first := subscriptionCacheKey("ab", "c")
+	second := subscriptionCacheKey("a", "bc")
+
+	if first == second {
+		t.Fatalf("expected cache keys to differ, got %q", first)
+	}
+}
+
 func TestNewSubscription_UsesInjectedHTTPClient(t *testing.T) {
 	requestWasSentThroughInjectedClient := false
 	checkURL := "http://subscription.test"
