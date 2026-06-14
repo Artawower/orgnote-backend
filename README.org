@@ -97,6 +97,16 @@ SUBSCRIPTION_SCHEMA_URL=http://localhost:8000/api/schema/ ./generate-subscriptio
 SUBSCRIPTION_SCHEMA_URL=http://localhost:8000/api/schema/ just check-subscription-api
 #+END_SRC
 
+Docker builds also need =SUBSCRIPTION_SCHEMA_URL= because the generated subscription client is refreshed during image build. The value is a build argument, not only a container runtime variable, so =env_file= alone is not enough unless Docker Compose receives it through =--env-file=.
+
+For GitHub deployments, set the environment variable =SUBSCRIPTION_SCHEMA_URL= in the target environment variables. It should point to a reachable subscription schema endpoint, for example:
+
+#+BEGIN_SRC text
+http://<subscription-service-host>:8000/api/schema/
+#+END_SRC
+
+The compose files fail fast when the variable is missing to avoid falling back to =localhost= inside the Docker build container.
+
 
 * 🍩 Contribute guide
 Any contribution is very much appreciated! Please read the [[https://github.com/Artawower/orgnote/wiki/Contribution-guide][style guide]] before contributing to avoid misunderstandings!

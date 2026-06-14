@@ -75,6 +75,7 @@ jobs:
             BACKEND_URL=${{ vars.BACKEND_URL }}
             ACCESS_CHECK_URL=${{ vars.ACCESS_CHECK_URL }}
             ACCESS_CHECK_TOKEN=${{ secrets.ACCESS_CHECK_TOKEN }}
+            SUBSCRIPTION_SCHEMA_URL=${{ vars.SUBSCRIPTION_SCHEMA_URL }}
             S3_ACCESS_KEY=${{ secrets.S3_ACCESS_KEY }}
             S3_SECRET_KEY=${{ secrets.S3_SECRET_KEY }}
             S3_BUCKET=${{ vars.S3_BUCKET }}
