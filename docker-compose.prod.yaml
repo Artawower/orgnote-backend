@@ -8,6 +8,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        SUBSCRIPTION_SCHEMA_URL: ${SUBSCRIPTION_SCHEMA_URL:?SUBSCRIPTION_SCHEMA_URL is required for backend Docker build}
     networks:
       - orgnote-prod-network
       - traefik-network
