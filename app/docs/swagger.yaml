@@ -568,6 +568,10 @@ paths:
       responses:
         "200":
           description: OK
+          headers:
+            X-Content-Hash:
+              description: SHA-256 hash of file content
+              type: string
           schema:
             type: file
         "400":

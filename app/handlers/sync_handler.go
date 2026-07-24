@@ -263,6 +263,7 @@ func (h *SyncHandler) UploadFile(c *fiber.Ctx) error {
 // @Produce      octet-stream
 // @Param        path query string true "File path"
 // @Success      200  {file}  binary
+// @Header       200  {string} X-Content-Hash "SHA-256 hash of file content"
 // @Failure      400  {object}  HttpError[any]
 // @Failure      401  {object}  HttpError[any]
 // @Failure      404  {object}  HttpError[any]

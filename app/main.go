@@ -25,6 +25,8 @@ import (
 	oauth2github "golang.org/x/oauth2/github"
 )
 
+const exposedResponseHeaders = "X-Content-Hash"
+
 // @title Org Note API
 // @version 0.0.1
 // @description List of methods for work with Org Note.
@@ -121,7 +123,9 @@ func main() {
 	app.Use(recover.New(recover.Config{
 		EnableStackTrace: true,
 	}))
-	app.Use(cors.New())
+	app.Use(cors.New(cors.Config{
+		ExposeHeaders: exposedResponseHeaders,
+	}))
 	app.Use(handlers.NewUserInjectMiddleware(handlers.Config{
 		GetUser: userRepository.FindUserByToken,
 	}))

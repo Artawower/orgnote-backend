@@ -437,6 +437,12 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "type": "file"
+                        },
+                        "headers": {
+                            "X-Content-Hash": {
+                                "type": "string",
+                                "description": "SHA-256 hash of file content"
+                            }
                         }
                     },
                     "400": {
