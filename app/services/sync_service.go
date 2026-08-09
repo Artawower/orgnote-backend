@@ -116,6 +116,9 @@ func (s *SyncService) UploadFile(userID primitive.ObjectID, filePath string, con
 	if err != nil {
 		return nil, fmt.Errorf("sync service: upload: get metadata: %v", err)
 	}
+	if versionError := validateUploadVersion(existingMetadata, expectedVersion); versionError != nil {
+		return nil, versionError
+	}
 
 	storageDelta := uploadStorageDelta(existingMetadata, int64(len(content)))
 	if err := s.ensureStorageCounter(userID); err != nil {
@@ -192,6 +195,16 @@ func (s *SyncService) releaseReservedStorage(userID primitive.ObjectID, reserved
 	}
 	if err := s.storageUsageRepo.ReleaseStorage(userID, *reservedStorage); err != nil {
 		log.Error().Err(err).Str("userId", userID.Hex()).Int64("bytes", *reservedStorage).Msg("sync service: upload: release reserved storage")
+	}
+}
+
+func validateUploadVersion(metadata *models.FileMetadata, expectedVersion *int) error {
+	if metadata == nil || expectedVersion != nil {
+		return nil
+	}
+	return &VersionMismatchError{
+		Path:          metadata.Path,
+		ServerVersion: metadata.Version,
 	}
 }
 

@@ -109,6 +109,12 @@ func (r *FileMetadataRepository) Upsert(userID primitive.ObjectID, filePath stri
 	if existing == nil {
 		return r.createMetadata(ctx, userID, normalizedPath, pathLower, contentHash, size)
 	}
+	if expectedVersion == nil {
+		return nil, &VersionMismatchError{
+			Path:          existing.Path,
+			ServerVersion: existing.Version,
+		}
+	}
 
 	return r.updateMetadata(ctx, userID, pathLower, normalizedPath, contentHash, size, expectedVersion)
 }

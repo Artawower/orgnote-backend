@@ -225,6 +225,33 @@ func TestUploadFile_ReturnsQuotaExceededWhenReservationFails(t *testing.T) {
 	}
 }
 
+func TestUploadFile_RejectsMissingVersionForExistingFile(t *testing.T) {
+	const path = "/.orgnote/config.toml"
+	repo := newMockFileMetadataRepo()
+	blobStorage := newMockBlobStorage()
+	service := newTestSyncService(repo, &mockStorageUsageRepo{}, blobStorage)
+	userID := primitive.NewObjectID()
+	repo.files[path] = &models.FileMetadata{
+		UserID: userID, Path: path, ContentHash: "remote-hash", Size: 6, Version: 48,
+	}
+
+	_, err := service.UploadFile(userID, path, []byte("local defaults"), "", 1024, nil, "")
+
+	var versionErr *VersionMismatchError
+	if !errors.As(err, &versionErr) {
+		t.Fatalf("expected version mismatch, got %v", err)
+	}
+	if versionErr.ServerVersion != 48 {
+		t.Fatalf("expected server version 48, got %d", versionErr.ServerVersion)
+	}
+	if repo.files[path].ContentHash != "remote-hash" {
+		t.Fatal("expected existing file to remain unchanged")
+	}
+	if len(blobStorage.blobs) != 0 {
+		t.Fatal("expected blob upload to be skipped")
+	}
+}
+
 func TestUploadFile_ReleasesReservationWhenUploadFails(t *testing.T) {
 	repo := newMockFileMetadataRepo()
 	usage := &mockStorageUsageRepo{}
@@ -249,12 +276,12 @@ func TestUploadFile_ReleasesStorageWhenReplacingWithSmallerFile(t *testing.T) {
 	blobStorage := newMockBlobStorage()
 	service := newTestSyncService(repo, usage, blobStorage)
 	userID := primitive.NewObjectID()
-	_, err := repo.Upsert(userID, "/test.txt", "old", 8, nil)
+	metadata, err := repo.Upsert(userID, "/test.txt", "old", 8, nil)
 	if err != nil {
 		t.Fatalf("failed to seed metadata: %v", err)
 	}
 
-	_, err = service.UploadFile(userID, "test.txt", []byte("test"), "", 10, nil, "")
+	_, err = service.UploadFile(userID, "test.txt", []byte("test"), "", 10, &metadata.Version, "")
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
